@@ -4,7 +4,7 @@ abbrev: "TODO - Abbreviation"
 category: info
 
 docname: draft-ietf-alto-new-transport-latest
-submissiontype: IETF  
+submissiontype: IETF
 number:
 date:
 consensus: true
