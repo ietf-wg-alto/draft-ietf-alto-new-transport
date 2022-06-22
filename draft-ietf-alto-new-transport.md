@@ -9,8 +9,8 @@ number:
 date:
 consensus: true
 v: 3
-area: AREA
-workgroup: ALTO Working Group
+area: "Transport"
+workgroup: "Application-Layer Traffic Optimization"
 keyword:
  - H2
  - H3
