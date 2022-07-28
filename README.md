@@ -1,6 +1,6 @@
-# TODO - Your title
+# ALTO/H2: The ALTO Protocol using HTTP/2
 
-This is the working area for the IETF [ALTO Working Group](https://datatracker.ietf.org/wg/alto/documents/) Internet-Draft, "TODO - Your title".
+This is the working area for the IETF [ALTO Working Group](https://datatracker.ietf.org/wg/alto/documents/) Internet-Draft, "ALTO/H2: The ALTO Protocol using HTTP/2".
 
 * [Editor's Copy](https://ietf-wg-alto.github.io/draft-ietf-alto-new-transport/#go.draft-ietf-alto-new-transport.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-ietf-alto-new-transport)
@@ -27,4 +27,3 @@ $ make
 
 Command line usage requires that you have the necessary software installed.  See
 [the instructions](https://github.com/martinthomson/i-d-template/blob/main/doc/SETUP.md).
-
