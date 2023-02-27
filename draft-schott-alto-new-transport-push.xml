@@ -1,0 +1,733 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE rfc [
+  <!ENTITY nbsp    "&#160;">
+  <!ENTITY zwsp   "&#8203;">
+  <!ENTITY nbhy   "&#8209;">
+  <!ENTITY wj     "&#8288;">
+]>
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com)
+     by Daniel M Kohn (private) -->
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-schott-alto-new-transport-push-latest" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" symRefs="true" sortRefs="true" version="3">
+  <!-- xml2rfc v2v3 conversion 3.12.10 -->
+  <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+
+  <front>
+    <title abbrev="ALTO/H2">ALTO New Transport: Server Push using PUSH_PROMISE of HTTP/2</title>
+    <seriesInfo name="Internet-Draft" value="draft-schott-alto-new-transport-push-latest"/>
+    <author fullname="Roland Schott" initials="R." surname="Schott">
+      <organization>Deutsche Telekom</organization>
+      <address>
+        <postal>
+          <street>Heinrich-Hertz-Strasse 3-7</street>
+          <city>64295 Darmstadt</city>
+          <country>Germany</country>
+        </postal>
+        <email>Roland.Schott@telekom.de</email>
+      </address>
+    </author>
+    <author fullname="Y. Richard Yang" initials="Y." surname="Yang">
+      <organization>Yale University</organization>
+      <address>
+        <postal>
+          <street>51 Prospect St</street>
+          <city>New Haven</city>
+          <region>CT</region>
+          <code>06520</code>
+          <country>USA</country>
+        </postal>
+        <email>yry@cs.yale.edu</email>
+      </address>
+    </author>
+    <author fullname="Kai Gao" initials="K." surname="Gao">
+      <organization>Sichuan University</organization>
+      <address>
+        <postal>
+          <street/>
+          <city>Chengdu</city>
+          <code>201804</code>
+          <country>China</country>
+        </postal>
+        <email>kgao@scu.edu.cn</email>
+      </address>
+    </author>
+    <author fullname="Lauren Delwiche" initials="L." surname="Delwiche">
+      <organization>Yale University</organization>
+      <address>
+        <postal>
+          <street>51 Prospect St</street>
+          <city>New Haven</city>
+          <region>CT</region>
+          <code>06520</code>
+          <country>USA</country>
+        </postal>
+        <email>lauren.delwiche@yale.edu</email>
+      </address>
+    </author>
+    <date day="21" month="October" year="2022"/>
+    <area>TSV Area</area>
+    <workgroup>ALTO Working Group</workgroup>
+    <keyword>RFC</keyword>
+    <keyword>Request for Comments</keyword>
+    <keyword>I-D</keyword>
+    <keyword>Internet-Draft</keyword>
+    <keyword>Application-Layer Traffic Optimization, HTTP/2, SSE, Message Queue</keyword>
+    <abstract>
+      <t>The ALTO New Transport <xref target="draft-ietf-alto-new-transport" format="default"/>  introduces ALTO transport information structures (TIS) at an ALTO server. The introduction of ALTO TIS allows at least two types of efficient transport using HTTP: (1) HTTP/2/3 independent client long poll allowed by non-blocking, newer HTTP, and (2) HTTP/2 specific server push. This document defines HTTP/2 specific server-push ALTO transport based on ALTO TIS.
+      </t>
+    </abstract>
+    <note>
+      <name>Requirements Language</name>
+      <t>
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+          "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY",
+          and "OPTIONAL" in this document are to be interpreted as described
+          in BCP 14 <xref target="RFC2119" format="default"/><xref target="RFC8174" format="default"/> when,
+          and only when, they appear in all capitals, as shown here.
+      </t>
+    </note>
+  </front>
+  <middle>
+    <section anchor="intro" numbered="true" toc="default">
+      <name>Introduction</name>
+
+      <t>The ALTO new transport <xref target="draft-ietf-alto-new-transport" format="default"/>  introduces ALTO transport queues for an ALTO server to manage the transport of ALTO information to an ALTO client. The base design, however, supports only client pull. Hence, for a client to obtain the latest ALTO information, the client need to maintain a pending pull on the incremental updates queue. This document extends the base design to allow server push, potentially reducing information distribution delay.</t>
+
+      <t>The extension to realize server push on a transport queue is by adding a receiver set.  Figure 2 shows an example illustrating the additional receiver set at each transport queue.
+      </t>
+
+      <figure anchor="FigInfoStruct">
+        <name>ALTO New Transport Information Structure.</name>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+
+Information Resource:
+
+a) Static resource (#1) such as NetworkMap
+b) Filterable resource (#3) such as FilteredCostMap
+
+
+                              +-------------+
+                              |             |
+         +--------------------| ALTO Server |-----------+
+         |                  +-|             |-+         |
+         |                  | +-------------+ |         |
+         |                  |                 |         |
+---------|------------------|-----------------|---------|------------
+         |                  |                 |         | Information
+         |                  |                 |         | Resource
++-------------+   +-------------+   +-------------+   +-------------+
+| Information |   | Information |   | Information |   | Information |
+| Resource #1 |   | Resource #2 |   | Resource #3 |   | Resource #4 |
++-------------+   +-------------+   +-------------+   +-------------+
+       |                              /    \
+-------|-----------------------------/------\------------------------
+       |                            /        \            Transport
+       |                      +----/          \------+    Queues
+       |                      |                      |
+  +--------+             +--------+             +--------+
+  |   tq1  |-----+       |   tq2  |-----+       |   tq3  |-----+
+  +----|---+     |       +----|---+     |       +----|---+     |
+       |         |            |         |            |         |
+  +----|---+ +---|----+  +----|---+ +---|----+  +----|---+ +---|----+
+  | tq1/uq | | tq1/rs |  | tq2/uq | | tq2/rs |  | tq3/uq | | tq3/rs |
+  +--------+ +--------+  +--------+ +--------+  +--------+ +--------+
+       |\       /\              |         /           |          |
+-------|-\-----/--\-------------|--------/------------|----------|---
+       |  \   /    +-------+    |       /             |          |
+       |   +-/-----------+  \   |      /              |          |
+       |    /             \  \  |     /   A           +          +
+       |   /            +--\--\-|----/--+ single       \        /
+       |  /             +---\--\|---/---+ http2/3       \      /
+   +----------+             +----------+  connection   +----------+
+   | Client 1 |             | Client 2 |               | Client 3 |
+   +----------+             +------- --+               +----------+
+
+tqi    = transport queue i
+tqi/uq = incremental updates queue of transport queue i
+tqi/rs = receiver set of transport queue i
+
+      ]]></artwork>
+      </figure>
+      <t>This document specifies the operation to manage the receiver set.</t>
+
+    </section>
+    <!-- End of overview section -->
+
+    <section anchor="altoh2rs" numbered="true" toc="default">
+      <name>Manage Server Push: Receiver Set</name>
+
+      <section anchor="altoh2rsops" numbered="true" toc="default">
+        <name>Receiver Set Operations</name>
+
+        <t>A client starts to receive server push when it is added to the receiver set. A client can add itself to the receiver set when creating the transport queue, or add itself explicitly to the receiver set. A client can  read the status of the receiver set and delete itself from the receiver set to stop server push.</t>
+
+        <t>Implicit Create: As a short cut, when creating a transport queue, an ALTO client can start server push by setting the "incremental-changes" field to be true when creating a transport queue using the HTTP POST method with ALTO SSE AddUpdateReq
+        ([RFC 8895] Sec. 6.5) as the parameter:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+
+    object {
+        ResourceID   resource-id;
+        [JSONString  tag;]
+        [Boolean     incremental-changes;]
+        [Object      input;]
+     } AddUpdateReq;
+
+
+        ]]></artwork>
+
+        <t>PUT Create: A client can add itself in the receiver set by using the HTTP PUT method: PUT transport-queue/rs/self</t>
+
+        <t>Read: A client can see only itself in the receiver set. The appearance of self in the receiver set (read does not return "not exists" error) is an indication that push starts.</t>
+
+        <t>Delete: A client can delete itself (stops receiving push) either explicitly or
+          implicitly.</t>
+
+        <ul spacing="normal">
+          <li>Explicit delete: A client deletes itself using the HTTP DELETE method:
+            DELETE transport-queue/rs/self.</li>
+          <li>Implicit delete: Transport queue is connection ephemeral: the close of connection or stream for the transport queue deletes the transport queue (from the view) for
+            the client.</li>
+        </ul>
+
+      </section>
+
+      <section anchor="altoh2rsexample" numbered="true" toc="default">
+        <name>Examples</name>
+
+        <t>The first example is a client creating a transport queue and starting server push.</t>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+   Client -> server request
+
+   HEADERS
+     - END_STREAM
+     + END_HEADERS
+       :method = POST
+       :scheme = https
+       :path = /tqs
+       host = alto.example.com
+       accept = application/alto-error+json,
+                    application/alto-transport+json
+       content-type = application/alto-transport+json
+       content-length = TBD
+
+   DATA
+    - END_STREAM
+    {
+       "resource-id": "my-routingcost-map",
+       "incremental-push": true
+    }
+
+        ]]></artwork>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+
+   Server -> client response:
+
+   HEADERS
+     - END_STREAM
+     + END_HEADERS
+       :status = 200
+       content-type = application/alto-transport+json
+       content-length = TBD
+
+   DATA
+     - END_STREAM
+      {"tq": “/tqs/2718281828459”}
+
+
+        ]]></artwork>
+
+        <t>If the client reads the status of the transport queue created above using the read operation (GET) in the same HTTP connection, the client should see itself in the receiver set:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+   Client -> server request
+
+   HEADERS
+     - END_STREAM
+     + END_HEADERS
+       :method = GET
+       :scheme = https
+       :path = /tqs/2718281828459
+       host = alto.example.com
+       accept = application/alto-error+json,
+                    application/alto-transport+json
+
+   Server -> client response:
+
+   HEADERS
+     - END_STREAM
+     + END_HEADERS
+       :status = 200
+       content-type = application/alto-transport+json
+       content-length = TBD
+
+   DATA
+     - END_STREAM
+    { "uq":
+       [
+         {“seq”:        101,
+          "media-type": "application/alto-costmap+json",
+          “tag”:        "a10ce8b059740b0b2e3f8eb1d4785acd42231bfe" },
+         {“seq”:        102,
+          "media-type": "application/merge-patch+json",
+          “tag”:        "cdf0222x59740b0b2e3f8eb1d4785acd42231bfe" },
+         {“seq”:        103,
+          "media-type": "application/merge-patch+json",
+          “tag”:        "8eb1d4785acd42231bfecdf0222x59740b0b2e3f",
+          "link":       "/tqs/2718281828459/snapshot/2e3f"}
+
+       ],
+     "rs": ["self"]
+    }
+
+          ]]></artwork>
+
+        <t>A client can stop incremental push updates from the server to itself by sending the request:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+   DELETE /tqs/2718281828459/rs/self HTTP/2
+   Accept: application/alto-transport+json
+
+
+   HTTP/2 200 OK
+          ]]></artwork>
+
+      </section>
+      <!-- rs examples -->
+
+    </section>
+    <!-- receiver set -->
+
+    <section anchor="altoh2push" numbered="true" toc="default">
+      <name>Server Push of Incremental Updates</name>
+
+      <section anchor="altoh2pushops" numbered="true" toc="default">
+        <name>Server Push</name>
+        <t>The work flow of server push of individual updates is the following:</t>
+        <ul spacing="normal">
+          <li>Initialization: the first update pushed from the server to the client MUST be the
+            later of the following two: (1) the last independent update in the incremental updates queue; and (2) the following entry of the entry that matches the tag when the client creates the transport queue. The client MUST set SETTINGS_ENABLE_PUSH to be
+            consistent.</li>
+          <li>Push state: the server MUST maintain the last entry pushed to the client (and hence per client, per connection state) and schedule next update push accordingly.</li>
+          <li>Push management: The client MUST NOT cancel (RST_STREAM) a PUSH_PROMISE to avoid complex server state management.</li>
+        </ul>
+      </section>
+
+      <section anchor="altoh2pushexamples" numbered="true" toc="default">
+        <name>Examples</name>
+
+        <t>A client can wait for the server for incremental push, where the server first sends PUSH_PROMISE, for the first example in Sec. 2.2: </t>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+   Server -> client PUSH_PROMISE in current stream:
+
+   PUSH_PROMISE
+     - END_STREAM
+       Promised Stream 4
+       HEADER BLOCK
+       :method = GET
+       :scheme = https
+       :path = /tqs/2718281828459/uq/101
+       host = alto.example.com
+       accept = application/alto-error+json,
+                    application/alto-costmap+json
+
+   Server -> client content Stream 4:
+
+   HEADERS
+     + END_STREAM
+     + END_HEADERS
+       :status = 200
+       content-type = application/alto-costmap+json
+       content-length = TBD
+
+   DATA
+     + END_STREAM
+    {
+      "meta" : {
+         "dependent-vtags" : [{
+            "resource-id": "my-network-map",
+            "tag": "da65eca2eb7a10ce8b059740b0b2e3f8eb1d4785"
+          }],
+         "cost-type" : {
+           "cost-mode"  : "numerical",
+           "cost-metric": "routingcost"
+         },
+         "vtag": {
+           "resource-id" : "my-routingcost-map",
+           "tag" : "3ee2cb7e8d63d9fab71b9b34cbf764436315542e"
+         }
+      },
+      "cost-map" : {
+        "PID1": { "PID1": 1,  "PID2": 5,  "PID3": 10 },
+        "PID2": { "PID1": 5,  "PID2": 1,  "PID3": 15 },
+        "PID3": { "PID1": 20, "PID2": 15  }
+      }
+   }
+
+   Server -> client PUSH_PROMISE in current stream:
+
+   PUSH_PROMISE
+     - END_STREAM
+       Promised Stream 6
+       HEADER BLOCK
+       :method = GET
+       :scheme = https
+       :path = /tqs/2718281828459/uq/102
+       host = alto.example.com
+       accept = application/alto-error+json,
+                    application/merge-patch+json
+
+   Server -> client content Stream 6
+
+   HEADERS
+     + END_STREAM
+     + END_HEADERS
+       :status = 200
+       content-type = application/merge-patch+json
+       content-length = TBD
+
+   DATA
+     + END_STREAM
+    { ...}
+
+          ]]></artwork>
+      </section>
+    </section>
+
+    <section anchor="altoh2streams" numbered="true" toc="default">
+      <name>Server Push Stream Management</name>
+
+      <section anchor="altoh2streampush" numbered="true" toc="default">
+        <name>Server -&gt; Client [PUSH_PROMISE for Transport Queue on Stream SID_tq]</name>
+        <t>The server push MUST satisfy the following requirements:</t>
+        <ul spacing="normal">
+          <li>PUSH_PROMISE MUST be sent in stream SID_tq to serialize to allow the client to know the push order;</li>
+          <li>Each PUSH_PROMISE chooses a new server-selected stream ID, and the stream is closed after push.</li>
+        </ul>
+      </section>
+
+    </section>
+
+    <section anchor="altoh2ird" numbered="true" toc="default">
+      <name>Server Push Information Resource Directory (IRD)</name>
+      <t>Extending the IRD example in Section 8.1 of <xref target="RFC8895" format="default"/>, below is the IRD of an ALTO server supporting ALTO base protocol, ALTO/SSE, and Server Push.</t>
+      <t>In particular, </t>
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+  "my-network-map": {
+    "uri": "https://alto.example.com/networkmap",
+    "media-type": "application/alto-networkmap+json",
+  },
+  "my-routingcost-map": {
+    "uri": "https://alto.example.com/costmap/routingcost",
+    "media-type": "application/alto-costmap+json",
+    "uses": ["my-networkmap"],
+    "capabilities": {
+      "cost-type-names": ["num-routingcost"]
+    }
+  },
+  "my-hopcount-map": {
+    "uri": "https://alto.example.com/costmap/hopcount",
+    "media-type": "application/alto-costmap+json",
+    "uses": ["my-networkmap"],
+    "capabilities": {
+      "cost-type-names": ["num-hopcount"]
+    }
+  },
+  "my-filtered-cost-map": {
+    "uri": "https://alto.example.com/costmap/filtered/constraints",
+    "media-type": "application/alto-costmap+json",
+    "accepts": "application/alto-costmapfilter+json",
+    "uses": ["my-networkmap"],
+    "capabilities": {
+      "cost-type-names": ["num-routingcost", "num-hopcount"],
+      "cost-constraints": true
+    }
+  },
+  "my-simple-filtered-cost-map": {
+    "uri": "https://alto.example.com/costmap/filtered/simple",
+    "media-type": "application/alto-costmap+json",
+    "accepts": "application/alto-costmapfilter+json",
+    "uses": ["my-networkmap"],
+    "capabilities": {
+      "cost-type-names": ["num-routingcost", "num-hopcount"],
+      "cost-constraints": false
+    }
+  },
+  "my-props": {
+    "uri": "https://alto.example.com/properties",
+    "media-type": "application/alto-endpointprops+json",
+    "accepts": "application/alto-endpointpropparams+json",
+    "capabilities": {
+      "prop-types": ["priv:ietf-bandwidth"]
+    }
+  },
+  "my-pv": {
+    "uri": "https://alto.example.com/endpointcost/pv",
+    "media-type": "multipart/related;
+                   type=application/alto-endpointcost+json",
+    "accepts": "application/alto-endpointcostparams+json",
+    "capabilities": {
+      "cost-type-names": [ "path-vector" ],
+      "ane-properties": [ "maxresbw", "persistent-entities" ]
+    }
+  },
+  "update-my-costs": {
+    "uri": "https://alto.example.com/updates/costs",
+    "media-type": "text/event-stream",
+    "accepts": "application/alto-updatestreamparams+json",
+    "uses": [
+       "my-network-map",
+       "my-routingcost-map",
+       "my-hopcount-map",
+       "my-simple-filtered-cost-map"
+    ],
+    "capabilities": {
+      "incremental-change-media-types": {
+        "my-network-map": "application/json-patch+json",
+        "my-routingcost-map": "application/merge-patch+json",
+        "my-hopcount-map": "application/merge-patch+json"
+      },
+      "support-stream-control": true
+    }
+  },
+  "update-my-costs-h2": {
+    "uri": "https://alto.example.com/updates-h2/costs",
+    "media-type": "application/alto-transport+json",
+    "accepts": "application/alto-updatestreamparams+json",
+    "uses": [
+       "my-network-map",
+       "my-routingcost-map",
+       "my-hopcount-map",
+       "my-simple-filtered-cost-map"
+    ],
+    "capabilities": {
+      "incremental-change-media-types": {
+        "my-network-map": "application/json-patch+json",
+        "my-routingcost-map": "application/merge-patch+json",
+        "my-hopcount-map": "application/merge-patch+json"
+      },
+      "support-stream-control": true
+    }
+  },
+
+  "update-my-props": {
+    "uri": "https://alto.example.com/updates/properties",
+    "media-type": "text/event-stream",
+    "uses": [ "my-props" ],
+    "accepts": "application/alto-updatestreamparams+json",
+    "capabilities": {
+      "incremental-change-media-types": {
+        "my-props": "application/merge-patch+json"
+      },
+      "support-stream-control": true
+    }
+  },
+  "update-my-pv": {
+    "uri": "https://alto.example.com/updates/pv",
+    "media-type": "text/event-stream",
+    "uses": [ "my-pv" ],
+    "accepts": "application/alto-updatestreamparams+json",
+    "capabilities": {
+      "incremental-change-media-types": {
+        "my-pv": "application/merge-patch+json"
+      },
+      "support-stream-control": true
+    }
+  }
+  ]]></artwork>
+    </section>
+
+    <section anchor="secconsider" numbered="true" toc="default">
+      <name>Security Considerations</name>
+      <t>The properties defined in this document present no security
+      considerations beyond those in Section 15 of the base ALTO specification
+      [RFC7285].</t>
+    </section>
+
+    <section anchor="ianaconsider" numbered="true" toc="default">
+      <name>IANA Considerations</name>
+      <t>IANA will need to register server push.</t>
+    </section>
+    <section numbered="true" toc="default">
+      <name>Acknowledgments</name>
+      <t>The authors of this document would also like to thank many
+      for the reviews and comments.</t>
+    </section>
+  </middle>
+  <back>
+    <references>
+      <name>References</name>
+      <references>
+        <name>Normative References</name>
+        <reference anchor="RFC2119" target="https://www.rfc-editor.org/info/rfc2119" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml">
+          <front>
+            <title>Key words for use in RFCs to Indicate Requirement Levels</title>
+            <author initials="S." surname="Bradner" fullname="S. Bradner">
+              <organization/>
+            </author>
+            <date year="1997" month="March"/>
+            <abstract>
+              <t>In many standards track documents several words are used to signify the requirements in the specification.  These words are often capitalized. This document defines these words as they should be interpreted in IETF documents.  This document specifies an Internet Best Current Practices for the Internet Community, and requests discussion and suggestions for improvements.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="BCP" value="14"/>
+          <seriesInfo name="RFC" value="2119"/>
+          <seriesInfo name="DOI" value="10.17487/RFC2119"/>
+        </reference>
+        <!-- requirements words -->
+    <reference anchor="RFC7230" target="https://www.rfc-editor.org/info/rfc7230" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7230.xml">
+          <front>
+            <title>Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing</title>
+            <author initials="R." surname="Fielding" fullname="R. Fielding" role="editor">
+              <organization/>
+            </author>
+            <author initials="J." surname="Reschke" fullname="J. Reschke" role="editor">
+              <organization/>
+            </author>
+            <date year="2014" month="June"/>
+            <abstract>
+              <t>The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed, collaborative, hypertext information systems.  This document provides an overview of HTTP architecture and its associated terminology, defines the "http" and "https" Uniform Resource Identifier (URI) schemes, defines the HTTP/1.1 message syntax and parsing requirements, and describes related security concerns for implementations.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="RFC" value="7230"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7230"/>
+        </reference>
+        <!-- HTTP/1.1 -->
+    <reference anchor="RFC7285" target="https://www.rfc-editor.org/info/rfc7285" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7285.xml">
+          <front>
+            <title>Application-Layer Traffic Optimization (ALTO) Protocol</title>
+            <author initials="R." surname="Alimi" fullname="R. Alimi" role="editor">
+              <organization/>
+            </author>
+            <author initials="R." surname="Penno" fullname="R. Penno" role="editor">
+              <organization/>
+            </author>
+            <author initials="Y." surname="Yang" fullname="Y. Yang" role="editor">
+              <organization/>
+            </author>
+            <author initials="S." surname="Kiesel" fullname="S. Kiesel">
+              <organization/>
+            </author>
+            <author initials="S." surname="Previdi" fullname="S. Previdi">
+              <organization/>
+            </author>
+            <author initials="W." surname="Roome" fullname="W. Roome">
+              <organization/>
+            </author>
+            <author initials="S." surname="Shalunov" fullname="S. Shalunov">
+              <organization/>
+            </author>
+            <author initials="R." surname="Woundy" fullname="R. Woundy">
+              <organization/>
+            </author>
+            <date year="2014" month="September"/>
+            <abstract>
+              <t>Applications using the Internet already have access to some topology information of Internet Service Provider (ISP) networks.  For example, views to Internet routing tables at Looking Glass servers are available and can be practically downloaded to many network application clients.  What is missing is knowledge of the underlying network topologies from the point of view of ISPs.  In other words, what an ISP prefers in terms of traffic optimization -- and a way to distribute it.</t>
+              <t>The Application-Layer Traffic Optimization (ALTO) services defined in this document provide network information (e.g., basic network location structure and preferences of network paths) with the goal of modifying network resource consumption patterns while maintaining or improving application performance.  The basic information of ALTO is based on abstract maps of a network.  These maps provide a simplified view, yet enough information about a network for applications to effectively utilize them.  Additional services are built on top of the maps.</t>
+              <t>This document describes a protocol implementing the ALTO services. Although the ALTO services would primarily be provided by ISPs, other entities, such as content service providers, could also provide ALTO services.  Applications that could use the ALTO services are those that have a choice to which end points to connect.  Examples of such applications are peer-to-peer (P2P) and content delivery networks.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="RFC" value="7285"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7285"/>
+        </reference>
+        <!-- alto base -->
+    <reference target="https://www.rfc-editor.org/info/rfc7540" anchor="RFC7540" xml:base="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7540.xml">
+          <front>
+            <title>Hypertext Transfer Protocol Version 2 (HTTP/2)</title>
+            <author fullname="M. Belshe" surname="Belshe" initials="M"/>
+            <author fullname="R. Peon" surname="Peon" initials="R"/>
+            <author fullname="M. Thomson" surname="Thomson" initials="M"/>
+            <date year="2015" month="May"/>
+            <abstract>
+              <t>This specification describes an optimized expression of the semantics of the Hypertext Transfer Protocol (HTTP), referred to as HTTP version 2 (HTTP/2). HTTP/2 enables a more efficient use of network resources and a reduced perception of latency by introducing header field compression and allowing multiple concurrent exchanges on the same connection. It also introduces unsolicited push of representations from servers to clients.</t>
+              <t>This specification is an alternative to, but does not obsolete, the HTTP/1.1 message syntax. HTTP's existing semantics remain unchanged.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="RFC" value="7540"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7540"/>
+        </reference>
+        <!-- HTTP/2 -->
+    <reference anchor="RFC8174" target="https://www.rfc-editor.org/info/rfc8174" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml">
+          <front>
+            <title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
+            <author initials="B." surname="Leiba" fullname="B. Leiba">
+              <organization/>
+            </author>
+            <date year="2017" month="May"/>
+            <abstract>
+              <t>RFC 2119 specifies common key words that may be used in protocol  specifications.  This document aims to reduce the ambiguity by clarifying that only UPPERCASE usage of the key words have the  defined special meanings.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="BCP" value="14"/>
+          <seriesInfo name="RFC" value="8174"/>
+          <seriesInfo name="DOI" value="10.17487/RFC8174"/>
+        </reference>
+
+        <!-- requirements words -->
+    <reference anchor="RFC8895" target="https://www.rfc-editor.org/info/rfc8895" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8895.xml">
+          <front>
+            <title>Application-Layer Traffic Optimization (ALTO) Incremental Updates Using Server-Sent Events (SSE)</title>
+            <author initials="W." surname="Roome" fullname="W. Roome">
+              <organization/>
+            </author>
+            <author initials="Y." surname="Yang" fullname="Y. Yang">
+              <organization/>
+            </author>
+            <date year="2020" month="November"/>
+            <abstract>
+              <t>The Application-Layer Traffic Optimization (ALTO) protocol (RFC 7285) provides network-related information, called network information resources, to client applications so that clients can make informed decisions in utilizing network resources. This document presents a mechanism to allow an ALTO server to push updates to ALTO clients to achieve two benefits: (1) updates can be incremental, in that if only a small section of an information resource changes, the ALTO server can send just the changes and (2) updates can be immediate, in that the ALTO server can send updates as soon as they are available.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="RFC" value="8895"/>
+          <seriesInfo name="DOI" value="10.17487/RFC8895"/>
+        </reference>
+
+        <reference anchor="draft-ietf-alto-new-transport" target="https://datatracker.ietf.org/doc/draft-ietf-alto-new-transport/02/">
+          <front>
+            <title>ALTO New Transport: ALTO Transport Information Structures</title>
+            <author initials="R." surname="Schott" fullname="R. Schott">
+              <organization/>
+            </author>
+            <author initials="Y." surname="Yang" fullname="Y. Yang">
+              <organization/>
+            </author>
+            <date year="2022" month="October"/>
+          </front>
+          <seriesInfo name="Internet Draft" value="ID"/>
+        </reference>
+    </references>
+
+      <references>
+        <name>Informative References</name>
+        <reference anchor="RFC7971" target="https://www.rfc-editor.org/info/rfc7971" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7971.xml">
+          <front>
+            <title>Application-Layer Traffic Optimization (ALTO) Deployment Considerations</title>
+            <author initials="M." surname="Stiemerling" fullname="M. Stiemerling">
+              <organization/>
+            </author>
+            <author initials="S." surname="Kiesel" fullname="S. Kiesel">
+              <organization/>
+            </author>
+            <author initials="M." surname="Scharf" fullname="M. Scharf">
+              <organization/>
+            </author>
+            <author initials="H." surname="Seidel" fullname="H. Seidel">
+              <organization/>
+            </author>
+            <author initials="S." surname="Previdi" fullname="S. Previdi">
+              <organization/>
+            </author>
+            <date year="2016" month="October"/>
+            <abstract>
+              <t>Many Internet applications are used to access resources such as pieces of information or server processes that are available in several equivalent replicas on different hosts.  This includes, but is not limited to, peer-to-peer file sharing applications.  The goal of Application-Layer Traffic Optimization (ALTO) is to provide guidance to applications that have to select one or several hosts from a set of candidates capable of providing a desired resource. This memo discusses deployment-related issues of ALTO.  It addresses different use cases of ALTO such as peer-to-peer file sharing and Content Delivery Networks (CDNs) and presents corresponding examples. The document also includes recommendations for network administrators and application designers planning to deploy ALTO, such as recommendations on how to generate ALTO map information.</t>
+            </abstract>
+          </front>
+          <seriesInfo name="RFC" value="7971"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7971"/>
+        </reference>
+        <!-- requirements -->
+
+    </references>
+    </references>
+  </back>
+</rfc>
