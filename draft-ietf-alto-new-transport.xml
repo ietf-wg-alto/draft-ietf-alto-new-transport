@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="25" month="February" year="2023"/>
+    <date day="2" month="March" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -192,7 +192,7 @@
       <name>TIPS Overview</name>
 
       <section anchor="basic-data-model" numbered="true" toc="default">
-      <name>Basic Data Model: Incremental Representation State Transfer (iREST)</name>
+      <name>Basic Data Model: Incremental Representational State Transfer (iREST)</name>
 
       <t>For each resource (e.g., a cost map, network map), the incremental
       updates and snapshots can be represented using the following directed acyclic graph model,
@@ -215,46 +215,46 @@
       <figure anchor="data-model">
         <name>iREST Model Example</name>
         <artwork name="" type="" align="left" alt=""><![CDATA[
-                                          +======+
-                                          |  0   |
-                                          +======+
-                                          /   |  \
-                                ID0-101  /    |   |
-                                        /     |   |
-                                      |/__    |   |
-                                +======+      |   |
-                    tag: 1.1 -> | 101  |      |   |
-                                +======+      |   |
-                                   ||         |   |
-                        ID101-102  ||         |   |
-                                   \/         |   |
-                                +======+      |   |
-                    tag: 1.5 -> | 102  |      |   |
-                                +======+      |   |
-                                   ||         |   |
-                        ID102-103  ||  ID0-103|   |
-                                   \/         |   |
-                                +======+      /   |
-+---------------+   tag: 2.0 -> | 103  |<----/    |
-| Base Resource |  =====>       +======+          |
-+---------------+                  ||             |
-                        ID103-104  ||             |
-                                   \/             |
-                                +======+          |
-                    tag: 3.0 -> | 104  |          |
-                                +======+          |
-                                   ||             | ID0-105
-                        ID104-105  ||             |
-                                   \/             /
-                                +======+         /
-                    tag: 3.3 -> | 105  |<-------/
-                                +======+
-                                   ||
-                        ID105-106  ||
-                                   \/
-                                +======+
-                    tag: 3.7 -> | 106  |
-                                +======+
+                                                  +======+
+                                                  |  0   |
+                                                  +======+
+                                                  /   |  \
+                                        ID0-101  /    |   |
+                                                /     |   |
+                                              |/__    |   |
+                                        +======+      |   |
+                   tag: 109783421097 -> | 101  |      |   |
+                                        +======+      |   |
+                                           ||         |   |
+                                ID101-102  ||         |   |
+                                           \/         |   |
+                                        +======+      |   |
+                   tag: 123566431234 -> | 102  |      |   |
+                                        +======+      |   |
+                                           ||         |   |
+                                ID102-103  ||  ID0-103|   |
+                                           \/         |   |
+                                        +======+      /   |
+                   tag: 123400881080 -> | 103  |<----/    |
++---------------+                       +======+          |
+| Base Resource |  =====>                  ||             |
++---------------+               ID103-104  ||             |
+                                           \/             |
+                                        +======+          |
+                   tag: 123566452654 -> | 104  |          |
+                                        +======+          |
+                                           ||             | ID0-105
+                                ID104-105  ||             |
+                                           \/             /
+                                        +======+         /
+                   tag: 123567838392 -> | 105  |<-------/
+                                        +======+
+                                           ||
+                                ID105-106  ||
+                                           \/
+                                        +======+
+                   tag: 123566470983 -> | 106  |
+                                        +======+
 
           tag: denotes the version of the resource at node i
           ID###-###: denotes update item (op, data) to transition from
@@ -287,6 +287,8 @@
                   105
               105
                   106
+          push           // server push metadata
+            ...
 
 
       Location -> resource naming (ID assignment)
@@ -926,9 +928,9 @@ Client                                  TIPS
               <t>Contains both an updates-graph-summary and an optional server-push boolean value
               which is set to TRUE if the client indicated server push</t>
 
-              <t>updates-graph-summary provides the starting sequence number of the updates graph
-              and the last sequence number (current available), along with
-              a recommended edge to consume.  How the server calculates the recommended edge
+              <t>updates-graph-summary provides the starting sequence number (start-seq) of the updates graph
+              and the last sequence number (end-seq) that is currently available, along with
+              a recommended edge to consume (start-edge-rec).  How the server calculates the recommended edge
               depends on the implementation.  Ideally, if the client does not provide a version
               tag, the server should recommend the edge of the latest snapshot available.  If the client
               does provide a version tag, the server should calculate the cumulative size of the
@@ -1065,17 +1067,23 @@ Client                                  TIPS
       <section anchor="metadata-directory" numbered="true" toc="default">
         <name>TIPS View Metadata Directory</name>
 
-        <t>An ALTO client can read the metadata directory of the updates graph
-        to understand its full contents beyond the intial summary provided (perhaps
-        to calculate a new shortest path to the end of the graph after not having
-        fetched for a period of time).</t>
+        <t>An ALTO client can read the metadata directory of the TIPS view
+        to understand its full contents beyond the intial summary provided. </t> 
 
         <section anchor="dir-req" numbered="true" toc="default">
           <name>Request</name>
 
           <t>An ALTO client requests the updates graph's metadata directory
         by sending an HTTP GET request with the media type
-        "application/alto-tipsgraph+json".  The GET request looks like:</t>
+        "application/alto-tipsview+json".  The GET request looks like:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+    GET /<tips-view-uri>
+        ]]></artwork>
+
+        <t>An ALTO client can also read the metadata directory of just the
+        the updates graph (perhaps to calculate a new shortest path to the end of the graph after not having
+        fetched for a period of time).  The HTTP method is a GET, and looks like:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/ug
@@ -1096,18 +1104,20 @@ Client                                  TIPS
              error HTTP message with status code 404 (Not Found) and media type
              "application/alto-error+json".</t>
 
-          <t>The response from the server, if no error, is the UpdatesGraph object indicated as "application/alto-tipsgraph+json" media type:</t>
+          <t>The response from the server, if no error, for the entire metadata directory of the TIPS view 
+          is the UpdatesDirectory object indicated as "application/alto-tipsview+json" media type:</t>
 
           <artwork name="" type="" align="left" alt=""><![CDATA[
     object {
       GraphDirMeta   meta;
       UpdatesGraph   updates-graph;
+      PushState      push-state;
     } UpdatesDirectory : ResponseEntityBase;
 
     object {
       ResourceID     resource-id;
       Tag            tag;
-    } GraphDirMeta
+    } GraphDirMeta;
 
     object-map {
       StartSeq -> EndSeqUpdates;
@@ -1123,6 +1133,16 @@ Client                                  TIPS
       JSONNumber    size;
     } UpdateItemMeta;
 
+    object {
+      Boolean     server-push;
+      NextEdge    next-edge;
+    } PushState;
+
+    object {
+      JSONNumber       seq-i;
+      JSONNumber       seq-j;
+    } NextEdge;
+
         ]]></artwork>
 
         <t>with the following fields:</t>
@@ -1136,7 +1156,15 @@ Client                                  TIPS
             <dd>
               <t>Contains a map of edges in the updates graph (start-seq to end-seq).  Each
               edge has a corresponding update-item-meta which includes the edge's
-              media type, resource version tag, and size of the content in kilobytes.</t>
+              media type, resource version tag, and size of the content in kilobytes.
+              Note that two different edges will share the same resource version tag 
+              if they connect to the same end-seq node in the graph.</t>
+            </dd>
+            <dt>push-state: </dt>
+            <dd> 
+              <t>Contains server-push boolean which is set to TRUE if the client has indicated server 
+              push.  Otherwise, it is set to FALSE.  push-state also contains next-edge which indicates 
+              the next edge that will be pushed to the client. If server-push is FALSE, next-edge is NULL. </t>
             </dd>
           </dl>
 
@@ -1146,42 +1174,46 @@ Client                                  TIPS
         <name>Example</name>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
-   GET /tips/2718281828459/ug HTTP/1.1
+   GET /tips/2718281828459 HTTP/1.1
    Host: alto.example.com
-   Accept: application/alto-tipsgraph+json, application/alto-error+json
+   Accept: application/alto-tipsview+json, application/alto-error+json
    Authorization: Basic Y2xpZW50MTpoZWxsb2FsdG8K
 
 
    HTTP/1.1 200 OK
-   Content-Type: application/alto-tipsgraph+json
+   Content-Type: application/alto-tipsview+json
    Content-Length: 488
 
    {
       "meta": {
-        "resource-id": "2718281828459"
+        "resource-id": "2718281828459",
         "tag": 125351264356
       },
       "updates-graph": {
         0: {
-          101: {alto-costmap+json, 10978342, 1000000},
-          103: {alto-costmap+json, 12340088, 1004000},
-          105: {alto-costmap+json, 12356783, 1008033}
+          101: {alto-costmap+json, 109783421097, 1000000},
+          103: {alto-costmap+json, 123400881080, 1004000},
+          105: {alto-costmap+json, 123567838392, 1008033}
         },
         101: {
-          102: {application/merge-patch+json, 12356643, 4040}
+          102: {application/merge-patch+json, 123566431234, 4040}
         },
         102: {
-          103: {application/merge-patch+json, 12356644, 3000}
+          103: {application/merge-patch+json, 123400881080, 3000}
         },
         103: {
-          104: {application/merge-patch+json, 12356645, 8000}
+          104: {application/merge-patch+json, 123566452654, 8000}
         },
         104: {
-          105: {application/merge-patch+json, 12356646, 10000}
+          105: {application/merge-patch+json, 123567838392, 10000}
         },
         105: {
-          106: {application/merge-patch+json, 12356647, 4040}
+          106: {application/merge-patch+json, 123566470983, 4040}
         }
+      }
+      "push-state": {
+        "server-push": false,
+        "next-edge": null
       }
    }
         ]]></artwork>
@@ -1196,14 +1228,15 @@ Client                                  TIPS
         <section anchor="ref-dir-req" numbered="true" toc="default">
           <name>Request</name>
 
-          <t>An ALTO client requests the updates graph's metadata directory
+          <t>An ALTO client requests the TIPS view metadata directory
         by sending an HTTP GET request with the media type
-        "application/alto-tipsgraph+json".  The GET request looks like:</t>
+        "application/alto-tipsview+json" and the version tag of the 
+        TIPS view directory it has currently.  The GET request looks like:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
-    POST /tips/2718281828459/ug HTTP/1.1
+    POST /tips/2718281828459 HTTP/1.1
     Host: alto.example.com
-    Accept: application/alto-tipsgraph+json,
+    Accept: application/alto-tipsview+json,
             application/merge-patch+json,
             application/alto-error+json
     Authorization: Basic Y2xpZW50MTpoZWxsb2FsdG8K
@@ -1388,7 +1421,7 @@ Client                                  TIPS
             requesting the TIPS view.</t>
 
             <t>Explicit add: A client can explicitly add itself in the receiver set by using the HTTP PUT method with media type
-            "application/alto-tipspush+json", where the
+            "application/alto-tipsview+json", where the
             client may optionally specify a starting edge (next-edge) from which it would like to receive updates:</t>
             <artwork name="" type="" align="left" alt=""><![CDATA[
     PUT /<tips-view-uri>/push
@@ -1396,13 +1429,27 @@ Client                                  TIPS
     object {
       Boolean     server-push;
       [NextEdge    next-edge;]
-    } PushState
+    } PushState;
 
     object {
       JSONNumber       seq-i;
       JSONNumber       seq-j;
-    } NextEdge
+    } NextEdge;
           ]]></artwork>
+
+          <t>with the following fields:</t>
+          <dl>
+            <dt>server-push: </dt>
+            <dd>
+              <t>Set to true if the client desires to receive server push updates.</t>
+            </dd>
+            <dt>next-edge: </dt>
+            <dd>
+              <t>Optional field to request a starting edge to be pushed if the client has pulled the 
+              updates graph directory and has calculated the path it desires to take.  The server is 
+              MAY push this edge first if available.</t>
+            </dd>
+          </dl>
 
           <t>Short cut add: When requesting a TIPS view, an ALTO client can
           start server push by setting the option "server-push" field to be true using the HTTP POST method
@@ -1462,10 +1509,8 @@ Client                                  TIPS
 
         <section anchor="push-read" numbered="true" toc="default">
           <name>Read Push State</name>
-          <t>A client can use the HTTP GET method, with accept header set to "application/alto-tipspush+json"
-          (defined in <xref target="push-start" format="default"/>) to check the status of server push.
-          Note that a server SHOULD send next-edge
-          to inform the client which item will be pushed next. </t>
+          <t>A client can use the HTTP GET method, with accept header set to "application/alto-tipsview+json"
+          (defined in <xref target="push-start" format="default"/>) to check the status of server push.</t>
 
           <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/push
@@ -1484,7 +1529,7 @@ Client                                  TIPS
         :path = /tips/2718281828459/push
         host = alto.example.com
         accept = application/alto-error+json,
-                      application/alto-tipspush+json
+                      application/alto-tipsview+json
 
     Server -> client response:
 
@@ -1492,7 +1537,7 @@ Client                                  TIPS
       - END_STREAM
       + END_HEADERS
         :status = 200
-        content-type = application/alto-tipspush+json
+        content-type = application/alto-tipsview+json
         content-length = 519
 
     DATA
@@ -1516,7 +1561,7 @@ Client                                  TIPS
 
           <t>Explicit stop: A client stops push by using the HTTP PUT method to
           /&lt;tips-view-uri&gt;/push, with content type
-          "application/alto-tipspush+json" and setting server-push to FALSE:</t>
+          "application/alto-tipsview+json" and setting server-push to FALSE:</t>
 
           <t>Implicit stop: (1) TIPS view is connection ephemeral: the close of connection or
           stream for the TIPS view deletes the TIPS view from the view of the client. (2) The client
@@ -1541,7 +1586,7 @@ Client                                  TIPS
         :path = /tips/2718281828459/push
         host = alto.example.com
         accept = application/alto-error+json
-        content-type = application/alto-tipspush+json
+        content-type = application/alto-tipsview+json
         content-length = 69
 
     DATA
@@ -1570,7 +1615,7 @@ Client                                  TIPS
           <name>Server Push</name>
 
           <t>The objective of the server is to push the latest version to the client using
-          the lowest cost (sum of size) of the updates. Hence, it is recommended that the
+          the lowest cost (sum of size) of the updates. Hence, it is RECOMMENDED that the
           server computes the push path using the following algorithm, upon each event computing a push:</t>
           <ul>
             <li>Compute client current version (n_c). During initialization, if the TIPS view request
@@ -1584,7 +1629,7 @@ Client                                  TIPS
           <ul spacing="normal">
             <li>Initialization: the client MUST set SETTINGS_ENABLE_PUSH to be
               consistent.  If the client specifically requests a starting edge to be pushed, the server
-              SHOULD start with that edge, even if it is not the shortest path.</li>
+              MAY start with that edge, even if it is not the shortest path.</li>
             <li>Push state: the server MUST maintain the last entry pushed to the client (and hence
             per client, per connection state) and schedule next update push accordingly.</li>
             <li>Push management: The client MUST NOT cancel (RST_STREAM) a PUSH_PROMISE to avoid
@@ -1957,8 +2002,7 @@ Client                                  TIPS
       <ul spacing="normal">
         <li>application/alto-tips+json: as described in <xref target="tips-createresp" format="default"/>;</li>
         <li>application/alto-tipsparams+json: as described in <xref target="tips-createreq" format="default"/>;</li>
-        <li>application/alto-tipsgraph+json: as described in <xref target="dir-resp" format="default"/></li>
-        <li>application/alto-tipspush+json: as described in <xref target="push-start" format="default"/></li>
+        <li>application/alto-tipsview+json: as described in <xref target="dir-resp" format="default"/></li>
       </ul>
       <section numbered="true" toc="default">
         <name>application/alto-tips+json Media Type</name>
@@ -2077,12 +2121,12 @@ Client                                  TIPS
         </dl>
       </section>
       <section numbered="true" toc="default">
-        <name>application/alto-tipsgraph+json Media Type</name>
+        <name>application/alto-tipsview+json Media Type</name>
         <dl>
           <dt>Type name:</dt>
           <dd>application</dd>
           <dt>Subtype name:</dt>
-          <dd>alto-tipsgraph+json</dd>
+          <dd>alto-tipsview+json</dd>
           <dt>Required parameters:</dt>
           <dd>N/A</dd>
           <dt>Optional parameters:</dt>
@@ -2102,64 +2146,6 @@ Client                                  TIPS
           </dd>
           <dt>Published specification:</dt>
           <dd><xref target="dir-resp"/> of this document.</dd>
-          <dt>Applications that use this media type:</dt>
-          <dd>ALTO servers and ALTO clients either stand alone or are embedded
-          within other applications.</dd>
-          <dt>Fragment identifier considerations:</dt>
-          <dd>N/A</dd>
-          <dt>Additional information:</dt>
-          <dd>
-            <t><br/></t>
-            <dl>
-              <dt>Deprecated alias names for this type:</dt>
-              <dd>N/A</dd>
-              <dt>Magic number(s):</dt>
-              <dd>N/A</dd>
-              <dt>File extension(s):</dt>
-              <dd>This document uses the media type to refer to protocol messages
-              and thus does not require a file extension.</dd>
-              <dt>Macintosh file type code(s):</dt>
-              <dd>N/A</dd>
-            </dl>
-          </dd>
-          <dt>Person and email address to contact for further information:</dt>
-          <dd>See Authors' Addresses section.</dd>
-          <dt>Intended usage:</dt>
-          <dd>COMMON</dd>
-          <dt>Restrictions on usage:</dt>
-          <dd>N/A</dd>
-          <dt>Author:</dt>
-          <dd>See Authors' Addresses section.</dd>
-          <dt>Change controller:</dt>
-          <dd>Internet Engineering Task Force (mailto:iesg@ietf.org).</dd>
-        </dl>
-      </section>
-      <section numbered="true" toc="default">
-        <name>application/alto-tipspush+json Media Type</name>
-        <dl>
-          <dt>Type name:</dt>
-          <dd>application</dd>
-          <dt>Subtype name:</dt>
-          <dd>alto-tipspush+json</dd>
-          <dt>Required parameters:</dt>
-          <dd>N/A</dd>
-          <dt>Optional parameters:</dt>
-          <dd>N/A</dd>
-          <dt>Encoding considerations:</dt>
-          <dd>Encoding considerations are identical to those specified for the
-          "application/json" media type. See <xref target="RFC8259" format="default"/>.
-          </dd>
-          <dt>Security considerations:</dt>
-          <dd>Security considerations relating to the generation and consumption
-          of ALTO Protocol messages are discussed in Section 10 of
-          <xref target="RFC8895"/> and Section 15 of <xref target="RFC7285"/>.
-          </dd>
-          <dt>Interoperability considerations:</dt>
-          <dd>This document specifies format of conforming messages and the
-          interpretation thereof.
-          </dd>
-          <dt>Published specification:</dt>
-          <dd><xref target="push-start"/> of this document.</dd>
           <dt>Applications that use this media type:</dt>
           <dd>ALTO servers and ALTO clients either stand alone or are embedded
           within other applications.</dd>
