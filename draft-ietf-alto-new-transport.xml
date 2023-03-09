@@ -1182,12 +1182,12 @@ Client                                  TIPS
 
    HTTP/1.1 200 OK
    Content-Type: application/alto-tipsview+json
-   Content-Length: 1237
+   Content-Length: 1239
 
    {
       "meta": {
         "resource-id": "2718281828459",
-        "tag": 125351264356
+        "tag": "125351264356"
       },
       "updates-graph": {
         "0": {
