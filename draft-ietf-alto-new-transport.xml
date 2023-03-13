@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="2" month="March" year="2023"/>
+    <date day="12" month="March" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -1769,7 +1769,16 @@ Client                                  TIPS
 
       <section anchor="ops-loadbalancing" numbered="true" toc="default">
          <name>Considerations for Load Balancing</name>
-         <t>TODO</t>
+         <t>TIPS allow clients to make concurrent pulls of the incremental updates potentianlly through different HTTP connections. As a consequence, it introduces additional complexties when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if</t>
+         <ul spacing="normal">
+           <li>the backend servers are stateful, i.e., the TIPS view is created and stored only on a single server;</li>
+           <li>the ALTO server is using layer-4 load balancing, i.e., the requests are distributed based on the TCP 5-tuple.</li>
+         </ul>
+         <t>Thus, additional considerations are required to enable correct load balancing for TIPS, including:</t>
+         <ul>
+             <li>Use a stateless architecture: One solution is to follow the stateless computing pattern: states about the TIPS view are not maintained by the backend servers but are stored in a distributed database. Thus, concurrent requests to the same TIPS view can be processed on arbitrary stateless backend servers, which all fetches data from the same database.</li>
+           <li>Configure the load balancers properly: In case when the backend servers are stateful, the load balancers must be properly configured to guarantee that requests of the same TIPS view always arrive at the same server. For example, the ALTO server may configure layer-7 load balancers that distribute requests based on URL or cookies.</li>
+         </ul>
       </section>
 
       <section anchor="ops-chooseupdates" numbered="true" toc="default">
