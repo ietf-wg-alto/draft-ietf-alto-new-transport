@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="12" month="March" year="2023"/>
+    <date day="26" month="March" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -651,9 +651,10 @@ Client                                  TIPS
               dependency relationship.  That is, if a TIPS' "uses" set
               includes resource R1 and resource R1 depends on ("uses") resource R0,
               then the TIPS' "uses" set SHOULD include R0 as well as R1.
-              For example, a TIPS for a cost map SHOULD also provide
-              a TIPS view for the network map upon which that cost map depends.
-            </t>
+              For example, if a TIPS provides a TIPS view for a cost map, it
+              SHOULD also provide a TIPS view for the network map upon which
+              that cost map depends. </t>
+         <t>If the set is not closed, at least one resource R1 in the "uses" field of a TIPS depends on another resource R0 which is not in the "uses" field of the same TIPS. Thus, a client cannot receive incremental updates for R0 from the same TIPS service. If the client observes in an update of R1 that the version tag for R0 has changed, it must make a request to retrieve the full content of R0, which is likely to be less efficient than receiving the incremental updates of R0.</t>
       </section>
 
       <section anchor="tips-ird-example" numbered="true" toc="default">
@@ -866,7 +867,7 @@ Client                                  TIPS
           </dd>
           <dt>server-push: </dt>
           <dd>
-            <t>Set to TRUE if a client desires to receive updates via server push. If the value is FALSE or not present, the client does not accept server push updates.</t>
+            <t>Set to TRUE if a client desires to receive updates via server push. If the value is FALSE or not present, the client does not accept server push updates. See <xref target="server-push" format="default"/> for detailed specifications.</t>
           </dd>
         </dl>
       </section>
@@ -1041,9 +1042,11 @@ Client                                  TIPS
         <t>An ALTO client can indicate it no longer desires to pull/receive updates
         for a specific network resource by "deleting" the TIPS view using the returned
         tips-view-uri and the HTTP DELETE method.  Whether or not the server
-        actually deletes the TIPS view is implementation dependent. Likely,
-        a server will remove the client from a dependency set associated with the TIPS view.  A server will not want to
-        delete a TIPS view if another client is using it.  The DELETE request looks like:
+            actually deletes the TIPS view is implementation dependent. For
+            example, an ALTO server may maintain a set of clients that subscribe
+            to the TIPS view of a resource: a client that deletes the view is
+            removed from the set, and the TIPS view is only removed when the
+            dependent set becomes empty. See other potential implementations in <xref target="ops-shared" format="default"/>. The DELETE request looks like:
         </t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
@@ -1161,7 +1164,7 @@ Client                                  TIPS
             <dd>
               <t>Contains server-push boolean which is set to TRUE if the client has indicated server
               push.  Otherwise, it is set to FALSE.  push-state also contains next-edge which indicates
-              the next edge that will be pushed to the client. If server-push is FALSE, next-edge is NULL.</t>
+              the next edge that will be pushed to the client. If server-push is FALSE, next-edge MUST be NULL.</t>
             </dd>
           </dl>
 
@@ -1431,7 +1434,7 @@ Client                                  TIPS
             <name>Start Server Push</name>
 
             <t>A client can add itself explicitly to the receiver set or add itself to the receiver set when
-            requesting the TIPS view.</t>
+            requesting the TIPS view. Before a client starts receving server push for a TIPS view, it MUST enable server push in HTTP, i.e., following Section 8.4 of <xref target="RFC9113" format="default"/> for HTTP/2 and Section 4.6 of <xref target="RFC9114" format="default"/> for HTTP/3. If the client does not enable HTTP server push, the ALTO server MUST return an ALTO error with the E_INVALID_FIELD_VALUE code and set the "field" to "server-push".</t>
 
             <t>Explicit add: A client can explicitly add itself in the receiver set by using the HTTP PUT method with media type
             "application/alto-tipsview+json", where the
@@ -1482,13 +1485,13 @@ Client                                  TIPS
         accept = application/alto-error+json,
                       application/alto-tips+json
         content-type = application/alto-tips+json
-        content-length = 69
+        content-length = 67
 
     DATA
       - END_STREAM
       {
         "resource-id": "my-routingcost-map",
-        ["server-push": true]
+        "server-push": true
       }
 
     Server -> client response:
@@ -1622,10 +1625,10 @@ Client                                  TIPS
       <!-- receiver set -->
 
       <section anchor="altoh2push" numbered="true" toc="default">
-        <name>Server Push of Incremental Updates</name>
+        <name>Push Incremental Updates</name>
 
         <section anchor="altoh2pushops" numbered="true" toc="default">
-          <name>Server Push</name>
+          <name>Scheduling Server Push Updates</name>
 
           <t>The objective of the server is to push the latest version to the client using
           the lowest cost (sum of size) of the updates. Hence, it is RECOMMENDED that the
@@ -1640,9 +1643,8 @@ Client                                  TIPS
 
           <t>Note</t>
           <ul spacing="normal">
-            <li>Initialization: the client MUST set SETTINGS_ENABLE_PUSH to be
-              consistent.  If the client specifically requests a starting edge to be pushed, the server
-              MAY start with that edge, even if it is not the shortest path.</li>
+            <li>Initialization: If the client specifically requests a starting edge to be pushed, the server
+              MAY start with that edge even if it is not the shortest path.</li>
             <li>Push state: the server MUST maintain the last entry pushed to the client (and hence
             per client, per connection state) and schedule next update push accordingly.</li>
             <li>Push management: The client MUST NOT cancel (RST_STREAM) a PUSH_PROMISE to avoid
@@ -1781,7 +1783,7 @@ Client                                  TIPS
       <section anchor="ops-chooseupdates" numbered="true" toc="default">
          <name>Considerations for Choosing Updates</name>
 
-         <t>TIPS should be cognizant of the effects of its update schedule, which
+         <t>When implementing TIPS, a developer should be cognizant of the effects of its update schedule, which
             includes both the choice of timing (i.e., when/what to trigger an
             update on the updates graph) and the choice of message format
             (i.e., given an update, send a full replacement or an incremental
@@ -1821,8 +1823,8 @@ Client                                  TIPS
    that PID, while JSON patch would have to send a list of remove
    operations and delete the prefix one by one.</t>
 
-          <t>Therefore, each TIPS may decide on its own whether to
-   use JSON merge patch or JSON patch according to the changes in
+          <t>Therefore, each TIPS instance may choose to encode the updates
+   using JSON merge patch or JSON patch based on the type of changes in
    network maps.</t>
          </section>
 
@@ -1941,13 +1943,32 @@ Client                                  TIPS
    offer incremental updates for ordinal mode cost
    maps, TIPS implementors should be aware that
    incremental updates for ordinal costs are more complicated than for
-   numerical costs, and ALTO clients should be aware that small changes
+   numerical costs, and that small changes of the original cost value
    may result in large updates.</t>
 
-            <t>A TIPS can avoid this complication by only offering
+            <t>A TIPS implementation can avoid this complication by only offering
    full replacements as updates in the updates graph for ordinal cost maps.</t>
         </section>
 
+        <section anchor="ops-shared" numbered="true" toc="default">
+            <name>Considerations for Managing Shared TIPS Views</name>
+            <t>From a client's point of view, it sees only one copy of the TIPS
+            view for any resource. However, on the server side, there are
+            different implementation options, especially for common resources
+            (e.g., network map or cost map) that may be frequently queried by
+            many clients. Some potential options are listed below:</t>
+            <ul>
+                <li>An ALTO server creates one TIPS view of the common resource for each client. When the client deletes the view, the server deletes the view in the server storage</li>
+                <li><t>An ALTO server matains one copy of the TIPS view for each common resource and all clients requesting the same resources use the same copy. There are two ways to manage the the storage for the shared copy:</t>
+                    <ul>
+                        <li>the ALTO server maintains the set of clients that subscribe to the TIPS view, and only removes the view from the storage when the set becomes empty.</li>
+                        <li>the TIPS view is never removed from the storage.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <t>Developers may choose different implementation options depending on criteria such as request frequency, available resources of the ALTO server, the ability to scale, and programming complexity.</t>
+        </section>
     </section> <!-- OPS -->
 
 
