@@ -188,6 +188,32 @@
     <section anchor="altoh2overview" numbered="true" toc="default">
       <name>TIPS Overview</name>
 
+      <section anchor="requirements" numbered="true" toc="default">
+          <name>Transport Requirements</name>
+
+          <t>Current ALTO protocol and its extensions support two transport mechanisms: First, a client can direct request an ALTO resource and obtain a complete snapshot of that ALTO resource, as specified in the base protocol <xref target="RFC7285" format="default" />; Second, a client can subscribe to incremental changes of one or multiple ALTO resources using the incremental update extension <xref target="RFC8895" format="default"/>, and a server pushes the updates to the client through a websocket connection.</t>
+
+          <t>However, the current transport mechanisms are not optimized for storing,
+              transmitting, and processing (incremental) updates of ALTO
+              information resources. Specifically, the new transport mechanism must
+          satisfy the following requirements:</t>
+
+          <dl>
+              <dt>Incremental updates:</dt>
+              <dd>Incremental updates can reduce both the data storage on an ALTO server and the transmission time of the updates, especially when the change of an ALTO resource is minor.  The base protocol does not support incremental updates and the current incremental update mechanism in <xref target="RFC8895" format="default"/> has limitations (as discussed below).</dd>
+              <dt>Cacheable updates:</dt>
+              <dd>Cacheable contents can be stored by a web cache and then be delivered to clients from the web cache. As the web cache is closer to the client and than the ALTO server, it is likely to deliver the update with smaller latency, larger throughput and smaller loss rate. Current ALTO transport mechanisms does not support cacheable incremental updates: in the base protocol, only resources that can be fetched by the HTTP GET method are cacheable but they are provided only in snapshots; in <xref target="RFC8895"/>, incremental updates are unnamed and cannot be cached.</dd>
+              <dt>Concurrent, non-blocking update transmission:</dt>
+              <dd>When a client needs to receive and apply multiple incremental updates, it is desired to transmit the updates concurrently to fully utilize the bandwidth and to reduce head-of-line blocking. The ALTO incremental update extension <xref target="RFC8895"/>, unfortunately, does not satisfy this requirement -- even though the updates can be multiplexed by the serverto avoid head-of-line blocking between multiple resources, the updates are delivered sequentially and can suffer from head-of-line blocking inside the connection, for example, when there is a packet loss.</dd>
+              <dt>Prefetching updates:</dt>
+              <dd>Prefetching updates can reduce the time to send the request, making it possible to achieve sub-RTT transmission of ALTO incremental updates. In <xref target="RFC8895"/>, this requirement is fulfilled using server-sent event (SSE) and is still desired in the ALTO new transport.</dd>
+              <dt>Backward compatibility:</dt>
+              <dd> While some of the previous requirements are offered by HTTP/2 <xref target="RFC9113"/> and HTTP/3 <xref target="RFC9114"/>, it is desired that the ALTO new transport mechanism can work with HTTP/1.x as many development tools and current ALTO implementations are based on HTTP/1.x.</dd>
+          </dl>
+
+          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long pull in HTTP/1.1 and using server push in higher HTTP verions.</t>
+      </section>
+
       <section anchor="basic-data-model" numbered="true" toc="default">
       <name>Basic Data Model: Incremental Representational State Transfer (iREST)</name>
 
@@ -203,55 +229,55 @@
         <li>Node content is path independent (different paths arrive at the same content)</li>
       </ul>
       <t>A concrete example is as shown in <xref target="data-model" format="default"/>.
-      Thick lines represent incremental updates and thin lines represent snapshots.
+      Thick lines represent mandatory incremental updates, dotted lines represent optional incremental updates, and thin lines represent snapshots.
       Note that node content is path independent: the content can be obtained
       by applying the updates from different paths.  For example, assume the client already has version at 103: the version at 105
-      can either be directly fetched as a snapshot or computed incrementally by applying the incremental updates between
-      103 and 104, then 104 and 105.</t>
+      can either be directly fetched as a snapshot, computed incrementally by applying the incremental updates between
+      103 and 104, then 104 and 105, or if the optional update from 103 to 105 exists, computed incrementally by applying the incremental updates from 103 and 105.</t>
 
       <figure anchor="data-model">
         <name>iREST Model Example</name>
         <artwork name="" type="" align="left" alt=""><![CDATA[
                                                   +======+
-                                                  |  0   |
-                                                  +======+
-                                                  /   |  \
-                                        ID0-101  /    |   |
-                                                /     |   |
-                                              |/__    |   |
-                                        +======+      |   |
-                   tag: 109783421097 -> | 101  |      |   |
-                                        +======+      |   |
-                                           ||         |   |
-                                ID101-102  ||         |   |
-                                           \/         |   |
-                                        +======+      |   |
-                   tag: 123566431234 -> | 102  |      |   |
-                                        +======+      |   |
-                                           ||         |   |
-                                ID102-103  ||  ID0-103|   |
-                                           \/         |   |
-                                        +======+      /   |
-                   tag: 123400881080 -> | 103  |<----/    |
-+---------------+                       +======+          |
-| Base Resource |  =====>                  ||             |
-+---------------+               ID103-104  ||             |
-                                           \/             |
-                                        +======+          |
-                   tag: 123566452654 -> | 104  |          |
-                                        +======+          |
-                                           ||             | ID0-105
-                                ID104-105  ||             |
-                                           \/             /
-                                        +======+         /
-                   tag: 123567838392 -> | 105  |<-------/
-                                        +======+
-                                           ||
-                                ID105-106  ||
-                                           \/
-                                        +======+
-                   tag: 123566470983 -> | 106  |
-                                        +======+
+                                                 -|  0   |
+                                                / +======+
+                                               /      |  \
+                                     ID0-101  /       |   |
+                                             /        |   |
+                                           |/__       |   |
+                                    +======+          |   |
+               tag: 109783421097 -> | 101  |          |   |
+                                    +======+          |   |
+                                       ||             |   |
+                            ID101-102  ||             |   |
+                                       \/             |   |
+                                    +======+          |   |
+               tag: 123566431234 -> | 102  |          |   |
+                                    +======+          |   |
+                                       ||             |   |
+                            ID102-103  ||             |   |
+                                       \/             |   |
+                                    +======+          /   |
+               tag: 123400881080 -> | 103  |<--------/    |
++---------------+                   +======+ ID0-103      |
+| Base Resource |  =====>              ||   ..            |
++---------------+           ID103-104  ||    ..           |
+                                       \/     ..          |
+                                    +======+  ..          |
+               tag: 123566452654 -> | 104  |  .. ID103    |
+                                    +======+  .. -105     |
+                                       ||     ..          | ID0-105
+                            ID104-105  ||     ..          |
+                                       \/   |._           /
+                                    +======+             /
+               tag: 123567838392 -> | 105  |<-----------/
+                                    +======+
+                                       ||
+                            ID105-106  ||
+                                       \/
+                                    +======+
+               tag: 123566470983 -> | 106  |
+                                    +======+
 
           tag: denotes the version of the resource at node i
           ID###-###: denotes update item (op, data) to transition from
@@ -280,6 +306,7 @@
                   103
               103
                   104
+                  105    // optional shortcut 103 -> 105 patch
               104
                   105
               105
@@ -1969,8 +1996,18 @@ Client                                  TIPS
 
             <t>Developers may choose different implementation options depending on criteria such as request frequency, available resources of the ALTO server, the ability to scale, and programming complexity.</t>
         </section>
-    </section> <!-- OPS -->
 
+        <section anchor="ops-shortcut" numbered="true" toc="default">
+            <name>Considerations for Offering Shortcut Incremental Updates</name>
+
+            <t>Besides the mandatory stepwise incremental updates (from i to i+1), an ALTO server may optionally offer shortcut incremental updates, or simple shortcuts, between two non-consecutive versions i and i+k (k > 1). Such shortcuts offer alternative paths in the update graph and can potentially speed up the transmission and processing of incremental updates, leading to faster synchronization of ALTO information especially when the client has limited bandwidth and computation. However, developers of an ALTO server must be aware that:</t>
+            <ol>
+                <li>Optional shortcuts may increase the size of the update graph, in the worst case square to the number of updates (i.e., when a shortcut is offered for each version to all future versions).</li>
+                <li>Optional shortcuts require additional storage, both on the ALTO server and on web caches.</li>
+                <li>Optional shortcuts may reduce concurrency when the updates do not overlap, e.g., when the updates apply to different parts of an ALTO resource. In such a case, the total size of the original updates is close to the size of the shortcut, but the original updates can be transmitted concurrently while the shortcut is transmitted in a single connection. </li>
+            </ol>
+        </section>
+    </section>
 
     <section anchor="sec-sec" numbered="true" toc="default">
        <name>Security Considerations</name>
