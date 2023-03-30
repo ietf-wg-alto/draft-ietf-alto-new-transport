@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="26" month="March" year="2023"/>
+    <date day="30" month="March" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -106,7 +106,7 @@
       Information Publication Service (TIPS).  TIPS uses an incremental RESTful design to
       give an ALTO client the new capability to explicitly, concurrently (non-blocking) request (pull)
       specific incremental updates using native HTTP/2 or HTTP/3, while still
-      functioning for HTTP/1.x.  TIPS also provides an ALTO server to concurrently push specific incremental updates using native HTTP/2 or HTTP/3
+      functioning for HTTP/1.x.  TIPS also provides for an ALTO server to concurrently push specific incremental updates using native HTTP/2 or HTTP/3
       server push.
       </t>
     </abstract>
@@ -204,14 +204,14 @@
               <dt>Cacheable updates:</dt>
               <dd>Cacheable contents can be stored by a web cache and then be delivered to clients from the web cache. As the web cache is closer to the client and than the ALTO server, it is likely to deliver the update with smaller latency, larger throughput and smaller loss rate. Current ALTO transport mechanisms does not support cacheable incremental updates: in the base protocol, only resources that can be fetched by the HTTP GET method are cacheable but they are provided only in snapshots; in <xref target="RFC8895"/>, incremental updates are unnamed and cannot be cached.</dd>
               <dt>Concurrent, non-blocking update transmission:</dt>
-              <dd>When a client needs to receive and apply multiple incremental updates, it is desired to transmit the updates concurrently to fully utilize the bandwidth and to reduce head-of-line blocking. The ALTO incremental update extension <xref target="RFC8895"/>, unfortunately, does not satisfy this requirement -- even though the updates can be multiplexed by the serverto avoid head-of-line blocking between multiple resources, the updates are delivered sequentially and can suffer from head-of-line blocking inside the connection, for example, when there is a packet loss.</dd>
+              <dd>When a client needs to receive and apply multiple incremental updates, it is desired to transmit the updates concurrently to fully utilize the bandwidth and to reduce head-of-line blocking. The ALTO incremental update extension <xref target="RFC8895"/>, unfortunately, does not satisfy this requirement -- even though the updates can be multiplexed by the server to avoid head-of-line blocking between multiple resources, the updates are delivered sequentially and can suffer from head-of-line blocking inside the connection, for example, when there is a packet loss.</dd>
               <dt>Prefetching updates:</dt>
               <dd>Prefetching updates can reduce the time to send the request, making it possible to achieve sub-RTT transmission of ALTO incremental updates. In <xref target="RFC8895"/>, this requirement is fulfilled using server-sent event (SSE) and is still desired in the ALTO new transport.</dd>
               <dt>Backward compatibility:</dt>
               <dd> While some of the previous requirements are offered by HTTP/2 <xref target="RFC9113"/> and HTTP/3 <xref target="RFC9114"/>, it is desired that the ALTO new transport mechanism can work with HTTP/1.x as many development tools and current ALTO implementations are based on HTTP/1.x.</dd>
           </dl>
 
-          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long pull in HTTP/1.1 and using server push in higher HTTP verions.</t>
+          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long pull in HTTP/1.1 and using server push in higher HTTP versions.</t>
       </section>
 
       <section anchor="basic-data-model" numbered="true" toc="default">
@@ -294,7 +294,7 @@
         <name>Location Schema for <xref target="data-model" format="default"/>.</name>
         <artwork name="" type="" align="left" alt=""><![CDATA[
 
-      <tips-view-uri>
+      <tips-view-uri>  // relative URI to TIPS view (see Section 4.2)
           ug    // updates graph
               0
                   101    // full 101 content
@@ -323,7 +323,7 @@
         GET /<tips-view-uri>/ug/105/106
 
       Server Push:
-        Use the URI as above
+        Construct same URIs as with client pull for push promise URIs
 
       ]]></artwork>
         </figure>
@@ -335,57 +335,6 @@
 
         </section>
     </section>
-      <section anchor="service-model" numbered="true" toc="default">
-        <name>High-level Service Model</name>
-
-        <t>Conceptually, the TIPS system consists of 3 types of resources:</t>
-        <ul>
-            <li>(R1) TIPS frontend to manage (create/delete) TIPS views.</li>
-            <li>(R2) TIPS view directory, which provides metadata (e.g., references) about the network resource data.</li>
-            <li>(R3) The actual network resource data, encoded as complete ALTO network resources (e.g., cost map, network map) or incremental updates.</li>
-        </ul>
-
-        <figure anchor="service-model-figure">
-          <name>Service Model</name>
-          <artwork name="" type="" align="left" alt=""><![CDATA[
-
-                     +------------------------------------------------+
-                     |                                                |
-+------+             |R1: Frontend/Open  R2: Directory/Meta  R3: Data |
-|      | "iget" base |     +-----+           +-----+         +-----+  |
-|      | resource 1  |     |     |           |     |         |     |  |
-|      |-------------|---->|     |           |     |         |     |  |
-|      | incremental |     |     |           |     |-------->|     |  |
-|      | transfer    |     |     |           |     |         |     |  |
-|      | resource    |     |     |           |     |         |     |  |
-|      |<------------|-----|     |           +-----+         +-----+  |
-|Client|             |     |     |                                    |
-|      | "iget" base |     |     |                                    |
-|      | resource 2  |     |     |           +-----+         +-----+  |
-|      |-------------|---->|     |           |     |         |     |  |
-|      | incremental |     |     |           |     |         |     |  |
-|      | transfer    |     |     |           |     | ------->|     |  |
-|      | resource    |     |     |           |     |         |     |  |
-|      |<------------|-----|     |           |     |         |     |  |
-+------+             |     +-----+           +-----+         +-----+  |
-                     |                                                |
-                     +------------------------------------------------+
-
-      ]]></artwork>
-        </figure>
-
-      <t>Design Point: Component Resource Location</t>
-        <ul>
-            <li>Design 1 (Single): all 3 types at the same, single server (accessed via relative reference)</li>
-            <li>Design 2 (Flexible): all 3 types can be at their own server (accessed via absolute reference)</li>
-            <li>Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be on the same server</li>
-        </ul>
-      <t>This document specifies Design 1 (keeping R1, R2, and R3 on the same server) in order to simplify session management,
-      though at the expense of maximum load balancing flexibility (see <xref target="ops-loadbalancing" format="default"/> for a discussion on load balancing considerations).
-      A future companion document may extend the protocol to support Design 2 or Design 3.</t>
-
-      </section>
-
       <section anchor="tipsinfo-terms" numbered="true" toc="default">
         <name>TIPS Terminology</name>
 
@@ -393,10 +342,10 @@
         <dl newline="true" spacing="normal" indent="3">
 
           <dt>Network information resource:</dt>
-          <dd>A piece of retrievable information about network state, per <xref target="RFC7285" format="default"/>.</dd>
+          <dd>Is a piece of retrievable information about network state, per <xref target="RFC7285" format="default"/>.</dd>
 
           <dt>TIPS view (ts):</dt>
-          <dd>Defined in this document to be the container of incremental transport information
+          <dd>Is defined in this document to be the container of incremental transport information
           about the network information resource.  Though the TIPS view
           may include other transport information, it has two basic components: updates graph (ug)
           and receiver set (rs).</dd>
@@ -410,11 +359,11 @@
           updates graph (within a new TIPS view) for each unique filter request.</dd>
 
           <dt>Receiver set (rs):</dt>
-          <dd>The receiver set contains the set of clients who have requested to receive server push updates.</dd>
+          <dd>Contains the set of clients who have requested to receive server push updates.</dd>
 
           <dt>Information Resource Directory (IRD):</dt>
-          <dd>Requested by an ALTO client to discover available information resources provided by an
-          ALTO server, per <xref target="RFC7285" format="default"/>.
+          <dd>Contains a list of available information resources provided by an
+          ALTO server that can be requested by ALTO clients, per <xref target="RFC7285" format="default"/>.
           Each entry in an IRD indicates a URI at which an ALTO server
           accepts requests, and returns either an information resource or an information resource
           directory that references additional information resources.  An ALTO server's IRD MAY
@@ -422,7 +371,7 @@
           to request new TIPS instances.</dd>
 
         </dl>
-        <t>Figure 1 shows an example illustrating the TIPS abstraction.
+        <t>Figure 4 shows an example illustrating the TIPS abstraction.
            Each ALTO client (Client 1, Client 2, or Client 3)
            maintains a single HTTP connection with the ALTO server.
         </t>
@@ -491,7 +440,7 @@ tvi/rs = receiver set of tvi (for server push)
         <name>TIPS Workflow</name>
 
         <t>The intended use case of TIPS is to run it as a service
-           inside an HTTP/2 or HTTP/3 connection (though it can run inside
+           over an HTTP/2 or HTTP/3 connection (though it can run over
            an HTTP/1.x connection, without server push functionality).
            Specifically, an ALTO client opens an HTTP connection with an ALTO server and uses
            TIPS to retrieve a JSON object that contains a URI to a TIPS view of each network
@@ -978,7 +927,7 @@ Client                                  TIPS
           HTTP/1.1 400 Bad Request
           Content-Length: 131
           Content-Type: application/alto-error+json
-          Connection: Closed
+          Connection: close
 
           {
               "meta":{
@@ -1069,7 +1018,7 @@ Client                                  TIPS
         <t>An ALTO client can indicate it no longer desires to pull/receive updates
         for a specific network resource by "deleting" the TIPS view using the returned
         tips-view-uri and the HTTP DELETE method.  Whether or not the server
-            actually deletes the TIPS view is implementation dependent. For
+            actually deletes the TIPS view is implementation dependent.  For
             example, an ALTO server may maintain a set of clients that subscribe
             to the TIPS view of a resource: a client that deletes the view is
             removed from the set, and the TIPS view is only removed when the
@@ -1327,12 +1276,15 @@ Client                                  TIPS
 
       <section anchor="update-invariants" numbered="true" toc="default">
           <name>Server Updates Directory Invariants</name>
-          <t>A server may change its updates graph (to compact, etc.), but it must satisfy the following invariants:</t>
+          <t>A server may change its updates graph (to compact, etc.), but it needs to ensure that any 
+          resource state that it makes available MUST be reachable by clients, either directly via a snapshot (that is, relative to 0)
+          or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.  More specifically,
+          it must satisfy the following invariants:</t>
         <ul>
           <li>Continuity: ns -&gt; ne, anything in between ns and ne also exists (implies ni -&gt; ni + 1 patch exists),
-          where ns is start-seq and ne is end-seq</li>
+          where ns is start-seq and ne is end-seq.</li>
           <li>Feasibility: let n0 denote the smallest version in N (where N is the complete set of nodes in the updates graph),
-          the server can provide a snapshot of n0. In other words, there is always a direct link to ns</li>
+          the server can provide a snapshot of n0. In other words, there is always a direct link to ns, where ns is start-seq.</li>
           <li>"Right shift" only: if a server provides [n1, n2] at time t and [n1', n2'] at time t'. If t' &gt; t and get [n1', n2'], then n1' &gt;= n1 and n2' &gt;= n2.</li>
         </ul>
         <t>For example, using the example model in <xref target="basic-data-model" format="default"/>, assume at time 0, the server provides the valid set [101,
@@ -1795,7 +1747,7 @@ Client                                  TIPS
 
       <section anchor="ops-loadbalancing" numbered="true" toc="default">
          <name>Considerations for Load Balancing</name>
-         <t>TIPS allow clients to make concurrent pulls of the incremental updates potentianlly through different HTTP connections. As a consequence, it introduces additional complexties when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if</t>
+         <t>TIPS allow clients to make concurrent pulls of the incremental updates potentially through different HTTP connections. As a consequence, it introduces additional complexities when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if</t>
          <ul spacing="normal">
            <li>the backend servers are stateful, i.e., the TIPS view is created and stored only on a single server;</li>
            <li>the ALTO server is using layer-4 load balancing, i.e., the requests are distributed based on the TCP 5-tuple.</li>
@@ -1937,6 +1889,12 @@ Client                                  TIPS
    those version tags when identifying the new updates to pull.
    Although not as efficient as possible, this recovery method is simple
    and reliable.</t>
+
+          <t>Though a server SHOULD send update items sequentially, it is possible that a client
+          receives the update items out of order (in the case of a retransmitted update item or a
+          result of concurrent fetch).  The client MUST buffer the update items if they arrive out
+          of order and then apply them sequentially (based upon the sequence numbers) due to the
+          operation of JSON merge patch and JSON patch.</t>
         </section>
 
         <section anchor="ops-filtered" numbered="true" toc="default">
@@ -1985,7 +1943,7 @@ Client                                  TIPS
             (e.g., network map or cost map) that may be frequently queried by
             many clients. Some potential options are listed below:</t>
             <ul>
-                <li>An ALTO server creates one TIPS view of the common resource for each client. When the client deletes the view, the server deletes the view in the server storage</li>
+                <li>An ALTO server creates one TIPS view of the common resource for each client. When the client deletes the view, the server deletes the view in the server storage.</li>
                 <li><t>An ALTO server matains one copy of the TIPS view for each common resource and all clients requesting the same resources use the same copy. There are two ways to manage the the storage for the shared copy:</t>
                     <ul>
                         <li>the ALTO server maintains the set of clients that subscribe to the TIPS view, and only removes the view from the storage when the set becomes empty.</li>
@@ -2475,5 +2433,54 @@ Client                                  TIPS
         <!-- requirements -->
       </references>
     </references>
+    <section numbered="true" toc="default">
+        <name>High-level Service Model</name>
+
+        <t>Conceptually, the TIPS system consists of 3 types of resources:</t>
+        <ul>
+            <li>(R1) TIPS frontend to manage (create/delete) TIPS views.</li>
+            <li>(R2) TIPS view directory, which provides metadata (e.g., references) about the network resource data.</li>
+            <li>(R3) The actual network resource data, encoded as complete ALTO network resources (e.g., cost map, network map) or incremental updates.</li>
+        </ul>
+
+        <figure anchor="service-model-figure">
+          <name>Service Model</name>
+          <artwork name="" type="" align="left" alt=""><![CDATA[
+
+                     +------------------------------------------------+
+                     |                                                |
++------+             |R1: Frontend/Open  R2: Directory/Meta  R3: Data |
+|      | "iget" base |     +-----+           +-----+         +-----+  |
+|      | resource 1  |     |     |           |     |         |     |  |
+|      |-------------|---->|     |           |     |         |     |  |
+|      | incremental |     |     |           |     |-------->|     |  |
+|      | transfer    |     |     |           |     |         |     |  |
+|      | resource    |     |     |           |     |         |     |  |
+|      |<------------|-----|     |           +-----+         +-----+  |
+|Client|             |     |     |                                    |
+|      | "iget" base |     |     |                                    |
+|      | resource 2  |     |     |           +-----+         +-----+  |
+|      |-------------|---->|     |           |     |         |     |  |
+|      | incremental |     |     |           |     |         |     |  |
+|      | transfer    |     |     |           |     | ------->|     |  |
+|      | resource    |     |     |           |     |         |     |  |
+|      |<------------|-----|     |           |     |         |     |  |
++------+             |     +-----+           +-----+         +-----+  |
+                     |                                                |
+                     +------------------------------------------------+
+
+      ]]></artwork>
+        </figure>
+
+      <t>Design Point: Component Resource Location</t>
+        <ul>
+            <li>Design 1 (Single): all 3 types at the same, single server (accessed via relative reference)</li>
+            <li>Design 2 (Flexible): all 3 types can be at their own server (accessed via absolute reference)</li>
+            <li>Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be on the same server</li>
+        </ul>
+      <t>This document specifies Design 1 (keeping R1, R2, and R3 on the same server) in order to simplify session management,
+      though at the expense of maximum load balancing flexibility (see <xref target="ops-loadbalancing" format="default"/> for a discussion on load balancing considerations).
+      A future companion document may extend the protocol to support Design 2 or Design 3.</t>
+    </section>
   </back>
 </rfc>
