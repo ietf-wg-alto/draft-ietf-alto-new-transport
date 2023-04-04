@@ -1276,7 +1276,7 @@ Client                                  TIPS
 
       <section anchor="update-invariants" numbered="true" toc="default">
           <name>Server Updates Directory Invariants</name>
-          <t>A server may change its updates graph (to compact, etc.), but it needs to ensure that any 
+          <t>A server may change its updates graph (to compact, etc.), but it needs to ensure that any
           resource state that it makes available MUST be reachable by clients, either directly via a snapshot (that is, relative to 0)
           or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.  More specifically,
           it must satisfy the following invariants:</t>
