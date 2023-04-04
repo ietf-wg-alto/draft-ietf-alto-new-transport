@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="30" month="March" year="2023"/>
+    <date day="4" month="April" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -644,7 +644,7 @@ Client                                  TIPS
         <artwork name="" type="" align="left" alt=""><![CDATA[
     "my-network-map": {
       "uri": "https://alto.example.com/networkmap",
-      "media-type": "application/alto-networkmap+json",
+      "media-type": "application/alto-networkmap+json"
     },
     "my-routingcost-map": {
       "uri": "https://alto.example.com/costmap/routingcost",
@@ -2220,9 +2220,10 @@ Client                                  TIPS
 
     <section numbered="true" toc="default">
       <name>Acknowledgments</name>
-      <t>The authors of this document would also like to thank Adrian Farrel, Qin Wu,
-      Jordi Ros Giralt, and the many others who reviewed and commented on previous
-      drafts of this document.</t>
+      <t>The authors of this document would also like to thank Mark Nottingham and Spencer Dawkins for providing
+      invaluable reviews of earlier versions of this document, Adrian Farrel, Qin Wu,
+      and Jordi Ros Giralt for their continuous feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba, and Spencer Dawkins for their
+      last call reviews of this document.</t>
     </section>
   </middle>
 
