@@ -211,7 +211,7 @@
               <dd> While some of the previous requirements are offered by HTTP/2 <xref target="RFC9113"/> and HTTP/3 <xref target="RFC9114"/>, it is desired that the ALTO new transport mechanism can work with HTTP/1.x as many development tools and current ALTO implementations are based on HTTP/1.x.</dd>
           </dl>
 
-          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long pull in HTTP/1.1 and using server push in higher HTTP versions.</t>
+          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long polling in HTTP/1.1 and using server push in higher HTTP verions.</t>
       </section>
 
       <section anchor="basic-data-model" numbered="true" toc="default">
@@ -2035,7 +2035,7 @@ Client                                  TIPS
 
     <section anchor="ianaconsider" numbered="true" toc="default">
       <name>IANA Considerations</name>
-      <t>IANA is requested to register the following media type under ALTO registry as defined in <xref target="RFC7285" format="default"/>:
+      <t>IANA is requested to register the following media types following the same process in <xref target="RFC7285" format="default"/>:
       </t>
       <ul spacing="normal">
         <li>application/alto-tips+json: as described in <xref target="tips-createresp" format="default"/>;</li>
