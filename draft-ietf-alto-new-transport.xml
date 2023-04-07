@@ -211,7 +211,7 @@
               <dd> While some of the previous requirements are offered by HTTP/2 <xref target="RFC9113"/> and HTTP/3 <xref target="RFC9114"/>, it is desired that the ALTO new transport mechanism can work with HTTP/1.x as many development tools and current ALTO implementations are based on HTTP/1.x.</dd>
           </dl>
 
-          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long polling in HTTP/1.1 and using server push in higher HTTP verions.</t>
+          <t>The ALTO new transport specified in this document satisfies all the design requirements and hence improves the efficiency of continuous dissemination of ALTO information. The key idea is to introduce a unified data model to describe the changes (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS view. Along with the data model, this document also specifies a unified naming for the snapshots and incremental updates, independent of the HTTP version. Thus, these updates can be cached and be concurrently requested. Prefetching is realized using long polling in HTTP/1.1 and using server push in higher HTTP versions.</t>
       </section>
 
       <section anchor="basic-data-model" numbered="true" toc="default">
@@ -327,7 +327,7 @@
 
       ]]></artwork>
         </figure>
-        <t> Due to the sequential nature of the update patch IDs, a client can long pull a future update
+        <t> Due to the sequential nature of the update patch IDs, a client can long poll a future update
         that does not yet exist (e.g., the patch from 106 to 107) by constructing the URI:</t>
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
@@ -527,14 +527,27 @@ Client                                  TIPS
 
       </section>
 
-      <section anchor="tipsinfo-http1" numbered="true" toc="default">
-        <name>TIPS With HTTP/1.x</name>
+      <section anchor="tipsinfo-httpversions" numbered="true" toc="default">
+        <name>TIPS With Different HTTP Versions</name>
 
         <t>
-            While TIPS is designed to take advantage of newer HTTP features,
-            TIPS still functions with HTTP/1.x for client pull functionality only,
+          The HTTP version a connection uses is negotiated between client and server based on
+          the respective HTTP RFC documents. 
+        </t>
+
+        <t>
+            While TIPS is designed to take advantage of newer HTTP features like
+            server push and substreams for concurrent fetch, TIPS still functions with HTTP/1.x for client pull
+            defined in <xref target="client-pull" format="default"/>,
             with the limitation that it cannot cancel any outstanding requests or
-            fetch resources concurrently over the same connection.
+            fetch resources concurrently over the same connection due to the blocking nature
+            of HTTP/1.x requests.  Additionally, because HTTP/1.x does not support server push,
+            the use of TIPS with server push defined in <xref target="server-push" format="default"/>
+            is not available if a client connects to an ALTO server with HTTP/1.x.
+            If a client only capable of HTTP/1.x desires to monitor multiple resources at the same time,
+            it must open multiple connections, one for each resource.
+            For HTTP/2 and /3, because of substreams, multiple resources can be
+            monitored simultaneously. 
         </t>
 
       </section>
@@ -1338,8 +1351,8 @@ Client                                  TIPS
            whose data format is indicated by the media type.
         </t>
 
-        <t>It is possible that a client conducts proactive fetching of future updates, by long pulling updates
-        that have not been listed in the directory yet. For long-pull prefetch, the client must have
+        <t>It is possible that a client conducts proactive fetching of future updates, by long polling updates
+        that have not been listed in the directory yet. For long-poll prefetch, the client must have
         indicated the media type which may appear. It is RECOMMENDED that the server allows for at
         least the prefetch of &lt;end-seq&gt; -&gt; &lt;end-seq + 1&gt;</t>
 
@@ -1363,7 +1376,7 @@ Client                                  TIPS
             <li>415 (Unsupported Media Type): if the media type(s) accepted by the client
             does not include the media type of the update chosen by the server.</li>
             <li>425 (Too Early): if the seq exceeds the server prefetch window</li>
-            <li>429 (Too Many Requests): when the number of pending (long-pull) requests
+            <li>429 (Too Many Requests): when the number of pending (long-poll) requests
             exceeds server threshold. Server may indicate when to re-try the request in the
             "Re-Try After" headers.</li>
           </ul>
@@ -2222,7 +2235,7 @@ Client                                  TIPS
       <name>Acknowledgments</name>
       <t>The authors of this document would also like to thank Mark Nottingham and Spencer Dawkins for providing
       invaluable reviews of earlier versions of this document, Adrian Farrel, Qin Wu,
-      and Jordi Ros Giralt for their continuous feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba, and Spencer Dawkins for their
+      and Jordi Ros Giralt for their continuous feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins and Sheng Jiang for their
       last call reviews of this document.</t>
     </section>
   </middle>
