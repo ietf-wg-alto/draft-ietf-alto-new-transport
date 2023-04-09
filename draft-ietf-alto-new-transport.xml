@@ -162,9 +162,8 @@
         functioning for HTTP/1.x.  TIPS also provides an ALTO server to concurrently push specific incremental updates using native HTTP/2 or HTTP/3
         server push. Specifically, this document specifies the following:</t>
       <ul>
-        <li>Extensions to the ALTO Protocol to create, update, or remove an incremental representational
-        state transfer resource (iREST).</li>
-        <li>A new resource type that specifies the iREST graph model for a resource.</li>
+        <li>Extensions to the ALTO Protocol to create, update, or remove an incrementally changing network information resource.</li>
+        <li>A new resource type that specifies the TIPS updates graph model for a resource.</li>
         <li>URI patterns to fetch the snapshots or incremental updates.</li>
       </ul>
 
@@ -193,7 +192,7 @@
       <section anchor="requirements" numbered="true" toc="default">
           <name>Transport Requirements</name>
 
-          <t>Current ALTO protocol and its extensions support two transport mechanisms: First, a client can direct request an ALTO resource and obtain a complete snapshot of that ALTO resource, as specified in the base protocol <xref target="RFC7285" format="default" />; Second, a client can subscribe to incremental changes of one or multiple ALTO resources using the incremental update extension <xref target="RFC8895" format="default"/>, and a server pushes the updates to the client through a websocket connection.</t>
+          <t>Current ALTO protocol and its extensions support two transport mechanisms: First, a client can direct request an ALTO resource and obtain a complete snapshot of that ALTO resource, as specified in the base protocol <xref target="RFC7285" format="default" />; Second, a client can subscribe to incremental changes of one or multiple ALTO resources using the incremental update extension <xref target="RFC8895" format="default"/>, and a server pushes the updates to the client through a WebSocket connection.</t>
 
           <t>However, the current transport mechanisms are not optimized for storing,
               transmitting, and processing (incremental) updates of ALTO
@@ -561,7 +560,7 @@ Client                                  TIPS
 
         <t>
           The HTTP version a connection uses is negotiated between client and server based on
-          the respective HTTP RFC documents. 
+          the respective HTTP RFC documents regarding how to establish a connection (<xref target="RFC9112" format="default"/><xref target="RFC9113" format="default"/><xref target="RFC9114" format="default"/>). 
         </t>
 
         <t>
@@ -834,7 +833,7 @@ Client                                  TIPS
       created at the time of the request or may already exist (either
       because another client has an active connection to a TIPS view for the
       same requested network resource or because the server perpetually
-      maintains a TIPS view for an often requested resource).  The server
+      maintains a TIPS view for an often-requested resource).  The server
       MAY keep track of which clients have an active connection
       to each TIPS view to determine whether or not it should delete a TIPS view
       and its corresponding updates graph and associated data. </t>
@@ -923,7 +922,10 @@ Client                                  TIPS
           <dl newline="true" spacing="normal" indent="3">
             <dt>tips-view-uri: </dt>
             <dd>
-              <t>Relative URI to the TIPS view of a network resource.</t>
+              <t>Relative URI to the TIPS view of a network resource,  which MUST be unique per connection,
+              and is de-aliased by the server to refer to the actual location of the TIPS view which may
+              be shared by other clients.
+              </t>
 
               <t>When creating the URI for the TIPS view, TIPS MUST
                  NOT use other properties of an HTTP request, such as cookies or
@@ -950,7 +952,7 @@ Client                                  TIPS
               depends on the implementation.  Ideally, if the client does not provide a version
               tag, the server should recommend the edge of the latest snapshot available.  If the client
               does provide a version tag, the server should calculate the cumulative size of the
-              incremental updates availabe from that version onward and compare it to the size of the
+              incremental updates available from that version onward and compare it to the size of the
               complete resource snapshot.  If the snapshot is bigger, the server should
               recommend the first incremental update edge starting from client's tagged version. Else,
               the server should recommend the latest snapshot edge.  If the client indicates
@@ -1086,7 +1088,7 @@ Client                                  TIPS
         <name>TIPS View Metadata Directory</name>
 
         <t>An ALTO client can read the metadata directory of the TIPS view
-        to understand its full contents beyond the intial summary provided. </t>
+        to understand its full contents beyond the initial summary provided. </t>
 
         <section anchor="dir-req" numbered="true" toc="default">
           <name>Request</name>
@@ -1099,7 +1101,7 @@ Client                                  TIPS
     GET /<tips-view-uri>
         ]]></artwork>
 
-        <t>An ALTO client can also read the metadata directory of just the
+        <t>An ALTO client can also read the metadata directory of just
         the updates graph (perhaps to calculate a new shortest path to the end of the graph after not having
         fetched for a period of time).  The HTTP method is a GET, and looks like:</t>
 
@@ -1441,7 +1443,7 @@ Client                                  TIPS
             <name>Start Server Push</name>
 
             <t>A client can add itself explicitly to the receiver set or add itself to the receiver set when
-            requesting the TIPS view. Before a client starts receving server push for a TIPS view, it MUST enable server push in HTTP, i.e., following <xref target="RFC9113" section="8.4"/> for HTTP/2 and <xref target="RFC9114" section="4.6"/> for HTTP/3. If the client does not enable HTTP server push, the ALTO server MUST return an ALTO error with the E_INVALID_FIELD_VALUE code and set the "field" to "server-push".</t>
+            requesting the TIPS view. Before a client starts receiving server push for a TIPS view, it MUST enable server push in HTTP, i.e., following <xref target="RFC9113" section="8.4"/> for HTTP/2 and <xref target="RFC9114" section="4.6"/> for HTTP/3. If the client does not enable HTTP server push, the ALTO server MUST return an ALTO error with the E_INVALID_FIELD_VALUE code and set the "field" to "server-push".</t>
 
             <t>Explicit add: A client can explicitly add itself in the receiver set by using the HTTP PUT method with media type
             "application/alto-tipsview+json", where the
@@ -1594,7 +1596,7 @@ Client                                  TIPS
           </ol>
 
           <t>Note that a client may choose to explicitly stop server push for a resource, but
-          may not delete the TIPS view so that it can switch seemlessly from server push to
+          may not delete the TIPS view so that it can switch seamlessly from server push to
           client pull in the case that the server push frequency is undesirable, without having
           to request a new TIPS view. </t>
           
@@ -1840,7 +1842,7 @@ Client                                  TIPS
         <section anchor="ops-scheduling" numbered="true" toc="default">
           <name>Considerations for Cross-Resource Dependency Scheduling</name>
 
-          <t>Dependent ALTO resources result in cross-resource dependenies in TIPS.
+          <t>Dependent ALTO resources result in cross-resource dependencies in TIPS.
           Consider the following pair of resources, where my-cost-map is
           dependent on my-network-map:</t>
 
@@ -1974,7 +1976,7 @@ Client                                  TIPS
             many clients. Some potential options are listed below:</t>
             <ul>
                 <li>An ALTO server creates one TIPS view of the common resource for each client. When the client deletes the view, the server deletes the view in the server storage.</li>
-                <li><t>An ALTO server matains one copy of the TIPS view for each common resource and all clients requesting the same resources use the same copy. There are two ways to manage the the storage for the shared copy:</t>
+                <li><t>An ALTO server maintains one copy of the TIPS view for each common resource and all clients requesting the same resources use the same copy. There are two ways to manage the storage for the shared copy:</t>
                     <ul>
                         <li>the ALTO server maintains the set of clients that subscribe to the TIPS view, and only removes the view from the storage when the set becomes empty.</li>
                         <li>the TIPS view is never removed from the storage.</li>
@@ -1990,7 +1992,7 @@ Client                                  TIPS
 
             <t>Besides the mandatory stepwise incremental updates (from i to i+1), an ALTO server may optionally offer shortcut incremental updates, or simple shortcuts, between two non-consecutive versions i and i+k (k > 1). Such shortcuts offer alternative paths in the update graph and can potentially speed up the transmission and processing of incremental updates, leading to faster synchronization of ALTO information especially when the client has limited bandwidth and computation. However, developers of an ALTO server must be aware that:</t>
             <ol>
-                <li>Optional shortcuts may increase the size of the update graph, in the worst case square to the number of updates (i.e., when a shortcut is offered for each version to all future versions).</li>
+                <li>Optional shortcuts may increase the size of the update graph, in the worst case being the square of the number of updates (i.e., when a shortcut is offered for each version to all future versions).</li>
                 <li>Optional shortcuts require additional storage on the ALTO server.</li>
                 <li>Optional shortcuts may reduce concurrency when the updates do not overlap, e.g., when the updates apply to different parts of an ALTO resource. In such a case, the total size of the original updates is close to the size of the shortcut, but the original updates can be transmitted concurrently while the shortcut is transmitted in a single connection. </li>
             </ol>
