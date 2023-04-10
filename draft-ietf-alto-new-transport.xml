@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="8" month="April" year="2023"/>
+    <date day="10" month="April" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -456,6 +456,28 @@ tvi/rs = receiver set of tvi (for server push)
              ]]></artwork>
 
         </section>
+
+        <section anchor="update-invariants" numbered="true" toc="default">
+          <name>Updates Graph Modification Invariants</name>
+          <t>A server MAY change its updates graph (to compact, to add nodes, etc.), but it MUST ensure that any
+          resource state that it makes available is reachable by clients, either directly via a snapshot (that is, relative to 0)
+          or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.  Additionally, to allow clients to
+          proactively construct URIs for future incremental update items, the ID of each added node in the updates graph must increment
+          contiguously by 1.  More specifically,
+          the updates graph must satisfy the following invariants:</t>
+        <ul>
+          <li>Continuity: ns -&gt; ne, anything in between ns and ne also exists (implies ni -&gt; ni + 1 update item exists),
+          where ns is start-seq and ne is end-seq.</li>
+          <li>Feasibility: let n0 denote the smallest version in N (where N is the complete set of nodes in the updates graph),
+          the server can provide a snapshot of n0. In other words, there is always a direct link to ns, where ns is start-seq.</li>
+          <li>"Right shift" only: if a server provides [n1, n2] at time t and [n1', n2'] at time t'. If t' &gt; t and get [n1', n2'], then n1' &gt;= n1 and n2' &gt;= n2.</li>
+        </ul>
+        <t>For example, in the case of a server compacting a resource's updates graph to conserve space, using the example model in <xref target="basic-data-model" format="default"/>, assume at time 0, the server provides the valid set [101,
+        102, 103, 104, 105, 106].  At time 1, both [103, 104, 105, 106] and [105, 106] are valid sets. However, [102, 103, 104, 105, 106]
+        is not a valid set as there is no snapshot of the version at 102 and [104, 105, 106] is not a valid set as there is no snapshot of the version at 104.
+        Thus, there is a risk that the right content of the version at 102, in the first example, and 104, in the second example,
+        cannot be obtained by a client that does not have the previous version at 101 or 103, respectively.</t>
+      </section>
     </section>
 
     <section anchor="tipsinfo-workflow" numbered="true" toc="default">
@@ -560,7 +582,7 @@ Client                                  TIPS
 
         <t>
           The HTTP version a connection uses is negotiated between client and server based on
-          the respective HTTP RFC documents regarding how to establish a connection (<xref target="RFC9112" format="default"/><xref target="RFC9113" format="default"/><xref target="RFC9114" format="default"/>). 
+          the respective HTTP RFC documents regarding how to establish a connection (<xref target="RFC9112" format="default"/><xref target="RFC9113" format="default"/><xref target="RFC9114" format="default"/>).
         </t>
 
         <t>
@@ -576,7 +598,7 @@ Client                                  TIPS
             it must open multiple connections, one for each resource, so that an outstanding long-poll request
             can be issued for each resource to monitor for new updates.
             For HTTP/2 and /3, because of substreams, multiple resources can be
-            monitored simultaneously. 
+            monitored simultaneously.
         </t>
 
       </section>
@@ -1066,7 +1088,7 @@ Client                                  TIPS
             example, an ALTO server may maintain a set of clients that subscribe
             to the TIPS view of a resource: a client that deletes the view is
             removed from the set, and the TIPS view is only removed when the
-            dependent set becomes empty. See other potential implementations in <xref target="ops-shared" format="default"/>. The DELETE request looks like:
+            dependent set becomes empty. See other potential implementations in <xref target="ops-shared" format="default"/>. The DELETE request MUST have the following format:
         </t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
@@ -1095,7 +1117,7 @@ Client                                  TIPS
 
           <t>An ALTO client requests the updates graph's metadata directory
         by sending an HTTP GET request with the media type
-        "application/alto-tipsview+json".  The GET request looks like:</t>
+        "application/alto-tipsview+json".  The GET request MUST have the following format:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>
@@ -1103,14 +1125,14 @@ Client                                  TIPS
 
         <t>An ALTO client can also read the metadata directory of just
         the updates graph (perhaps to calculate a new shortest path to the end of the graph after not having
-        fetched for a period of time).  The HTTP method is a GET, and looks like:</t>
+        fetched for a period of time).  The HTTP method is GET, and MUST follow the format:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/ug
         ]]></artwork>
 
         <t>An ALTO client can also read the metadata of an individual edge
-        in the updates graph.  The HTTP method is a GET, and looks like:</t>
+        in the updates graph.  The HTTP method is GET, and MUST follow the format:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/ug/meta/<i>/<j>
@@ -1244,16 +1266,19 @@ Client                                  TIPS
       <section anchor="refresh-directory" numbered="true" toc="default">
         <name>Refresh Directory</name>
 
-        <t>An ALTO client can refresh the updates graph directory
-        without re-fetching the whole updates graph object. </t>
+        <t>An ALTO client can refresh the TIPS view UpdatesDirectory object (because the updates graph changes over time)
+        without re-fetching the entire object by
+        requesting a patch for the current version of the TIPS view metadata the client already has.</t>
 
         <section anchor="ref-dir-req" numbered="true" toc="default">
           <name>Request</name>
 
-          <t>An ALTO client requests the TIPS view metadata directory
-        by sending an HTTP GET request with the media type
+          <t>An ALTO client requests a patch for the TIPS view metadata directory
+        by sending an HTTP POST request with the media type
         "application/alto-tipsview+json" and the version tag of the
-        TIPS view directory it has currently.  The GET request looks like:</t>
+        TIPS view directory it has currently.</t>  
+        
+        <t>An example request:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     POST /tips/2718281828459 HTTP/1.1
@@ -1275,7 +1300,9 @@ Client                                  TIPS
         <name>Response</name>
 
         <t>The server may return the whole directory or the incremental changes,
-        using merge-patch.  A patch response looks like:</t>
+        using merge-patch.</t>
+        
+        <t>An example patch response:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
 
@@ -1298,31 +1325,7 @@ Client                                  TIPS
     }
         ]]></artwork>
 
-
         </section>
-
-
-      </section>
-
-      <section anchor="update-invariants" numbered="true" toc="default">
-          <name>Server Updates Directory Invariants</name>
-          <t>A server may change its updates graph (to compact, etc.), but it needs to ensure that any
-          resource state that it makes available MUST be reachable by clients, either directly via a snapshot (that is, relative to 0)
-          or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.  More specifically,
-          it must satisfy the following invariants:</t>
-        <ul>
-          <li>Continuity: ns -&gt; ne, anything in between ns and ne also exists (implies ni -&gt; ni + 1 update item exists),
-          where ns is start-seq and ne is end-seq.</li>
-          <li>Feasibility: let n0 denote the smallest version in N (where N is the complete set of nodes in the updates graph),
-          the server can provide a snapshot of n0. In other words, there is always a direct link to ns, where ns is start-seq.</li>
-          <li>"Right shift" only: if a server provides [n1, n2] at time t and [n1', n2'] at time t'. If t' &gt; t and get [n1', n2'], then n1' &gt;= n1 and n2' &gt;= n2.</li>
-        </ul>
-        <t>For example, using the example model in <xref target="basic-data-model" format="default"/>, assume at time 0, the server provides the valid set [101,
-        102, 103, 104, 105, 106].  At time 1, both [103, 104, 105, 106] and [105, 106] are valid sets. However, [102, 103, 104, 105, 106]
-        is not a valid set as there is no snapshot of the version at 102 and [104, 105, 106] is not a valid set as there is no snapshot of the version at 104.
-        Thus, there is a risk that the right content of the version at 102, in the first example, and 104, in the second example,
-        cannot be obtained by a client that does not have the previous version at 101 or 103, respectively.</t>
-
       </section>
     </section>
 
@@ -1349,14 +1352,14 @@ Client                                  TIPS
            request.
         </t>
 
-        <t>The GET request looks like</t>
+        <t>The GET request MUST have the following format:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     GET /<tips-view-uri>/ug/<i>/<j>
         ]]></artwork>
 
         <t>For example, if the client wants to query the content of the first
-           update item (0 -&gt; 101), it can send a request to
+           update item (0 -&gt; 101), it will send a request to
            "/tips/2718281828459/ug/0/101".
         </t>
       </section>
@@ -1412,7 +1415,7 @@ Client                                  TIPS
     Accept: application/alto-costmap+json, application/alto-error+json
         ]]></artwork>
 
-        <t>And the response will be</t>
+        <t>And the response will be:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
     HTTP/1.1 200 OK
@@ -1471,7 +1474,7 @@ Client                                  TIPS
             <dt>next-edge: </dt>
             <dd>
               <t>Optional field to request a starting edge to be pushed if the client has pulled the
-              updates graph directory and has calculated the path it desires to take.  The server is
+              updates graph directory and has calculated the path it desires to take.  The server
               MAY push this edge first if available.</t>
             </dd>
           </dl>
@@ -1579,7 +1582,7 @@ Client                                  TIPS
 
           <t>A client can stop receiving server push updates either explicitly or
             implicitly.</t>
-          
+
           <dl newline="true" spacing="normal" indent="3">
           <dt>Explicit stop:</dt>
             <dd>A client stops push by using the HTTP PUT method to
@@ -1599,7 +1602,7 @@ Client                                  TIPS
           may not delete the TIPS view so that it can switch seamlessly from server push to
           client pull in the case that the server push frequency is undesirable, without having
           to request a new TIPS view. </t>
-          
+
           <t>Example of explicit stop:</t>
 
           <artwork name="" type="" align="left" alt=""><![CDATA[
