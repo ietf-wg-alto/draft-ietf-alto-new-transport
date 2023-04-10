@@ -462,9 +462,9 @@ tvi/rs = receiver set of tvi (for server push)
           <t>A server MAY change its updates graph (to compact, to add nodes, etc.), but it MUST ensure that any
           resource state that it makes available is reachable by clients, either directly via a snapshot (that is, relative to 0)
           or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.  Additionally, to allow clients to
-          proactively construct URIs for future incremental update items, the ID of each added node in the updates graph must increment
+          proactively construct URIs for future update items, the ID of each added node in the updates graph must increment
           contiguously by 1.  More specifically,
-          the updates graph must satisfy the following invariants:</t>
+          the updates graph MUST satisfy the following invariants:</t>
         <ul>
           <li>Continuity: ns -&gt; ne, anything in between ns and ne also exists (implies ni -&gt; ni + 1 update item exists),
           where ns is start-seq and ne is end-seq.</li>
@@ -539,7 +539,7 @@ Client                                  TIPS
       ]]></artwork>
       </figure>
 
-      <t>Note that in <xref target="FigInfoWorkflowPull" format="default"/>,
+      <t>Note: in <xref target="FigInfoWorkflowPull" format="default"/>,
       the update item at /&lt;tips-view-uri1&gt;/ug/&lt;j&gt;/&lt;j+1&gt; may not yet
       exist, so the server holds the request until the update becomes available (long polling).</t>
 
@@ -1846,17 +1846,18 @@ Client                                  TIPS
           <name>Considerations for Cross-Resource Dependency Scheduling</name>
 
           <t>Dependent ALTO resources result in cross-resource dependencies in TIPS.
-          Consider the following pair of resources, where my-cost-map is
-          dependent on my-network-map:</t>
+          Consider the following pair of resources, where my-cost-map (C) is
+          dependent on my-network-map (N).  The updates graph for each resource is shown,
+          along with links in between the respective updates graphs to show dependency:</t>
 
           <figure anchor="dependency-model">
             <name>Example Dependency Model</name>
             <artwork name="" type="" align="left" alt=""><![CDATA[
                        +---+   +---+   +---+   +---+   +---+
-  my-network-map (N)   | 0 |-->|101|-->|102|-->|103|-->|104|
+  my-network-map (N)   | 0 |-->|89 |-->|90 |-->|91 |-->|92 |
                        +---+   +---+   +---+   +---+   +---+
-                                 |   \       \
-                                 |    \       \
+                                 |   \       \       \ 
+                                 |    \       \       \ 
                        +---+   +---+   +---+   +---+   +---+
   my-cost-map (C)      | 0 |-->|101|-->|102|-->|103|-->|104|
                        +---+   +---+   +---+   +---+   +---+
@@ -1864,19 +1865,23 @@ Client                                  TIPS
             ]]></artwork>
           </figure>
 
+          <t>In <xref target="dependency-model" format="default"/>, the cost-map version at node 101 and 102 is dependent on
+          the network-map version at node 89.  The cost-map version at node 103 is dependent on the network-map
+          version at node 90, and so on.</t>
+
           <t>In pull-mode, a client can decide the order in which to receive the updates.</t>
 
           <t>In push-mode, the server must decide. Pushing order may affect how fast the client
           can build a consistent view and how long the client needs to buffer the update. </t>
           <ul>
-            <li>Example 1: The server pushes N101, N102, N103, C101, C102 in that order. The client either gets no consistent
-            view of the resources or it has to buffer N2 and N3 </li>
-            <li>Example 2: The server pushes C1, C2, C3, N1. The client either gets no consistent view or
-            it has to buffer C3. </li>
+            <li>Example 1: The server pushes N89, N90, N91, C101, C102 in that order. The client either gets no consistent
+            view of the resources or it has to buffer N90 and N91 </li>
+            <li>Example 2: The server pushes C101, C102, C103, N89. The client either gets no consistent view or
+            it has to buffer C103. </li>
           </ul>
 
           <t>Therefore, the server is RECOMMENDED to push updates in the ascending order of the smallest dependent tag,
-          e.g., {C1, C2, N1} before {C3, N2}</t>
+          e.g., {C101, C102, N89} before {C103, N90}</t>
 
         </section>
 
