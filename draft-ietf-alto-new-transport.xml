@@ -1276,8 +1276,8 @@ Client                                  TIPS
           <t>An ALTO client requests a patch for the TIPS view metadata directory
         by sending an HTTP POST request with the media type
         "application/alto-tipsview+json" and the version tag of the
-        TIPS view directory it has currently.</t>  
-        
+        TIPS view directory it has currently.</t>
+
         <t>An example request:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
@@ -1301,7 +1301,7 @@ Client                                  TIPS
 
         <t>The server may return the whole directory or the incremental changes,
         using merge-patch.</t>
-        
+
         <t>An example patch response:</t>
 
         <artwork name="" type="" align="left" alt=""><![CDATA[
