@@ -1782,7 +1782,7 @@ Client                                  TIPS
 
       <section anchor="ops-loadbalancing" numbered="true" toc="default">
          <name>Considerations for Load Balancing</name>
-         <t>TIPS allow clients to make concurrent pulls of the incremental updates potentially through different HTTP connections. As a consequence, it introduces additional complexities when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if</t>
+         <t>TIPS allow clients to make concurrent pulls of the incremental updates potentially through different HTTP connections. As a consequence, it introduces additional complexities when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if the following two conditions both hold:</t>
          <ul spacing="normal">
            <li>the backend servers are stateful, i.e., the TIPS view is created and stored only on a single server;</li>
            <li>the ALTO server is using layer-4 load balancing, i.e., the requests are distributed based on the TCP 5-tuple.</li>
@@ -1790,24 +1790,24 @@ Client                                  TIPS
          <t>Thus, additional considerations are required to enable correct load balancing for TIPS, including:</t>
          <ul>
              <li>Use a stateless architecture: One solution is to follow the stateless computing pattern: states about the TIPS view are not maintained by the backend servers but are stored in a distributed database. Thus, concurrent requests to the same TIPS view can be processed on arbitrary stateless backend servers, which all fetches data from the same database.</li>
-           <li>Configure the load balancers properly: In case when the backend servers are stateful, the load balancers must be properly configured to guarantee that requests of the same TIPS view always arrive at the same server. For example, the ALTO server may configure layer-7 load balancers that distribute requests based on URL or cookies.</li>
+           <li>Configure the load balancers properly: In case when the backend servers are stateful, the load balancers must be properly configured to guarantee that requests of the same TIPS view always arrive at the same server. For example, an operator or a provider of an ALTO server may configure layer-7 load balancers that distribute requests based on URL or cookies.</li>
          </ul>
       </section>
 
       <section anchor="ops-chooseupdates" numbered="true" toc="default">
          <name>Considerations for Choosing Updates</name>
 
-         <t>When implementing TIPS, a developer should be cognizant of the effects of its update schedule, which
+         <t>When implementing TIPS, a developer should be cognizant of the effects of update schedule, which
             includes both the choice of timing (i.e., when/what to trigger an
             update on the updates graph) and the choice of message format
             (i.e., given an update, send a full replacement or an incremental
             change).  In particular, the update schedule can have effects on both
             the overhead and the freshness of information.  To minimize overhead,
-            TIPS may choose to batch a sequence of updates for resources
+            developers may choose to batch a sequence of updates for resources
             that frequently change by cumulative updates or a full
-            replacement after a while.  TIPS should be
-            cognizant that batching reduces the freshness of information.  The
-            server should also consider the effect of such delays on client
+            replacement after a while.  Developers should be
+            cognizant that batching reduces the freshness of information and
+            should also consider the effect of such delays on client
             behaviors.
           </t>
 
@@ -1998,7 +1998,7 @@ Client                                  TIPS
         <section anchor="ops-shortcut" numbered="true" toc="default">
             <name>Considerations for Offering Shortcut Incremental Updates</name>
 
-            <t>Besides the mandatory stepwise incremental updates (from i to i+1), an ALTO server may optionally offer shortcut incremental updates, or simple shortcuts, between two non-consecutive versions i and i+k (k > 1). Such shortcuts offer alternative paths in the update graph and can potentially speed up the transmission and processing of incremental updates, leading to faster synchronization of ALTO information especially when the client has limited bandwidth and computation. However, developers of an ALTO server must be aware that:</t>
+            <t>Besides the mandatory stepwise incremental updates (from i to i+1), an ALTO server may optionally offer shortcut incremental updates, or simple shortcuts, between two non-consecutive versions i and i+k (k > 1). Such shortcuts offer alternative paths in the update graph and can potentially speed up the transmission and processing of incremental updates, leading to faster synchronization of ALTO information, especially when the client has limited bandwidth and computation. However, implementors of an ALTO server must be aware that:</t>
             <ol>
                 <li>Optional shortcuts may increase the size of the update graph, in the worst case being the square of the number of updates (i.e., when a shortcut is offered for each version to all future versions).</li>
                 <li>Optional shortcuts require additional storage on the ALTO server.</li>
