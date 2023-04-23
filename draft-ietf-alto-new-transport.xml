@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="10" month="April" year="2023"/>
+    <date day="23" month="April" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -226,7 +226,7 @@
           <dd>Is defined in this document to be the container of incremental transport information
           about the network information resource.  Though the TIPS view
           may include other transport information, it has two basic components: updates graph (ug)
-          and receiver set (rs). See <xref target="dir-resp" format="default"/> for the complete contents of a TIPS view.</dd>
+          and receiver set (rs).</dd>
 
           <dt>Updates graph (ug):</dt>
           <dd>Is a directed, acyclic graph that contains a sequence of incremental updates and snapshots (collectively called update items) of a network information resource,
@@ -982,7 +982,6 @@ Client                                  TIPS
             </dd>
           </dl>
 
-
         <t>If the request has any errors, the TIPS service MUST return an HTTP "400 Bad
             Request" to the ALTO client; the body of the response follows the generic
             ALTO error response format specified in
@@ -1106,229 +1105,6 @@ Client                                  TIPS
 
     </section>
 
-      <section anchor="metadata-directory" numbered="true" toc="default">
-        <name>TIPS View Metadata Directory</name>
-
-        <t>An ALTO client can read the metadata directory of the TIPS view
-        to understand its full contents beyond the initial summary provided. </t>
-
-        <section anchor="dir-req" numbered="true" toc="default">
-          <name>Request</name>
-
-          <t>An ALTO client requests the updates graph's metadata directory
-        by sending an HTTP GET request with the media type
-        "application/alto-tipsview+json".  The GET request MUST have the following format:</t>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-    GET /<tips-view-uri>
-        ]]></artwork>
-
-        <t>An ALTO client can also read the metadata directory of just
-        the updates graph (perhaps to calculate a new shortest path to the end of the graph after not having
-        fetched for a period of time).  The HTTP method is GET, and MUST follow the format:</t>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-    GET /<tips-view-uri>/ug
-        ]]></artwork>
-
-        <t>An ALTO client can also read the metadata of an individual edge
-        in the updates graph.  The HTTP method is GET, and MUST follow the format:</t>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-    GET /<tips-view-uri>/ug/meta/<i>/<j>
-        ]]></artwork>
-
-        </section>
-
-        <section anchor="dir-resp" numbered="true" toc="default">
-          <name>Response</name>
-          <t>If the TIPS view is closed, the ALTO server MUST return an
-             error HTTP message with status code 404 (Not Found) and media type
-             "application/alto-error+json".</t>
-
-          <t>The response from the server, if no error, for the entire metadata directory of the TIPS view
-          is the UpdatesDirectory object indicated as "application/alto-tipsview+json" media type:</t>
-
-          <artwork name="" type="" align="left" alt=""><![CDATA[
-    object {
-      GraphDirMeta   meta;
-      UpdatesGraph   updates-graph;
-      Boolean        server-push;
-    } UpdatesDirectory : ResponseEntityBase;
-
-    object {
-      ResourceID     resource-id;
-      Tag            tag;
-    } GraphDirMeta;
-
-    object-map {
-      JSONString -> EndSeqUpdates;
-    } UpdatesGraph;
-
-    object-map {
-      JSONString -> UpdateItemMeta;
-    } EndSeqUpdates;
-
-    object {
-      JSONString    media-type;
-      JSONString    tag;
-      JSONNumber    size;
-    } UpdateItemMeta;
-
-        ]]></artwork>
-
-        <t>with the following fields:</t>
-          <dl newline="true" spacing="normal" indent="3">
-            <dt>meta: </dt>
-            <dd>
-              <t>Specifies the network resource-id TIPS view to which the directory corresponds
-              and the version tag of the directory itself.</t>
-            </dd>
-            <dt>updates-graph: </dt>
-            <dd>
-              <t>Contains a map of edges in the updates graph (start-seq to end-seq).  Each
-              edge has a corresponding update-item-meta which includes the edge's
-              media type, resource version tag, and size of the content in kilobytes.
-              Note that two different edges will share the same resource version tag
-              if they connect to the same end-seq node in the graph.</t>
-            </dd>
-            <dt>server-push: </dt>
-            <dd>
-              <t>Boolean which is set to TRUE if the client has indicated server
-              push.  Otherwise, it is set to FALSE.</t>
-            </dd>
-          </dl>
-
-      </section>
-
-      <section anchor="dir-example" numbered="true" toc="default">
-        <name>Example</name>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-   GET /tips/2718281828459 HTTP/1.1
-   Host: alto.example.com
-   Accept: application/alto-tipsview+json, application/alto-error+json
-   Authorization: Basic Y2xpZW50MTpoZWxsb2FsdG8K
-
-
-   HTTP/1.1 200 OK
-   Content-Type: application/alto-tipsview+json
-   Content-Length: 1239
-
-   {
-      "meta": {
-        "resource-id": "2718281828459",
-        "tag": "125351264356"
-      },
-      "updates-graph": {
-        "0": {
-          "101": {
-            "media-type": "alto-costmap+json",
-            "tag": "109783421097", "size": 1000000 },
-          "103": {
-            "media-type": "alto-costmap+json",
-            "tag": "123400881080", "size": 1004000 },
-          "105": {
-            "media-type": "alto-costmap+json",
-            "tag": "123567838392", "size": 1008033 }
-        },
-        "101": {
-          "102": {
-            "media-type": "application/merge-patch+json",
-            "tag": "123566431234", "size": 4040}
-        },
-        "102": {
-          "103": {
-            "media-type": "application/merge-patch+json",
-            "tag": "123400881080", "size": 3000}
-        },
-        "103": {
-           "104": {
-             "media-type": "application/merge-patch+json",
-             "tag": "123566452654", "size": 8000}
-        },
-        "104": {
-          "105": {
-            "media-type": "application/merge-patch+json",
-            "tag": "123567838392", "size": 10000}
-        },
-        "105": {
-          "106": {
-            "media-type": "application/merge-patch+json",
-            "tag": "123566470983", "size": 4040}
-        }
-      },
-      "server-push": false
-   }
-        ]]></artwork>
-      </section>
-
-      <section anchor="refresh-directory" numbered="true" toc="default">
-        <name>Refresh Directory</name>
-
-        <t>An ALTO client can refresh the TIPS view UpdatesDirectory object (because the updates graph changes over time)
-        without re-fetching the entire object by
-        requesting a patch for the current version of the TIPS view metadata the client already has.</t>
-
-        <section anchor="ref-dir-req" numbered="true" toc="default">
-          <name>Request</name>
-
-          <t>An ALTO client requests a patch for the TIPS view metadata directory
-        by sending an HTTP POST request with the media type
-        "application/alto-tipsview+json" and the version tag of the
-        TIPS view directory it has currently.</t>
-
-        <t>An example request:</t>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-    POST /tips/2718281828459 HTTP/1.1
-    Host: alto.example.com
-    Accept: application/alto-tipsview+json,
-            application/merge-patch+json,
-            application/alto-error+json
-    Authorization: Basic Y2xpZW50MTpoZWxsb2FsdG8K
-    Content-Type: application/alto-tipsparams+json
-    Content-Length: 43
-
-    {
-      "tag": "125351264356"
-    }
-        ]]></artwork>
-      </section>
-
-      <section anchor="ref-dir-resp" numbered="true" toc="default">
-        <name>Response</name>
-
-        <t>The server may return the whole directory or the incremental changes,
-        using merge-patch.</t>
-
-        <t>An example patch response:</t>
-
-        <artwork name="" type="" align="left" alt=""><![CDATA[
-
-    HTTP/1.1 200 OK
-    Content-Type: application/merge-patch+json
-    Content-Length: 212
-
-    {
-      "meta": {
-        "tag": "543353364839"
-      },
-      "updates-map": {
-        "0": {
-          "101": null,
-          "107": {...}
-        },
-        "101": null,
-        "102": null
-      }
-    }
-        ]]></artwork>
-
-        </section>
-      </section>
-    </section>
-
     <section anchor="client-pull" numbered="true" toc="default">
       <name>TIPS Data Transfers - Client Pull</name>
 
@@ -1426,6 +1202,59 @@ Client                                  TIPS
         ]]></artwork>
       </section>
 
+      <section anchor="new-edge" numbered="true" toc="default">
+        <name>New Next Edge Recommendation</name>
+
+        <t>While intended TIPS usage is for the client to recieve a recommended starting edge in the TIPS summary,
+        consume that edge, then construct all future URIs by incrementing the sequence count by 1, there
+        may be cases in which the client needs to request a new next edge to consume.  For example, if a client has
+        an open TIPS view yet has not polled in a while, the client may requests the next logical incremental URI but
+        the server has compacted the updates graph so it no longer exists.  Thus, the client must request a new next edge to consume
+        based on its current version of the resource.</t>
+
+      <section anchor="new-edge-request" numbered="true" toc="default">
+        <name>Request</name>
+
+        <t>An ALTO client requests that the server provide a next edge recommendation for a given TIPS view
+        by sending an HTTP POST request with the media type "application/alto-tipsparams+json". The URI has the form:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+    POST /<tips-view-uri>/ug
+        ]]></artwork>
+
+        <t>The POST body have the following form, where providing the version tag of the resource the client already has is optional:</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+    object {
+        [JSONString  tag;]
+     } TIPSNextEdgeReq;
+
+        ]]></artwork>
+
+      </section>
+
+      <section anchor="new-edge-response" numbered="true" toc="default">
+        <name>Response</name>
+
+        <t>The response to a valid request MUST be a JSON object of type
+        UpdatesGraphSummary (defined in <xref target="tips-createresp" format="default"/> but reproduced below as well), denoted as media type "application/alto-tips+json":</t>
+
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+      object {
+        JSONNumber       start-seq;
+        JSONNumber       end-seq;
+        StartEdgeRec     start-edge-rec;
+      } UpdatesGraphSummary;
+
+      object {
+        JSONNumber       seq-i;
+        JSONNumber       seq-j;
+      } StartEdgeRec;
+        ]]></artwork>
+
+      </section>
+      </section>
+
     </section> <!-- End Client Pull -->
 
     <section anchor="server-push" numbered="true" toc="default">
@@ -1449,7 +1278,7 @@ Client                                  TIPS
             requesting the TIPS view. Before a client starts receiving server push for a TIPS view, it MUST enable server push in HTTP, i.e., following <xref target="RFC9113" section="8.4"/> for HTTP/2 and <xref target="RFC9114" section="4.6"/> for HTTP/3. If the client does not enable HTTP server push, the ALTO server MUST return an ALTO error with the E_INVALID_FIELD_VALUE code and set the "field" to "server-push".</t>
 
             <t>Explicit add: A client can explicitly add itself in the receiver set by using the HTTP PUT method with media type
-            "application/alto-tipsview+json", where the
+            "application/alto-tipsparams+json", where the
             client may optionally specify a starting edge (next-edge) from which it would like to receive updates:</t>
             <artwork name="" type="" align="left" alt=""><![CDATA[
     PUT /<tips-view-uri>/push
@@ -1537,7 +1366,7 @@ Client                                  TIPS
 
         <section anchor="push-read" numbered="true" toc="default">
           <name>Read Push State</name>
-          <t>A client can use the HTTP GET method, with accept header set to "application/alto-tipsview+json"
+          <t>A client can use the HTTP GET method, with accept header set to "application/alto-tipsparams+json"
           (defined in <xref target="push-start" format="default"/>) to check the status of server push.</t>
 
           <artwork name="" type="" align="left" alt=""><![CDATA[
@@ -1557,7 +1386,7 @@ Client                                  TIPS
         :path = /tips/2718281828459/push
         host = alto.example.com
         accept = application/alto-error+json,
-                      application/alto-tipsview+json
+                      application/alto-tipsparams+json
 
     Server -> client response:
 
@@ -1565,7 +1394,7 @@ Client                                  TIPS
       - END_STREAM
       + END_HEADERS
         :status = 200
-        content-type = application/alto-tipsview+json
+        content-type = application/alto-tipsparams+json
         content-length = 519
 
     DATA
@@ -1587,7 +1416,7 @@ Client                                  TIPS
           <dt>Explicit stop:</dt>
             <dd>A client stops push by using the HTTP PUT method to
             /&lt;tips-view-uri&gt;/push, with content type
-            "application/alto-tipsview+json" and setting server-push to FALSE:</dd>
+            "application/alto-tipsparams+json" and setting server-push to FALSE:</dd>
           </dl>
 
           <t>Implicit stop (two ways):</t>
@@ -1616,7 +1445,7 @@ Client                                  TIPS
         :path = /tips/2718281828459/push
         host = alto.example.com
         accept = application/alto-error+json
-        content-type = application/alto-tipsview+json
+        content-type = application/alto-tipsparams+json
         content-length = 69
 
     DATA
@@ -2079,7 +1908,6 @@ Client                                  TIPS
       <ul spacing="normal">
         <li>application/alto-tips+json: as described in <xref target="tips-createresp" format="default"/>;</li>
         <li>application/alto-tipsparams+json: as described in <xref target="tips-createreq" format="default"/>;</li>
-        <li>application/alto-tipsview+json: as described in <xref target="dir-resp" format="default"/></li>
       </ul>
       <section numbered="true" toc="default">
         <name>application/alto-tips+json Media Type</name>
@@ -2165,64 +1993,6 @@ Client                                  TIPS
           </dd>
           <dt>Published specification:</dt>
           <dd><xref target="tips-createreq"/> of this document.</dd>
-          <dt>Applications that use this media type:</dt>
-          <dd>ALTO servers and ALTO clients either stand alone or are embedded
-          within other applications.</dd>
-          <dt>Fragment identifier considerations:</dt>
-          <dd>N/A</dd>
-          <dt>Additional information:</dt>
-          <dd>
-            <t><br/></t>
-            <dl>
-              <dt>Deprecated alias names for this type:</dt>
-              <dd>N/A</dd>
-              <dt>Magic number(s):</dt>
-              <dd>N/A</dd>
-              <dt>File extension(s):</dt>
-              <dd>This document uses the media type to refer to protocol messages
-              and thus does not require a file extension.</dd>
-              <dt>Macintosh file type code(s):</dt>
-              <dd>N/A</dd>
-            </dl>
-          </dd>
-          <dt>Person and email address to contact for further information:</dt>
-          <dd>See Authors' Addresses section.</dd>
-          <dt>Intended usage:</dt>
-          <dd>COMMON</dd>
-          <dt>Restrictions on usage:</dt>
-          <dd>N/A</dd>
-          <dt>Author:</dt>
-          <dd>See Authors' Addresses section.</dd>
-          <dt>Change controller:</dt>
-          <dd>Internet Engineering Task Force (mailto:iesg@ietf.org).</dd>
-        </dl>
-      </section>
-      <section numbered="true" toc="default">
-        <name>application/alto-tipsview+json Media Type</name>
-        <dl>
-          <dt>Type name:</dt>
-          <dd>application</dd>
-          <dt>Subtype name:</dt>
-          <dd>alto-tipsview+json</dd>
-          <dt>Required parameters:</dt>
-          <dd>N/A</dd>
-          <dt>Optional parameters:</dt>
-          <dd>N/A</dd>
-          <dt>Encoding considerations:</dt>
-          <dd>Encoding considerations are identical to those specified for the
-          "application/json" media type. See <xref target="RFC8259" format="default"/>.
-          </dd>
-          <dt>Security considerations:</dt>
-          <dd>Security considerations relating to the generation and consumption
-          of ALTO Protocol messages are discussed in
-          <xref target="RFC8895" section="10"/> and <xref target="RFC7285" section="15"/>.
-          </dd>
-          <dt>Interoperability considerations:</dt>
-          <dd>This document specifies format of conforming messages and the
-          interpretation thereof.
-          </dd>
-          <dt>Published specification:</dt>
-          <dd><xref target="dir-resp"/> of this document.</dd>
           <dt>Applications that use this media type:</dt>
           <dd>ALTO servers and ALTO clients either stand alone or are embedded
           within other applications.</dd>
