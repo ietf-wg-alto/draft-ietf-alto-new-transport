@@ -581,8 +581,9 @@ Client                                  TIPS
         <name>TIPS With Different HTTP Versions</name>
 
         <t>
-          The HTTP version a connection uses is negotiated between client and server based on
-          the respective HTTP RFC documents regarding how to establish a connection (<xref target="RFC9112" format="default"/><xref target="RFC9113" format="default"/><xref target="RFC9114" format="default"/>).
+          The HTTP version a "https" connection uses is negotiated between client and server using the TLS ALPN extension, described in
+          <xref target="RFC9113" section="3.1"/> for HTTP/2 and <xref target="RFC9114" section="3.1"/> for HTTP/3.  For a "http" connection, the explicit
+          announcement of HTTP/2 or HTTP/3 support by the server is outside the scope of this document.
         </t>
 
         <t>
