@@ -76,7 +76,7 @@
         <email>lachlan.keller@yale.edu</email>
       </address>
     </author>
-    <date day="23" month="April" year="2023"/>
+    <date day="25" month="April" year="2023"/>
     <area>TSV Area</area>
     <workgroup>ALTO Working Group</workgroup>
     <keyword>RFC</keyword>
@@ -1856,7 +1856,7 @@ Client                                  TIPS
 
           <t>Allowing TIPS views enables a new class of
    Denial-of-Service attacks. In particular, For the TIPS server,
-   an ALTO client might create an unreasonable number of TIPS views.</t>
+   an ALTO client or clients might create an unreasonable number of TIPS views.</t>
 
           <t>To avoid these attacks on the TIPS server, the server SHOULD
    choose to limit the number of active views and reject new requests
@@ -2241,6 +2241,19 @@ Client                                  TIPS
           <seriesInfo name="RFC" value="7971"/>
           <seriesInfo name="DOI" value="10.17487/RFC7971"/>
         </reference>
+
+
+        <reference anchor='RFC9205'>
+          <front>
+          <title>Building Protocols with HTTP</title>
+          <author fullname='M. Nottingham' initials='M.' surname='Nottingham'><organization/></author>
+          <date month='June' year='2022'/>
+          <abstract><t>Applications often use HTTP as a substrate to create HTTP-based APIs. This document specifies best practices for writing specifications that use HTTP to define new application protocols. It is written primarily to guide IETF efforts to define application protocols using HTTP for deployment on the Internet but might be applicable in other situations.</t><t>This document obsoletes RFC 3205.</t></abstract>
+          </front>
+          <seriesInfo name='BCP' value='56'/>
+          <seriesInfo name='RFC' value='9205'/>
+          <seriesInfo name='DOI' value='10.17487/RFC9205'/>
+        </reference>
         <!-- requirements -->
       </references>
     </references>
@@ -2292,6 +2305,37 @@ Client                                  TIPS
       <t>This document specifies Design 1 (keeping R1, R2, and R3 on the same server) in order to simplify session management,
       though at the expense of maximum load balancing flexibility (see <xref target="ops-loadbalancing" format="default"/> for a discussion on load balancing considerations).
       A future companion document may extend the protocol to support Design 2 or Design 3.</t>
+    </section>
+    <section numbered="true" toc="default">
+        <name>Adherence to "Building Protocols with HTTP"</name>
+
+        <t>This work adheres fully to <xref target="RFC9205"/> for the following reasons:</t> 
+
+        <ul>
+          <li>TIPS does not "redefine, refine, or overlay the semantics of generic protocol elements such as methods,
+          status codes, or existing header fields" and instead focuses on "protocol elements that are specific to [the TIPS]
+          application -- namely, [its] HTTP resources" (<xref target="RFC9205" section="3.1"/>).</li>
+          <li>There are no statically defined URI components (<xref target="RFC9205" section="3.2"/>).</li>
+          <li>No minimum version of HTTP is specified by TIPS which is recommended (<xref target="RFC9205" section="4.1"/>).</li>
+          <li>This work follows the advice that "When specifying examples of protocol interactions, applications should document
+          both the request and response messages with complete header sections, preferably in HTTP/1.1 format" (<xref target="RFC9205" section="4.1"/>).</li>
+          <li>TIPS uses URI templates which is recommended (<xref target="RFC9205" section="4.2"/>).</li>
+          <li>TIPS follows the pattern that "a client will begin interacting with a given application server by requesting an initial document
+          that contains information about that particular deployment, potentially including links to other relevant resources.  Doing so ensures
+          that the deployment is as flexible as possible (potentially spanning multiple servers), allows evolution, and also gives the application
+          the opportunity to tailor the "discovery document" to the client" (<xref target="RFC9205" section="4.4.1"/>).</li>
+          <li>TIPS uses existing HTTP schemes (<xref target="RFC9205" section="4.4.2"/>).</li>
+          <li>TIPS defines its errors "to use the most applicable status code" (<xref target="RFC9205" section="4.6"/>).</li>
+          <li>TIPS does not "make assumptions about the relationship between separate requests on a single
+          transport connection; doing so breaks many of the assumptions of HTTP as a stateless protocol and
+          will cause problems in interoperability, security, operability, and evolution" (<xref target="RFC9205" section="4.11"/>).  The
+          only relationship between requests is that a client must make a request to first discover where a TIPS
+          view of resource will be served, which is consistent with URI discovery in <xref target="RFC9205" section="4.4.1"/>.</li>
+          <li>Section <xref target="RFC9205" section="4.14"/> of RFC 9205 notes that there are quite a few caveats with using server push, mostly
+          because of lack of widespread support.  We, the authors, have considered these factors and have still
+          decided server push can be valuable in the TIPS use case.</li>
+        </ul>
+
     </section>
   </back>
 </rfc>
