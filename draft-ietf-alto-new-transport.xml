@@ -2309,7 +2309,7 @@ Client                                  TIPS
     <section numbered="true" toc="default">
         <name>Adherence to "Building Protocols with HTTP"</name>
 
-        <t>This work adheres fully to <xref target="RFC9205"/> for the following reasons:</t> 
+        <t>This work adheres fully to <xref target="RFC9205"/> for the following reasons:</t>
 
         <ul>
           <li>TIPS does not "redefine, refine, or overlay the semantics of generic protocol elements such as methods,
