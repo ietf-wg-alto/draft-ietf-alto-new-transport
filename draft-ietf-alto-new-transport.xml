@@ -485,7 +485,7 @@ tvi/rs = receiver set of tvi (for server push)
 
 	<section anchor="tipsinfo-overview" numbered="true" toc="default">
         <name>Workflow Overview</name>
-			  
+			
         <t>There are two ways a client can receive updates for a resource:</t>
         <ol>
           <li>Client Pull (see <xref target="client-pull" format="default"/>)</li>
@@ -580,7 +580,7 @@ Client                                  TIPS
 
         ]]></artwork>
         </figure>
-      </section>    
+      </section>
       <section anchor="tipsinfo-httpversions" numbered="true" toc="default">
         <name>TIPS With Different HTTP Versions</name>
 
