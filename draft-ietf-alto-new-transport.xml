@@ -1856,11 +1856,11 @@ Client                                  TIPS
 
           <t>Allowing TIPS views enables a new class of
    Denial-of-Service attacks. In particular, For the TIPS server,
-   an ALTO client or clients might create an unreasonable number of TIPS views.</t>
+   an ALTO client or multiple clients might create an unreasonable number of TIPS views.</t>
 
           <t>To avoid these attacks on the TIPS server, the server SHOULD
-   choose to limit the number of active views and reject new requests
-   when that threshold is reached.  TIPS allows
+   choose to limit both the total number of active views and/or the number per each client, and reject new requests
+   when the threshold is reached.  TIPS allows
    predictive fetching and the server SHOULD also choose to limit the
    number of pending requests.  In these cases, the server
    SHOULD return the HTTP status "429 Too many requests".</t>
