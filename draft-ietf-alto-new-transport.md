@@ -112,7 +112,7 @@ using native HTTP/2 or HTTP/3 server push.
 
 --- middle
 
-# Introduction
+# Introduction {#intro}
 
 Application-Layer Traffic Optimization (ALTO) provides means for network
 applications to obtain network status information. So far, two transport
@@ -136,7 +136,7 @@ protocols when higher HTTP versions are used. First, consider the ALTO base
 protocol, which is designed to transfer only complete information resources.
 Hence, a client can run the base protocol on top of HTTP/2 or HTTP/3 to request
 multiple information resources concurrently, in concurrent streams, but each
-request must be for a complete information resource; there is no capability of
+request must be for a complete information resource: there is no capability of
 transferring incremental updates. Hence, there can be large overhead when the
 client already has an information resource and then there are small changes to
 the resource. Next, consider ALTO/SSE. Although ALTO/SSE can transfer
@@ -157,8 +157,8 @@ still functioning for HTTP/1.x. TIPS also provides an ALTO server to
 concurrently push specific incremental updates using native HTTP/2 or HTTP/3
 server push. Specifically, this document specifies the following:
 
--  Extensions to the ALTO Protocol to create, update, or remove an incrementally
-   changing network information resource.
+-  Extensions to the ALTO protocol to allow ALTO clients to create, remove, or
+   receive updates from an incrementally changing network information resource.
 
 -  A new resource type that specifies the TIPS updates graph model for a
    resource.
@@ -177,9 +177,9 @@ when, and only when, they appear in all capitals, as shown here.
 This document uses the same syntax and notations as introduced in Section 8.2 of
 {{RFC7285}} to specify the extensions to existing ALTO resources and services.
 
-# TIPS Overview
+# TIPS Overview {#overview}
 
-## Transport Requirements
+## Transport Requirements {#requirements}
 
 Current ALTO protocol and its extensions support two transport mechanisms:
 First, a client can direct request an ALTO resource and obtain a complete
@@ -192,7 +192,6 @@ However, the current transport mechanisms are not optimized for storing,
 transmitting, and processing (incremental) updates of ALTO information
 resources. Specifically, the new transport mechanism must satisfy the following
 requirements:
-
 
 Incremental updates:
 : Incremental updates can reduce both the data storage on an ALTO server and the
@@ -233,7 +232,7 @@ HTTP version. Thus, these updates can be concurrently requested. Prefetching is
 realized using long polling in HTTP/1.1 and using long polling or server push in
 higher HTTP versions.
 
-## TIPS Terminology
+## TIPS Terminology {#terminology}
 
 This document uses the following components:
 
@@ -249,12 +248,12 @@ TIPS view (tv):
 Updates graph (ug):
 : Is a directed, acyclic graph that contains a sequence of incremental updates
   and snapshots (collectively called update items) of a network information
-  resource, based on the TIPS data model defined in Section 3.1. Each
+  resource, based on the TIPS data model defined in {{data-model}}. Each
   incremental update is assigned a sequence number, and a URI can be constructed
-  using the sequence numbers. An ALTO map resource (e.g., Cost
-  Map, Network Map) may need only a single updates graph. A dynamic network
-  information resource (e.g., Filtered Cost Map) may create an updates graph
-  (within a new TIPS view) for each unique filter request.
+  with the sequence numbers, following the template in {{schema}}. An ALTO map
+  resource (e.g., Cost Map, Network Map) may need only a single updates graph. A
+  dynamic network information resource (e.g., Filtered Cost Map) may create an
+  updates graph (within a new TIPS view) for each unique filter request.
 
 Receiver set (rs):
 : Contains the set of clients who have requested to receive server push updates.
@@ -343,7 +342,7 @@ an updates graph, which is a directed, acyclic graph that contains a sequence of
 incremental updates and snapshots (collectively called update items) of a
 network information resource.
 
-## Basic Data Model of Updates Graph
+## Basic Data Model of Updates Graph {#data-model}
 
 For each resource (e.g., a cost map, network map), the incremental updates and
 snapshots can be represented using the following directed acyclic graph model,
@@ -409,7 +408,7 @@ incremental updates from 103 and 105.
 ~~~~
 {: #fig-ug artwork-align="center" title="TIPS Model Example"}
 
-## Resource Location Schema
+## Resource Location Schema {#schema}
 
 To access each individual update in an updates graph, consider the model
 represented as a "virtual" file system (adjacency list), contained within the
@@ -496,8 +495,9 @@ in the first example, and 104, in the second example, cannot be
 obtained by a client that does not have the previous version at 101
 or 103, respectively.
 
-# TIPS High-level Workflow { #workflow }
+# TIPS High Level Workflow { #workflow }
 
+## Workflow Overview
 
 There are two ways a client can receive updates for a resource:
 
@@ -1027,8 +1027,6 @@ Hence, the server processing logic SHOULD be:
    backlog queue.
 
 -  Else: return error.
-
-### Server Processing "Error" Conditions
 
 It is RECOMMENDED that the server uses the following HTTP codes to
 indicate errors, with the media type "application/alto-error+json",
