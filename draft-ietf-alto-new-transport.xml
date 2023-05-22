@@ -481,8 +481,11 @@ tvi/rs = receiver set of tvi (for server push)
     </section>
 
     <section anchor="tipsinfo-workflow" numbered="true" toc="default">
-        <name>TIPS High-level Workflow</name>
+        <name>TIPS High Level Workflow</name>
 
+	<section anchor="tipsinfo-overview" numbered="true" toc="default">
+        <name>Workflow Overview</name>
+			
         <t>There are two ways a client can receive updates for a resource:</t>
         <ol>
           <li>Client Pull (see <xref target="client-pull" format="default"/>)</li>
@@ -577,6 +580,7 @@ Client                                  TIPS
 
         ]]></artwork>
         </figure>
+      </section>
       <section anchor="tipsinfo-httpversions" numbered="true" toc="default">
         <name>TIPS With Different HTTP Versions</name>
 
@@ -1160,9 +1164,6 @@ Client                                  TIPS
           <li>Else: return error.</li>
         </ul>
 
-        <section anchor="server-errors" numbered="true" toc="default">
-          <name>Server Processing "Error" Conditions</name>
-
           <t>It is RECOMMENDED that the server uses the following HTTP codes to
           indicate errors, with the media type "application/alto-error+json",
           regarding update item requests. </t>
@@ -1177,7 +1178,6 @@ Client                                  TIPS
             exceeds server threshold. Server may indicate when to re-try the request in the
             "Re-Try After" headers.</li>
           </ul>
-        </section>
       </section>
 
       <section anchor="urs-example" numbered="true" toc="default">
@@ -1595,15 +1595,11 @@ Client                                  TIPS
       <section anchor="altoh2streams" numbered="true" toc="default">
         <name>Server Push Stream Management</name>
 
-        <section anchor="altoh2streampush" numbered="true" toc="default">
-          <name>Server -&gt; Client [PUSH_PROMISE for updates graph on Stream SID_tq]</name>
           <t>The server push MUST satisfy the following requirements:</t>
           <ul spacing="normal">
             <li>PUSH_PROMISE MUST be sent in stream SID_tq to serialize and allow the client to know the push order;</li>
             <li>Each PUSH_PROMISE chooses a new server-selected stream ID, and the stream is closed after push.</li>
           </ul>
-        </section>
-
       </section>
     </section>
 
