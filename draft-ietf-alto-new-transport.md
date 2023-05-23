@@ -246,17 +246,24 @@ TIPS view (tv):
   graph (ug) and receiver set (rs).
 
 Updates graph (ug):
-: Is a directed, acyclic graph that contains a sequence of incremental updates
-  and snapshots (collectively called update items) of a network information
-  resource, based on the TIPS data model defined in {{data-model}}. Each
-  incremental update is assigned a sequence number, and a URI can be constructed
-  with the sequence numbers, following the template in {{schema}}. An ALTO map
-  resource (e.g., Cost Map, Network Map) may need only a single updates graph. A
-  dynamic network information resource (e.g., Filtered Cost Map) may create an
-  updates graph (within a new TIPS view) for each unique filter request.
+: Is a directed, acyclic graph whose nodes represent the set of versions of an
+  information resource, and edges the set of update items to compute these
+  versions. An ALTO map resource (e.g., Cost Map, Network Map) may need only a
+  single updates graph. A dynamic network information resource (e.g., Filtered
+  Cost Map) may create an updates graph (within a new TIPS view) for each unique
+  request.
 
-Receiver set (rs):
-: Contains the set of clients who have requested to receive server push updates.
+Version:
+: Represents a historical content of an information resource. For an information
+  resource, each version is associated with and uniquely identified by a
+  monotonically and consecutively increased sequence number. We use the term
+  "version s" to refer to the version associated with sequence number s.
+
+Start sequence number (start-seq):
+: Is the smallest non-zero sequence number in an updates graph.
+
+End sequence number (end-seq):
+: Is the largest sequence number in an updates graph.
 
 Snapshot:
 : Is a full replacement of a resource and is contained within an updates graph.
@@ -267,21 +274,18 @@ Incremental update:
 
 Update item:
 : Refers to the content on an edge of the updates graph, which can be either a
-  snapshot or incremental update.
+  snapshot or incremental update. An update item can be considered as a pair
+  (op, data) where op denotes whether the item is an incremental update or a
+  snapshot, and data is the content of the item.
 
 ID#i-#j:
-: Denotes the update item (op, data) on a specific edge in the updates graph to
-  transition from version at node i to version at node j, where i and j are the
-  respective sequence numbers of the nodes the edge connects.
+: Denotes the update item on a specific edge in the updates graph to transition
+  from version i to version j, where i and j are the sequence numbers of the
+  source node and the target node of the edge, respectively.
 
-Information Resource Directory (IRD):
-: Contains a list of available information resources provided by an ALTO server
-  that can be requested by ALTO clients, per {{RFC7285}}. Each entry in an IRD
-  indicates a URI at which an ALTO server accepts requests, and returns either
-  an information resource or an information resource directory that references
-  additional information resources. An ALTO server's IRD MAY define one or more
-  transport information publication services, which ALTO clients use to request
-  new TIPS instances. See Section 5 for more details.
+Receiver set (rs):
+: Contains the set of clients who have requested to receive server push updates.
+
 
 ~~~~ drawing
                                    +-------------+
@@ -322,7 +326,7 @@ Information Resource Directory (IRD):
    +----------+       +----------+                 +----------+
 
 tvi   = TIPS view i
-tvi/ug = incremental updates graph associated with tsi
+tvi/ug = incremental updates graph associated with tvi
 tvi/rs = receiver set of tvi (for server push)
 ~~~~
 {: #fig-overview artwork-align="center" title="ALTO Transport Information"}
@@ -330,10 +334,11 @@ tvi/rs = receiver set of tvi (for server push)
 {{fig-overview}} shows an example illustrating the TIPS abstraction. The server
 provides the TIPS service of three information resources (#1, #2, and #3) where
 we assume #1 is an ALTO map resource, and #2 and #3 are filterable resources or
-services. For each information resource, a TIPS view is created. There are also
-3 ALTO client (Client 1, Client 2, and Client 3) that are connected to the ALTO
-server. Each client maintains a single HTTP connection with the ALTO server and
-uses the TIPS view to retrieve updates.
+services. For each information resource, a TIPS view is created: tv1, tv2 and
+tv3 are the TIPS view for information resource #1, #2 and #3 respectively. There
+are 3 ALTO clients (Client 1, Client 2, and Client 3) that are connected to the
+ALTO server. Each client maintains a single HTTP connection with the ALTO server
+and uses the TIPS view to retrieve updates.
 
 # TIPS Updates Graph
 
@@ -344,7 +349,7 @@ network information resource.
 
 ## Basic Data Model of Updates Graph {#data-model}
 
-For each resource (e.g., a cost map, network map), the incremental updates and
+For each resource (e.g., a cost map, a network map), the incremental updates and
 snapshots can be represented using the following directed acyclic graph model,
 where the server maps base resource IDs to incremental update IDs that are
 assigned sequentially (i.e., incremented by 1 each time):
@@ -354,7 +359,7 @@ assigned sequentially (i.e., incremented by 1 each time):
    0 is reserved as the initial state (empty/ null).
 
 -  Each edge is transport data (update item). In particular, edge from i to j is
-   the (op, data) to transition version from version i to version j.
+   the update item to transit from version i to version j.
 
 -  Node content is path independent (different paths arrive at the same content)
 
@@ -365,11 +370,11 @@ mandatory incremental updates (e.g., ID103-104), dotted lines represent optional
 incremental updates (e.g., ID103-105), and thin lines represent snapshots (e.g.,
 ID0-103). Note that node content is path independent: the content of node v can
 be obtained by applying the updates from any path that ends at v. For example,
-assume the client already has version at 103: the version at 105 can either be
-directly fetched as a snapshot, computed incrementally by applying the
-incremental updates between 103 and 104, then 104 and 105, or if the optional
-update from 103 to 105 exists, computed incrementally by applying the
-incremental updates from 103 and 105.
+assume the latest version is 105 and a client already has version 103. The
+target version 105 can either be directly fetched as a snapshot, computed
+incrementally by applying the incremental updates between 103 and 104, then 104
+and 105, or if the optional update from 103 to 105 exists, computed
+incrementally by applying the incremental updates from 103 and 105.
 
 ~~~~ drawing
                                                         +======+
@@ -412,13 +417,13 @@ incremental updates from 103 and 105.
 
 To access each individual update in an updates graph, consider the model
 represented as a "virtual" file system (adjacency list), contained within the
-root of a TIPS view URI (see Section 6.2 for tips-view-uri definition). For
-example, assuming that the update graph of a TIPS view is as shown in
+root of a TIPS view URI (see {{open-resp}} for the definition of tips-view-uri).
+For example, assuming that the update graph of a TIPS view is as shown in
 {{fig-ug}}, the location schema of this TIPS view will have the format as in
 {{fig-ug-schema}}.
 
 ~~~~ drawing
-<tips-view-uri>  // relative URI to TIPS view
+<tips-view-uri>  // relative URI to a TIPS view
     ug    // updates graph
         0
             101    // full 101 snapshot
@@ -443,7 +448,7 @@ example, assuming that the update graph of a TIPS view is as shown in
 ~~~~
 {: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
 
-TIPS uses this file structure schema to generate template URIs which allow
+TIPS uses this directory schema to generate template URIs which allow
 clients to construct the location of incremental updates after receiving the
 tips-view-uri path from the server. The generic template for the location of the
 update item on the edge from node i to node j in the updates graph is:
@@ -453,15 +458,15 @@ update item on the edge from node i to node j in the updates graph is:
 Due to the sequential nature of the update item IDs, a client can long poll a
 future update that does not yet exist (e.g., the incremental update from 106 to
 107) by constructing the URI for the next edge that will be added, starting from
-the sequence number of the current last node in the graph to the next sequential
-node (last node sequence number + 1):
+the sequence number of the current last node (denoted as end-seq) in the graph
+to the next sequential node (with the sequence number of end-seq + 1):
 
     GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
 
 ## Updates Graph Modification Invariants
 
-A server MAY change its updates graph (to compact, to add nodes,
-etc.), but it MUST ensure that any resource state that it makes
+A server may change its updates graph (to compact, to add nodes,
+etc.), but it must ensure that any resource state that it makes
 available is reachable by clients, either directly via a snapshot
 (that is, relative to 0) or indirectly by requesting an earlier
 snapshot and a contiguous set of incremental updates.  Additionally,
@@ -470,30 +475,30 @@ items, the ID of each added node in the updates graph must increment
 contiguously by 1.  More specifically, the updates graph MUST satisfy
 the following invariants:
 
--  Continuity: ns -> ne, anything in between ns and ne also exists
-   (implies ni -> ni + 1 update item exists), where ns is start-seq
-   and ne is end-seq.
+-  Continuity: At any time, let ns denote the smallest non-zero version (i.e.,
+   start-seq) in the update graph and ne denote the latest version (i.e.,
+   end-seq). Then any version in between ns and ne must also exist. This implies
+   that the incremental update from ni to ni + 1 exists for any ns <= ni <= ne,
+   and all versions in the update graph (except 0) is an integer interval
+   `[ns, ne]`.
 
--  Feasibility: let n0 denote the smallest version in N (where N is
-   the complete set of nodes in the updates graph), the server can
-   provide a snapshot of n0.  In other words, there is always a
-   direct link to ns, where ns is start-seq.
+-  Feasibility: Let ns denote the start-seq in the update graph. The server must
+   provide a snapshot of ns and, in other words, there is always a direct link
+   to ns in the update graph.
 
--  "Right shift" only: if a server provides `[n1, n2]` at time t and
-   `[n1', n2']` at time t'.  If t' > t and get `[n1', n2']`, then n1' >=
-   n1 and n2' >= n2.
+-  "Right shift" only: Assume a server provides versions in `[n1, n2]` at time t
+   and versions in `[n1', n2']` at time t'. If t' > t, then n1' >= n1 and n2' >=
+   n2.
 
-For example, in the case of a server compacting a resource's updates
-graph to conserve space, using the example model in Section 3.1,
-assume at time 0, the server provides the valid set `[101, 102, 103,
-104, 105, 106]`.  At time 1, both `[103, 104, 105, 106]` and `[105, 106]`
-are valid sets.  However, `[102, 103, 104, 105, 106]` is not a valid
-set as there is no snapshot of the version at 102 and `[104, 105, 106]`
-is not a valid set as there is no snapshot of the version at 104.
-Thus, there is a risk that the right content of the version at 102,
-in the first example, and 104, in the second example, cannot be
-obtained by a client that does not have the previous version at 101
-or 103, respectively.
+For example, consider the case that a server compacts a resource's updates graph
+to conserve space, using the example model in {{data-model}}. Assume at time 0,
+the server provides the versions `{101, 102, 103, 104, 105, 106}`. At time 1,
+both `{103, 104, 105, 106}` and `{105, 106}` are valid sets. However, `{102,
+103, 104, 105, 106}` and `{104, 105, 106}` are not valid sets as there is no
+snapshot to version 102 or 104 in the update graph. Thus, there is a risk that
+the right content of version 102 (in the first example) or 104 (in the second
+example) cannot be obtained by a client that does not have the previous version
+101 or 103, respectively.
 
 # TIPS High Level Workflow { #workflow }
 
@@ -501,20 +506,20 @@ or 103, respectively.
 
 There are two ways a client can receive updates for a resource:
 
-1.  Client Pull (see Section 7)
+1.  Client Pull (see {{pull}});
 
-2.  Server Push (see Section 8)
+2.  Server Push (see {{push}}).
 
-At a high level, an ALTO client opens a persistent HTTP connection
-with an ALTO server and uses TIPS to retrieve a JSON object that
-contains a URI to a TIPS view of each network information resource
-that the client wants to monitor, along with a summary of each TIPS
-view (which provides, at minimum, the start and end sequence number
-of the updates graph and a server-recommended edge to consume first).
+At a high level, an ALTO client first uses the TIPS service to indicate the
+information resource(s) that the client wants to monitor. For each requested
+resource, the server returns a JSON object that contains a URI, which points to
+the root of a TIPS view, and a summary of the current view, which contains, at
+the minimum, the start-seq and end-seq of the update graph and a
+server-recommended edge to consume first.
 
 In the simplest use case, for client pull, the TIPS view summary provides enough
 information for the client to continuously pull each additional update,
-resulting in the workflow in {{fig-workflow-pull}}.
+following the workflow in {{fig-workflow-pull}}.
 
 ~~~~ drawing
 Client                                  TIPS
@@ -553,7 +558,10 @@ Note: in {{fig-workflow-pull}}, the update item at
 `/<tips-view-uri1>/ug/<j>/<j+1>` may not yet exist, so the server holds the
 request until the update becomes available (long polling).
 
-A client that prefers server push can use the workflow as shown in {{fig-workflow-push}}.
+A client that prefers server push can use the workflow as shown in
+{{fig-workflow-push}}. In this case, the client indicate for server push when it
+creates the TIPS view. Future updates are pushed to the client as soon as they
+become available.
 
 ~~~~ drawing
 Client                                  TIPS
@@ -586,45 +594,40 @@ Client                                  TIPS
 
 ## TIPS with Different HTTP Versions
 
-The HTTP version a "https" connection uses is negotiated between
-client and server using the TLS ALPN extension, described in
-Section 3.1 of {{RFC9113}} for HTTP/2 and Section 3.1 of {{RFC9114}} for
-HTTP/3.  For a "http" connection, the explicit announcement of HTTP/2
-or HTTP/3 support by the server is outside the scope of this
-document.
+The HTTP version of a "https" connection uses is negotiated between client and
+server using the TLS ALPN extension, as specified in Section 3.1 of {{RFC9113}}
+for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For a "http" connection,
+the explicit announcement of HTTP/2 or HTTP/3 support by the server is outside
+the scope of this document.
 
 While TIPS is designed to take advantage of newer HTTP features like
 server push and substreams for concurrent fetch, TIPS still functions
-with HTTP/1.x for client pull defined in Section 7, with the
+with HTTP/1.x for client pull defined in {{pull}}, with the
 limitation that it cannot cancel any outstanding requests or fetch
 resources concurrently over the same connection due to the blocking
 nature of HTTP/1.x requests.  Additionally, because HTTP/1.x does not
 support server push, the use of TIPS with server push defined in
-Section 8 is not available if a client connects to an ALTO server
-with HTTP/1.x.  If a client only capable of HTTP/1.x desires to
-monitor multiple resources at the same time, it must open multiple
-connections, one for each resource, so that an outstanding long-poll
-request can be issued for each resource to monitor for new updates.
-For HTTP/2 and /3, because of substreams, multiple resources can be
-monitored simultaneously.
+{{push}} is not available if a client connects to an ALTO server
+with HTTP/1.x. If a client only capable of HTTP/1.x desires to concurrently
+monitor multiple resources at the same time, it must open multiple connections,
+one for each resource, so that an outstanding long-poll request can be issued
+for each resource to monitor for new updates. For HTTP/2 and /3, because of
+substreams, multiple resources can be monitored simultaneously.
 
-# TIPS Information Resource Directory (IRD) Announcement
+# TIPS Information Resource Directory (IRD) Announcement {#ird}
 
-An ALTO server's IRD (Information Resource Directory) MAY define one
-or more transport information publication services, which ALTO
-clients use to request new TIPS instances.  An IRD entry defining a
-TIPS MUST declare the "media-type", and specify "capabilities" and
-"uses" as follows.
+To announce a TIPS information resource in the information resource directory
+(IRD), an ALTO server MUST specify the "media-type", "capabilities" and "uses"
+as follows.
 
 ## Media Type
 
-The media type of the Transport Information Publication Service
-resource is "application/alto-tips+json".
+The media type of the Transport Information Publication Service resource is
+"application/alto-tips+json".
 
 ## Capabilities
 
-
-The capabilities declaration of TIPS is modelled on that defined in
+The capabilities field of TIPS is modelled on that defined in
 Section 6.3 of {{RFC8895}}.
 
 Specifically, the capabilities are defined as an object of type
@@ -769,7 +772,7 @@ The server MAY keep track of which clients have an active connection
 to each TIPS view to determine whether or not it should delete a TIPS
 view and its corresponding updates graph and associated data.
 
-## Open Request
+## Open Request {#open-req}
 
 An ALTO client requests that the server provide a TIPS view for a given resource
 by sending an HTTP POST body with the media type
@@ -787,10 +790,10 @@ TIPSReq, where:
 with the following fields:
 
 resource-id:
-:  The resource-id of an ALTO resource and MUST be in the TIPS'
-   "uses" list (Section 5).  If a client does not support all
-   incremental methods from the set announced in the server's
-   capabilities, the client MUST NOT use the TIPS service.
+:  The resource-id of an ALTO resource and MUST be in the TIPS' "uses" list
+   ({{ird}}). If a client does not support all incremental methods from the set
+   announced in the server's capabilities, the client MUST NOT use the TIPS
+   service.
 
 tag:
 :  If the resource-id is a GET-mode resource with a version tag (or
@@ -811,10 +814,10 @@ input:
 server-push:
 :  Set to TRUE if a client desires to receive updates via server
    push.  If the value is FALSE or not present, the client does not
-   accept server push updates.  See Section 8 for detailed
+   accept server push updates.  See {{push}} for detailed
    specifications.
 
-## Open Response
+## Open Response {#open-resp}
 
 The response to a valid request MUST be a JSON object of type
 AddTIPSResponse, denoted as media type "application/alto-tips+json":
@@ -902,13 +905,13 @@ Note that "field" and "value" are optional fields.  If the "value"
 field exists, the "field" field MUST exist.
 
 -  If the TIPS request does not have a "resource-id" field, the error
-   code of the error message MUST be E_MISSING_FIELD and the "field"
+   code of the error message MUST be `E_MISSING_FIELD` and the "field"
    field SHOULD be "resource-id".  The TIPS service MUST NOT create
    any TIPS view.
 
 -  If the "resource-id" field is invalid or is not associated with
    the TIPS, the error code of the error message MUST be
-   E_INVALID_FIELD_VALUE.  The "field" field SHOULD be the full path
+   `E_INVALID_FIELD_VALUE`.  The "field" field SHOULD be the full path
    of the "resource-id" field, and the "value" field SHOULD be the
    invalid resource-id.
 
@@ -960,22 +963,21 @@ message:
         }
     }
 
-## Close Request
+## Close Request {#close-req}
 
-An ALTO client can indicate it no longer desires to pull/receive
-updates for a specific network resource by "deleting" the TIPS view
-using the returned tips-view-uri and the HTTP DELETE method.  Whether
-or not the server actually deletes the TIPS view is implementation
-dependent.  For example, an ALTO server may maintain a set of clients
-that subscribe to the TIPS view of a resource: a client that deletes
-the view is removed from the set, and the TIPS view is only removed
-when the dependent set becomes empty.  See other potential
-implementations in Section 9.7.  The DELETE request MUST have the
+An ALTO client can indicate it no longer desires to pull/receive updates for a
+specific network resource by "deleting" the TIPS view using the returned
+tips-view-uri and the HTTP DELETE method. Whether or not the server actually
+deletes the TIPS view is implementation dependent. For example, an ALTO server
+may maintain a set of clients that subscribe to the TIPS view of a resource: a
+client that deletes the view is removed from the set, and the TIPS view is only
+removed when the dependent set becomes empty. See other potential
+implementations in {{shared-tips-view}}. The DELETE request MUST have the
 following format:
 
     DELETE /<tips-view-uri>
 
-The response to a valid request MUST be 200 if success, and the
+The response to a valid request must be 200 if success, and the
 corresponding error code if there is any error.
 
 If the connection between the client and TIPS provider is severed
@@ -983,7 +985,7 @@ without a DELETE request having been sent, the server MUST treat it
 as if the client had sent a DELETE request because the TIPS view is,
 at least from the client view, per-session based.
 
-# TIPS Data Transfers - Client Pull
+# TIPS Data Transfers - Client Pull {#pull}
 
 TIPS allows an ALTO client to retrieve the content of an update item
 from the updates graph, with an update item defined as the content
@@ -1097,8 +1099,8 @@ tag of the resource the client already has is optional:
 ###  Response
 
 The response to a valid request MUST be a JSON object of type
-UpdatesGraphSummary (defined in Section 6.2 but reproduced below as
-well), denoted as media type "application/alto-tips+json":
+UpdatesGraphSummary (defined in {{open-resp}} but reproduced below as well),
+denoted as media type "application/alto-tips+json":
 
     object {
       JSONNumber       start-seq;
@@ -1111,14 +1113,14 @@ well), denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 
-# TIPS Data Transfer - Server Push
+# TIPS Data Transfer - Server Push {#push}
 
 TIPS allows an ALTO client to receive an update item pushed by the
 ALTO server.
 
 If a client registers for server push, it should not request updates
 via pull to avoid receiving the same information twice, unless the
-client does not receive the expected updates (see Section 9.4).
+client does not receive the expected updates (see {{client-processing}}).
 
 ##  Manage Server Push
 
@@ -1134,7 +1136,7 @@ starts receiving server push for a TIPS view, it MUST enable server
 push in HTTP, i.e., following Section 8.4 of {{RFC9113}} for HTTP/2 and
 Section 4.6 of {{RFC9114}} for HTTP/3.  If the client does not enable
 HTTP server push, the ALTO server MUST return an ALTO error with the
-E_INVALID_FIELD_VALUE code and set the "field" to "server-push".
+`E_INVALID_FIELD_VALUE` code and set the "field" to "server-push".
 
 Explicit add: A client can explicitly add itself in the receiver set
 by using the HTTP PUT method with media type "application/alto-
@@ -1166,7 +1168,7 @@ next-edge:
 
 Short cut add: When requesting a TIPS view, an ALTO client can start
 server push by setting the option "server-push" field to be true
-using the HTTP POST method defined in Section 6.1.
+using the HTTP POST method defined in {{open-req}}.
 
 Example of a client requesting a TIPS view and starting server push:
 
@@ -1221,8 +1223,7 @@ Example of a client requesting a TIPS view and starting server push:
 ### Read Push State
 
 A client can use the HTTP GET method, with accept header set to
-"application/alto-tipsparams+json" (defined in Section 8.1.1) to
-check the status of server push.
+"application/alto-tipsparams+json" to check the status of server push.
 
     GET /<tips-view-uri>/push
 
@@ -1308,25 +1309,21 @@ Example of explicit stop:
       + END_HEADERS
         :status = 200
 
-## Push Incremental Updates
-
-### Scheduling Server Push Updates
+## Scheduling Server Push Updates
 
 The objective of the server is to push the latest version to the
 client using the lowest cost (sum of size) of the updates.  Hence, it
 is RECOMMENDED that the server computes the push path using the
 following algorithm, upon each event computing a push:
 
--  Compute client current version (n\_c).  During initialization, if
-   the TIPS view request has a tag, find that version; otherwise n\_c
-   = 0
+-  Compute client current version (nc). During initialization, if the TIPS view
+   request has a tag, find that version; otherwise nc = 0
 
--  Compute the shortest path from current version to latest version,
-   n\_c, n1, ... n\_e (latest version).  Note that the shortest path
-   may not involve the tagged version and instead follow the edge
-   from 0 to the latest snapshot.
+-  Compute the shortest path from the current version to the latest version, nc,
+   n1, ... ne (latest version). Note that the shortest path may not involve the
+   tagged version and instead follow the edge from 0 to the latest snapshot.
 
--  push `/<tips-view-uri>/ug/n_c/n1`
+-  push `/<tips-view-uri>/ug/nc/n1`
 
 Note
 
@@ -1338,14 +1335,14 @@ Note
    client (and hence per client, per connection state) and schedule
    next update push accordingly.
 
--  Push management: The client MUST NOT cancel (RST\_STREAM) a
-   PUSH\_PROMISE to avoid complex server state management.
+-  Push management: The client MUST NOT cancel (`RST_STREAM`) a
+   `PUSH_PROMISE` to avoid complex server state management.
 
 ## Examples
 
-Using the example updates graph in Section 3.1, a client can wait on
+Using the example updates graph in {{data-model}}, a client can wait on
 the server for incremental push, where the server first sends
-PUSH_PROMISE:
+`PUSH_PROMISE`:
 
     Server -> client PUSH_PROMISE in current stream:
 
@@ -1438,15 +1435,15 @@ PUSH_PROMISE:
 
 The server push MUST satisfy the following requirements:
 
--  PUSH\_PROMISE MUST be sent in stream SID\_tq to serialize and allow
+-  `PUSH_PROMISE` frames MUST be sent in stream `SID_tq` to serialize and allow
    the client to know the push order;
 
--  Each PUSH_PROMISE chooses a new server-selected stream ID, and the
+-  Each `PUSH_PROMISE` frame chooses a new server-selected stream ID, and the
    stream is closed after push.
 
 # Operation and Processing Considerations
 
-##  Considerations for Load Balancing
+##  Considerations for Load Balancing {#load-balancing}
 
 TIPS allow clients to make concurrent pulls of the incremental
 updates potentially through different HTTP connections.  As a
@@ -1544,9 +1541,9 @@ graphs to show dependency:
 ~~~~
 {: #fig-cross artwork-align="center" title="Example Dependency Model"}
 
-In {{fig-cross}}, the cost-map versions at node 101 and 102 are dependent on the
-network-map version at node 89. The cost-map version at node 103 is dependent on
-the network-map version at node 90, and so on.
+In {{fig-cross}}, the cost-map versions 101 and 102 (denoted as C101 and C102)
+are dependent on the network-map version 89 (denoted as N89). The cost-map
+version 103 (C103) is dependent on the network-map version 90 (N90), and so on.
 
 In pull-mode, a client can decide the order in which to receive the updates.
 
@@ -1556,7 +1553,7 @@ needs to buffer the update.
 
 -  Example 1: The server pushes N89, N90, N91, C101, C102 in that
    order.  The client either gets no consistent view of the resources
-   or it has to buffer N90 and N91
+   or it has to buffer N90 and N91.
 
 -  Example 2: The server pushes C101, C102, C103, N89.  The client
    either gets no consistent view or it has to buffer C103.
@@ -1565,7 +1562,7 @@ Therefore, the server is RECOMMENDED to push updates in the ascending
 order of the smallest dependent tag, e.g., {C101, C102, N89} before
 {C103, N90}
 
-## Considerations for Client Processing Updates
+## Considerations for Client Processing Updates {#client-processing}
 
 In general, when an ALTO client receives a full replacement for a
 resource, the ALTO client should replace the current version with the
@@ -1649,7 +1646,7 @@ A TIPS implementation can avoid this complication by only offering
 full replacements as updates in the updates graph for ordinal cost
 maps.
 
-## Considerations for Managing Shared TIPS Views
+## Considerations for Managing Shared TIPS Views {#shared-tips-view}
 
 From a client's point of view, it sees only one copy of the TIPS view
 for any resource.  However, on the server side, there are different
@@ -1762,9 +1759,9 @@ and responses (Section 15 of {{RFC7285}}).
 IANA is requested to register the following media types following the
 same process in {{RFC7285}}:
 
-*  application/alto-tips+json: as described in Section 6.2;
+*  application/alto-tips+json: as described in {{open-resp}};
 
-*  application/alto-tipsparams+json: as described in Section 6.1;
+*  application/alto-tipsparams+json: as described in {{open-req}};
 
 ##  application/alto-tips+json Media Type
 
@@ -1794,7 +1791,7 @@ Interoperability considerations:
   thereof.
 
 Published specification:
-: Section 6.2 of this document.
+: {{open-resp}} of this document.
 
 Applications that use this media type:
 : ALTO servers and ALTO clients either stand alone or are embedded within other
@@ -1862,7 +1859,7 @@ Interoperability considerations:
   thereof.
 
 Published specification:
-: Section 6.1 of this document.
+: {{open-req}} of this document.
 
 Applications that use this media type:
 : ALTO servers and ALTO clients either stand alone or are embedded within other
@@ -1962,7 +1959,7 @@ Design Point: Component Resource Location
 
 This document specifies Design 1 (keeping R1, R2, and R3 on the same server) in
 order to simplify session management, though at the expense of maximum load
-balancing flexibility (see Section 9.1 for a discussion on load balancing
+balancing flexibility (see {{load-balancing}} for a discussion on load balancing
 considerations). A future companion document may extend the protocol to support
 Design 2 or Design 3.
 
