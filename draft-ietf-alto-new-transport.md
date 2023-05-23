@@ -157,7 +157,7 @@ still functioning for HTTP/1.x. TIPS also provides an ALTO server to
 concurrently push specific incremental updates using native HTTP/2 or HTTP/3
 server push. Specifically, this document specifies the following:
 
--  Extensions to the ALTO protocol to allow dynamic subscription and efficient
+-  Extensions to the ALTO Protocol to allow dynamic subscription and efficient
    uniform update delivery of an incrementally changing network information
    resource.
 
@@ -169,22 +169,20 @@ server push. Specifically, this document specifies the following:
 {{sec-bcp-http}} discusses to what extent the TIPS design adheres to the Best
 Current Practices for building protocols with HTTP {{RFC9205}}.
 
-# Terminology and Notations
-
 ## Requirements Language
 
 {::boilerplate bcp14-tagged}
 
 ## Notations
 
-This document uses the same syntax and notations as introduced in 
+This document uses the same syntax and notations as introduced in
 {{Section 8.2 of RFC7285}} to specify the extensions to existing ALTO resources and services.
 
 # TIPS Overview {#overview}
 
 ## Transport Requirements {#requirements}
 
-Current ALTO protocol and its extensions support two transport mechanisms:
+The ALTO Protocol and its extensions support two transport mechanisms:
 First, a client can direct request an ALTO resource and obtain a complete
 snapshot of that ALTO resource, as specified in the base protocol {{RFC7285}};
 Second, a client can subscribe to incremental changes of one or multiple ALTO
@@ -237,7 +235,7 @@ higher HTTP versions.
 
 ## TIPS Terminology {#terminology}
 
-This document uses the following terms:
+In addition to the terms defined in {{RFC7285}}, this document uses the following terms:
 
 Transport Information Publication Service (TIPS):
 : Is a new type of ALTO service, as specified in this document, to enable a
