@@ -355,13 +355,14 @@ where the server maps base resource IDs to incremental update IDs that are
 assigned sequentially (i.e., incremented by 1 each time):
 
 -  Each node in the graph is a version of the resource, where a tag identifies
-   content of version (tag is valid only within the scope of resource). Version
-   0 is reserved as the initial state (empty/ null).
+   content of the version (tag is valid only within the scope of resource).
+   Version 0 is reserved as the initial state (empty/null).
 
--  Each edge is transport data (update item). In particular, edge from i to j is
-   the update item to transit from version i to version j.
+-  Each edge is an update item. In particular, edge from i to j is the update
+   item to transit from version i to version j.
 
--  Node content is path independent (different paths arrive at the same content)
+-  Version is path independent (different paths arrive at the same version/node
+   has the same content)
 
 A concrete example is as shown in {{fig-ug}}. There are 7 nodes in the graph,
 representing 7 different versions of the resource. Edges in the figure represent
@@ -453,7 +454,9 @@ clients to construct the location of incremental updates after receiving the
 tips-view-uri path from the server. The generic template for the location of the
 update item on the edge from node i to node j in the updates graph is:
 
+~~~
     <tips-view-uri>/ug/<i>/<j>
+~~~
 
 Due to the sequential nature of the update item IDs, a client can long poll a
 future update that does not yet exist (e.g., the incremental update from 106 to
@@ -461,7 +464,9 @@ future update that does not yet exist (e.g., the incremental update from 106 to
 the sequence number of the current last node (denoted as end-seq) in the graph
 to the next sequential node (with the sequence number of end-seq + 1):
 
+~~~
     GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
+~~~
 
 ## Updates Graph Modification Invariants
 
@@ -500,7 +505,7 @@ the right content of version 102 (in the first example) or 104 (in the second
 example) cannot be obtained by a client that does not have the previous version
 101 or 103, respectively.
 
-# TIPS High Level Workflow { #workflow }
+# TIPS High Level Workflow {#workflow}
 
 ## Workflow Overview
 
@@ -627,12 +632,13 @@ The media type of the Transport Information Publication Service resource is
 
 ## Capabilities
 
-The capabilities field of TIPS is modelled on that defined in
+The capabilities field of TIPS is modeled on that defined in
 Section 6.3 of {{RFC8895}}.
 
 Specifically, the capabilities are defined as an object of type
 TIPSCapabilities:
 
+~~~
      object {
        IncrementalUpdateMediaTypes incremental-change-media-types;
        Boolean                     support-server-push;
@@ -641,8 +647,9 @@ TIPSCapabilities:
      object-map {
         ResourceID -> String;
      } IncrementalUpdateMediaTypes;
+~~~
 
-with field:
+with fields:
 
 incremental-change-media-types:
 :  If a TIPS can provide updates with incremental changes for a
@@ -700,58 +707,60 @@ is likely to be less efficient than receiving the incremental updates of R0.
 Extending the IRD example in Section 8.1 of {{RFC8895}}, below is the IRD of an
 ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
 
-      "my-network-map": {
-        "uri": "https://alto.example.com/networkmap",
-        "media-type": "application/alto-networkmap+json"
-      },
-      "my-routingcost-map": {
-        "uri": "https://alto.example.com/costmap/routingcost",
-        "media-type": "application/alto-costmap+json",
-        "uses": ["my-networkmap"],
-        "capabilities": {
-          "cost-type-names": ["num-routingcost"]
-        }
-      },
-      "my-hopcount-map": {
-        "uri": "https://alto.example.com/costmap/hopcount",
-        "media-type": "application/alto-costmap+json",
-        "uses": ["my-networkmap"],
-        "capabilities": {
-          "cost-type-names": ["num-hopcount"]
-        }
-      },
-
-      "my-simple-filtered-cost-map": {
-        "uri": "https://alto.example.com/costmap/filtered/simple",
-        "media-type": "application/alto-costmap+json",
-        "accepts": "application/alto-costmapfilter+json",
-        "uses": ["my-networkmap"],
-        "capabilities": {
-          "cost-type-names": ["num-routingcost", "num-hopcount"],
-          "cost-constraints": false
-        }
-      },
-
-      "update-my-costs-tips": {
-        "uri": "https://alto.example.com/updates-new/costs",
-        "media-type": "application/alto-tips+json",
-        "accepts": "application/alto-tipsparams+json",
-        "uses": [
-            "my-network-map",
-            "my-routingcost-map",
-            "my-hopcount-map",
-            "my-simple-filtered-cost-map"
-        ],
-        "capabilities": {
-          "incremental-change-media-types": {
-            "my-network-map": "application/json-patch+json",
-            "my-routingcost-map": "application/merge-patch+json",
-            "my-hopcount-map": "application/merge-patch+json",
-            "my-simple-filtered-cost-map": "application/merge-patch+json"
-          },
-          "support-server-push": true
-        }
+~~~
+    "my-network-map": {
+      "uri": "https://alto.example.com/networkmap",
+      "media-type": "application/alto-networkmap+json"
+    },
+    "my-routingcost-map": {
+      "uri": "https://alto.example.com/costmap/routingcost",
+      "media-type": "application/alto-costmap+json",
+      "uses": ["my-networkmap"],
+      "capabilities": {
+        "cost-type-names": ["num-routingcost"]
       }
+    },
+    "my-hopcount-map": {
+      "uri": "https://alto.example.com/costmap/hopcount",
+      "media-type": "application/alto-costmap+json",
+      "uses": ["my-networkmap"],
+      "capabilities": {
+        "cost-type-names": ["num-hopcount"]
+      }
+    },
+
+    "my-simple-filtered-cost-map": {
+      "uri": "https://alto.example.com/costmap/filtered/simple",
+      "media-type": "application/alto-costmap+json",
+      "accepts": "application/alto-costmapfilter+json",
+      "uses": ["my-networkmap"],
+      "capabilities": {
+        "cost-type-names": ["num-routingcost", "num-hopcount"],
+        "cost-constraints": false
+      }
+    },
+
+    "update-my-costs-tips": {
+      "uri": "https://alto.example.com/updates-new/costs",
+      "media-type": "application/alto-tips+json",
+      "accepts": "application/alto-tipsparams+json",
+      "uses": [
+          "my-network-map",
+          "my-routingcost-map",
+          "my-hopcount-map",
+          "my-simple-filtered-cost-map"
+      ],
+      "capabilities": {
+        "incremental-change-media-types": {
+          "my-network-map": "application/json-patch+json",
+          "my-routingcost-map": "application/merge-patch+json",
+          "my-hopcount-map": "application/merge-patch+json",
+          "my-simple-filtered-cost-map": "application/merge-patch+json"
+        },
+        "support-server-push": true
+      }
+    }
+~~~
 
 Note that it is straightforward for an ALTO sever to run HTTP/2 and
 support concurrent retrieval of multiple resources such as "my-
@@ -779,12 +788,14 @@ by sending an HTTP POST body with the media type
 "application/alto-tipsparams+json". That body contains a JSON object of type
 TIPSReq, where:
 
-     object {
-        ResourceID   resource-id;
-        [JSONString  tag;]
-        [Object      input;]
-        [Boolean     server-push;]
-     } TIPSReq;
+~~~
+    object {
+       ResourceID   resource-id;
+       [JSONString  tag;]
+       [Object      input;]
+       [Boolean     server-push;]
+    } TIPSReq;
+~~~
 
 
 with the following fields:
@@ -822,26 +833,28 @@ server-push:
 The response to a valid request MUST be a JSON object of type
 AddTIPSResponse, denoted as media type "application/alto-tips+json":
 
-      object {
-        JSONString        tips-view-uri;
-        TIPSViewSummary   tips-view-summary;
-      } AddTIPSResponse;
+~~~
+    object {
+      JSONString        tips-view-uri;
+      TIPSViewSummary   tips-view-summary;
+    } AddTIPSResponse;
 
-      object {
-        UpdatesGraphSummary   updates-graph-summary;
-        [Boolean              server-push;]
-      } TIPSViewSummary;
+    object {
+      UpdatesGraphSummary   updates-graph-summary;
+      [Boolean              server-push;]
+    } TIPSViewSummary;
 
-      object {
-        JSONNumber       start-seq;
-        JSONNumber       end-seq;
-        StartEdgeRec     start-edge-rec;
-      } UpdatesGraphSummary;
+    object {
+      JSONNumber       start-seq;
+      JSONNumber       end-seq;
+      StartEdgeRec     start-edge-rec;
+    } UpdatesGraphSummary;
 
-      object {
-        JSONNumber       seq-i;
-        JSONNumber       seq-j;
-      } StartEdgeRec;
+    object {
+      JSONNumber       seq-i;
+      JSONNumber       seq-j;
+    } StartEdgeRec;
+~~~
 
 with the following fields:
 
@@ -888,6 +901,7 @@ follows the generic ALTO error response format specified in
 Section 8.5.2 of {{RFC7285}}.  Hence, an example ALTO error response
 has the format:
 
+~~~~
     HTTP/1.1 400 Bad Request
     Content-Length: 131
     Content-Type: application/alto-error+json
@@ -900,6 +914,7 @@ has the format:
             "value": "my-network-map/#"
         }
     }
+~~~~
 
 Note that "field" and "value" are optional fields.  If the "value"
 field exists, the "field" field MUST exist.
@@ -930,6 +945,7 @@ authentication.  If a client with username "client1" and password
 with resource ID "my-routingcost-map", it can send the following
 request:
 
+~~~~
     POST /tips HTTP/1.1
     Host: alto.example.com
     Accept: application/alto-tips+json, application/alto-error+json
@@ -940,10 +956,12 @@ request:
     {
       "resource-id": "my-routingcost-map"
     }
+~~~~
 
 If the operation is successful, the ALTO server returns the following
 message:
 
+~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
     Content-Length: 291
@@ -962,6 +980,7 @@ message:
           "server-push": false
         }
     }
+~~~~
 
 ## Close Request {#close-req}
 
@@ -975,7 +994,9 @@ removed when the dependent set becomes empty. See other potential
 implementations in {{shared-tips-view}}. The DELETE request MUST have the
 following format:
 
+~~~~
     DELETE /<tips-view-uri>
+~~~~
 
 The response to a valid request must be 200 if success, and the
 corresponding error code if there is any error.
@@ -1004,7 +1025,9 @@ costmap+json, application/alto-error+json" in the request.
 
 The GET request MUST have the following format:
 
+~~~~
     GET /<tips-view-uri>/ug/<i>/<j>
+~~~~
 
 For example, if the client wants to query the content of the first
 update item (0 -> 101), it will send a request to
@@ -1055,17 +1078,21 @@ regarding update item requests.
 Assume the client wants to get the contents of the update item on
 edge 0 to 101.  The request is:
 
+~~~~
     GET /tips/2718281828459/ug/0/101 HTTP/1.1
     Host: alto.example.com
     Accept: application/alto-costmap+json, application/alto-error+json
+~~~~
 
 And the response will be:
 
+~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-costmap+json
     Content-Length: 50
 
     { ... full replacement of my-routingcost-map ... }
+~~~~
 
 ## New Next Edge Recommendation
 
@@ -1086,14 +1113,18 @@ recommendation for a given TIPS view by sending an HTTP POST request
 with the media type "application/alto-tipsparams+json".  The URI has
 the form:
 
+~~~~
     POST /<tips-view-uri>/ug
+~~~~
 
 The POST body have the following form, where providing the version
 tag of the resource the client already has is optional:
 
+~~~~
     object {
         [JSONString  tag;]
     } TIPSNextEdgeReq;
+~~~~
 
 
 ###  Response
@@ -1102,6 +1133,7 @@ The response to a valid request MUST be a JSON object of type
 UpdatesGraphSummary (defined in {{open-resp}} but reproduced below as well),
 denoted as media type "application/alto-tips+json":
 
+~~~~
     object {
       JSONNumber       start-seq;
       JSONNumber       end-seq;
@@ -1112,6 +1144,7 @@ denoted as media type "application/alto-tips+json":
       JSONNumber       seq-i;
       JSONNumber       seq-j;
     } StartEdgeRec;
+~~~~
 
 # TIPS Data Transfer - Server Push {#push}
 
@@ -1143,6 +1176,7 @@ by using the HTTP PUT method with media type "application/alto-
 tipsparams+json", where the client may optionally specify a starting
 edge (next-edge) from which it would like to receive updates:
 
+~~~~
     PUT /<tips-view-uri>/push
 
     object {
@@ -1154,6 +1188,7 @@ edge (next-edge) from which it would like to receive updates:
       JSONNumber       seq-i;
       JSONNumber       seq-j;
     } NextEdge;
+~~~~
 
 with the following fields:
 
@@ -1172,6 +1207,7 @@ using the HTTP POST method defined in {{open-req}}.
 
 Example of a client requesting a TIPS view and starting server push:
 
+~~~~
     Client -> server request
 
     HEADERS
@@ -1218,6 +1254,7 @@ Example of a client requesting a TIPS view and starting server push:
           "server-push": true
         }
       }
+~~~~
 
 
 ### Read Push State
@@ -1225,10 +1262,13 @@ Example of a client requesting a TIPS view and starting server push:
 A client can use the HTTP GET method, with accept header set to
 "application/alto-tipsparams+json" to check the status of server push.
 
+~~~~
     GET /<tips-view-uri>/push
+~~~~
 
 Example:
 
+~~~~
     Client -> server request
 
     HEADERS
@@ -1255,6 +1295,7 @@ Example:
       {
         "server-push": true
       }
+~~~~
 
 ### Stop Push
 
@@ -1283,6 +1324,7 @@ TIPS view.
 
 Example of explicit stop:
 
+~~~~
     Client -> server request
 
     HEADERS
@@ -1308,6 +1350,7 @@ Example of explicit stop:
       - END_STREAM
       + END_HEADERS
         :status = 200
+~~~~
 
 ## Scheduling Server Push Updates
 
@@ -1344,6 +1387,7 @@ Using the example updates graph in {{data-model}}, a client can wait on
 the server for incremental push, where the server first sends
 `PUSH_PROMISE`:
 
+~~~~
     Server -> client PUSH_PROMISE in current stream:
 
     PUSH_PROMISE
@@ -1430,6 +1474,7 @@ the server for incremental push, where the server first sends
           }
         }
       }
+~~~~
 
 ##  Server Push Stream Management
 
