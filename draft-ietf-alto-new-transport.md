@@ -1765,14 +1765,14 @@ users (Section 15.4 of {{RFC7285}}) also still fully apply.
 
 The additional services (addition of update read service and update
 push service) provided by this extension extend the attack surface
-described in Section 15.1.1 of {{RFC7285}}.  Below, we discuss the
+described in Section 15.1.1 of {{RFC7285}}.  The following sub-sections discuss the
 additional risks and their remedies.
 
 ## TIPS: Denial-of-Service Attacks
 
 Allowing TIPS views enables a new class of Denial-of-Service attacks.
-In particular, For the TIPS server, an ALTO client or clients might
-create an unreasonable number of TIPS views.
+In particular, for the TIPS server, an ALTO client might
+create an excessive number of TIPS views.
 
 To avoid these attacks on the TIPS server, the server SHOULD choose
 to limit the number of active views and reject new requests when that
