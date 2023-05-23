@@ -157,8 +157,9 @@ still functioning for HTTP/1.x. TIPS also provides an ALTO server to
 concurrently push specific incremental updates using native HTTP/2 or HTTP/3
 server push. Specifically, this document specifies the following:
 
--  Extensions to the ALTO protocol to allow ALTO clients to create, remove, or
-   receive updates from an incrementally changing network information resource.
+-  Extensions to the ALTO protocol to allow dynamic subscription and efficient
+   uniform update delivery of an incrementally changing network information
+   resource.
 
 -  A new resource type that specifies the TIPS updates graph model for a
    resource.
@@ -234,7 +235,12 @@ higher HTTP versions.
 
 ## TIPS Terminology {#terminology}
 
-This document uses the following components:
+This document uses the following terms:
+
+Transport Information Publication Service (TIPS):
+: Is a new type of ALTO service, as specified in this document, to enable a
+  uniform transport mechanism for updates of an incrementally changing ALTO
+  network information resource.
 
 Network information resource:
 : Is a piece of retrievable information about network state, per {{RFC7285}}.
@@ -248,8 +254,8 @@ TIPS view (tv):
 Updates graph (ug):
 : Is a directed, acyclic graph whose nodes represent the set of versions of an
   information resource, and edges the set of update items to compute these
-  versions. An ALTO map resource (e.g., Cost Map, Network Map) may need only a
-  single updates graph. A dynamic network information resource (e.g., Filtered
+  versions. An ALTO map service (e.g., Cost Map, Network Map) may need only a
+  single updates graph. A dynamic network information service (e.g., Filtered
   Cost Map) may create an updates graph (within a new TIPS view) for each unique
   request.
 
@@ -270,7 +276,11 @@ Snapshot:
 
 Incremental update:
 : Is a partial replacement of a resource contained within an updates graph,
-  codified in this document as a JSON Merge Patch or JSON Patch.
+  codified in this document as a JSON Merge Patch or JSON Patch. An incremental
+  update is mandatory if the source version (i) and target version (j) are
+  consecutive, i.e., i + 1 = j, and optional or a shortcut otherwise. Mandatory
+  incremental updates are always in an updates graph, while optional/shortcut
+  incremental updates may or may not be included in an updates graph.
 
 Update item:
 : Refers to the content on an edge of the updates graph, which can be either a
@@ -298,10 +308,10 @@ Receiver set (rs):
 | ALTO Server                                                          |
 | +------------------------------------------------------------------+ |
 | |                                              Network Information | |
-| | +-------------+     +-------------+     +-------------+          | |
-| | | Information |     | Information |     | Information |          | |
-| | | Resource #1 |     | Resource #2 |     | Resource #3 |          | |
-| | +-------------+     +-------------+     +-------------+          | |
+| | +-------------+                         +-------------+          | |
+| | | Information |                         | Information |          | |
+| | | Resource #1 |                         | Resource #2 |          | |
+| | +-------------+                         +-------------+          | |
 | +-----|--------------------------------------/-------\-------------+ |
 |       |                                     /         \              |
 | +-----|------------------------------------/-----------\-----------+ |
@@ -329,16 +339,17 @@ tvi   = TIPS view i
 tvi/ug = incremental updates graph associated with tvi
 tvi/rs = receiver set of tvi (for server push)
 ~~~~
-{: #fig-overview artwork-align="center" title="ALTO Transport Information"}
+{: #fig-overview artwork-align="center" title="Overview of ALTO TIPS"}
 
-{{fig-overview}} shows an example illustrating the TIPS abstraction. The server
-provides the TIPS service of three information resources (#1, #2, and #3) where
-we assume #1 is an ALTO map resource, and #2 and #3 are filterable resources or
-services. For each information resource, a TIPS view is created: tv1, tv2 and
-tv3 are the TIPS view for information resource #1, #2 and #3 respectively. There
-are 3 ALTO clients (Client 1, Client 2, and Client 3) that are connected to the
-ALTO server. Each client maintains a single HTTP connection with the ALTO server
-and uses the TIPS view to retrieve updates.
+{{fig-overview}} shows an example illustrating an overview of the ALTO TIPS
+service. The server provides the TIPS service of two information resources (#1
+and #2) where we assume #1 is an ALTO map service, and #2 is a filterable
+service. There are 3 ALTO clients (Client 1, Client 2, and Client 3) that are
+connected to the ALTO server. Each client maintains a single HTTP connection
+with the ALTO server and uses the TIPS view to retrieve updates. Specifically, a
+TIPS view (tv1) is created for the map service #1, and is shared by multiple
+clients. For the filtering service #2, two different TIPS view (tv2 and tv3) are
+created upon different client requests.
 
 # TIPS Updates Graph
 
@@ -375,7 +386,7 @@ assume the latest version is 105 and a client already has version 103. The
 target version 105 can either be directly fetched as a snapshot, computed
 incrementally by applying the incremental updates between 103 and 104, then 104
 and 105, or if the optional update from 103 to 105 exists, computed
-incrementally by applying the incremental updates from 103 and 105.
+incrementally by taking the "shortcut" path from 103 and 105.
 
 ~~~~ drawing
                                                         +======+
@@ -416,36 +427,36 @@ incrementally by applying the incremental updates from 103 and 105.
 
 ## Resource Location Schema {#schema}
 
-To access each individual update in an updates graph, consider the model
-represented as a "virtual" file system (adjacency list), contained within the
-root of a TIPS view URI (see {{open-resp}} for the definition of tips-view-uri).
-For example, assuming that the update graph of a TIPS view is as shown in
-{{fig-ug}}, the location schema of this TIPS view will have the format as in
-{{fig-ug-schema}}.
+Update items are exposed as HTTP resources and the URLs of these items, which we
+can resource location schema, follow specific patterns. To access each
+individual update in an updates graph, consider the model represented as a
+"virtual" file system (adjacency list), contained within the root of a TIPS view
+URI (see {{open-resp}} for the definition of tips-view-uri). For example,
+assuming that the update graph of a TIPS view is as shown in {{fig-ug}}, the
+location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
 
 ~~~~ drawing
-<tips-view-uri>  // relative URI to a TIPS view
-    ug    // updates graph
-        0
-            101    // full 101 snapshot
-            103
-            105
-        101
-            102    // 101 -> 102 incremental update
-        102
-            103
-        103
-            104
-            105    // optional shortcut 103 -> 105 incr. update
-        104
-            105
-        105
-            106
-    push           // server push metadata
-      ...
-    meta           // TIPS view meta
-      ...
-
+  <tips-view-uri>  // relative URI to a TIPS view
+    |_ ug    // updates graph
+    |  |_ 0
+    |  |  |_ 101    // full 101 snapshot
+    |  |  |_ 103
+    |  |  \_ 105
+    |  |_ 101
+    |  |  \_ 102    // 101 -> 102 incremental update
+    |  |_ 102
+    |  |  \_ 103
+    |  |_ 103
+    |  |  |_ 104
+    |  |  \_ 105    // optional shortcut 103 -> 105 incr. update
+    |  |_ 104
+    |  |  \_ 105
+    |  \_ 105
+    |     \_ 106
+    |_ push         // server push metadata
+    |  \_ ...
+    \_ meta         // TIPS view meta
+       \_ ...
 ~~~~
 {: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
 
