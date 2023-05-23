@@ -166,17 +166,19 @@ server push. Specifically, this document specifies the following:
 
 -  URI patterns to fetch the snapshots or incremental updates.
 
+{{sec-bcp-http}} discusses to what extent the TIPS design adheres to the Best
+Current Practices for building protocols with HTTP {{RFC9205}}.
+
+# Terminology and Notations
+
 ## Requirements Language
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
-document are to be interpreted as described in BCP 14 {{RFC2119}}{{RFC8174}}
-when, and only when, they appear in all capitals, as shown here.
+{::boilerplate bcp14-tagged}
 
 ## Notations
 
-This document uses the same syntax and notations as introduced in Section 8.2 of
-{{RFC7285}} to specify the extensions to existing ALTO resources and services.
+This document uses the same syntax and notations as introduced in 
+{{Section 8.2 of RFC7285}} to specify the extensions to existing ALTO resources and services.
 
 # TIPS Overview {#overview}
 
@@ -2019,7 +2021,7 @@ balancing flexibility (see {{load-balancing}} for a discussion on load balancing
 considerations). A future companion document may extend the protocol to support
 Design 2 or Design 3.
 
-# Adherence to "Building Protocols with HTTP"
+# Adherence to "Building Protocols with HTTP" BCP {#sec-bcp-http}
 
 This work adheres fully to {{RFC9205}} for the following reasons:
 
