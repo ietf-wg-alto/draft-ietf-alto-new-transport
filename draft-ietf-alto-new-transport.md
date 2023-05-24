@@ -233,6 +233,8 @@ HTTP version. Thus, these updates can be concurrently requested. Prefetching is
 realized using long polling in HTTP/1.1 and using long polling or server push in
 higher HTTP versions.
 
+This document assumes the deployment model discussed in  {{sec-dep-model}}.
+
 ## TIPS Terminology {#terminology}
 
 This document uses the following terms:
@@ -1957,9 +1959,9 @@ Change controller:
 
 --- back
 
-# High-level Service Model
+# A High Level Deployment Model {#sec-dep-model}
 
-Conceptually, the TIPS system consists of 3 types of resources:
+Conceptually, the TIPS system consists of three types of resources:
 
 - (R1) TIPS frontend to manage (create/delete) TIPS views.
 
@@ -1992,23 +1994,23 @@ Conceptually, the TIPS system consists of 3 types of resources:
                       |                                                |
                       +------------------------------------------------+
 ~~~~
-{: #fig-service-model artwork-align="center" title="Service Model"}
+{: #fig-service-model artwork-align="center" title="Sample TIPS Deployment Model"}
 
 Design Point: Component Resource Location
 
-- Design 1 (Single): all 3 types at the same, single server (accessed via
+- Design 1 (Single): all the three resource types at the same, single server (accessed via
   relative reference)
 
-- Design 2 (Flexible): all 3 types can be at their own server (accessed via
+- Design 2 (Flexible): all three resource types can be at their own server (accessed via
   absolute reference)
 
 - Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be
   on the same server
 
-This document specifies Design 1 (keeping R1, R2, and R3 on the same server) in
+This document specifies Design 1 in
 order to simplify session management, though at the expense of maximum load
-balancing flexibility (see {{load-balancing}} for a discussion on load balancing
-considerations). A future companion document may extend the protocol to support
+balancing flexibility. Ssee {{load-balancing}} for a discussion on load balancing
+considerations. Future documents may extend the protocol to support
 Design 2 or Design 3.
 
 # Conformance to "Building Protocols with HTTP" Best Current Practices
