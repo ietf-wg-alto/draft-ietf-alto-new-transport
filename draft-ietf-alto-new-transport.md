@@ -2009,7 +2009,7 @@ Design Point: Component Resource Location
 
 This document specifies Design 1 in
 order to simplify session management, though at the expense of maximum load
-balancing flexibility. Ssee {{load-balancing}} for a discussion on load balancing
+balancing flexibility. See {{load-balancing}} for a discussion on load balancing
 considerations. Future documents may extend the protocol to support
 Design 2 or Design 3.
 
