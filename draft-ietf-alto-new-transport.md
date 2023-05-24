@@ -1955,14 +1955,6 @@ Author:
 Change controller:
 : Internet Engineering Task Force (mailto:iesg@ietf.org).
 
-# Acknowledgments
-
-The authors of this document would also like to thank Mark Nottingham and
-Spencer Dawkins for providing invaluable reviews of earlier versions of this
-document, Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous
-feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba,
-Spencer Dawkins and Sheng Jiang for their last call reviews of this document.
-
 --- back
 
 # High-level Service Model
@@ -2019,29 +2011,27 @@ balancing flexibility (see {{load-balancing}} for a discussion on load balancing
 considerations). A future companion document may extend the protocol to support
 Design 2 or Design 3.
 
-# Adherence to "Building Protocols with HTTP"
+# Conformance to "Building Protocols with HTTP" Best Current Practices
 
-This work adheres fully to {{RFC9205}} for the following reasons:
+This specification adheres fully to {{RFC9205}} as further elaborated below:
 
 -  TIPS does not "redefine, refine, or overlay the semantics of
    generic protocol elements such as methods, status codes, or
    existing header fields" and instead focuses on "protocol elements
    that are specific to `[the TIPS]` application -- namely, `[its]` HTTP
-   resources" (Section 3.1 of {{RFC9205}}).
+   resources" ({{Section 3.1 of RFC9205}}).
 
--  There are no statically defined URI components (Section 3.2 of
-   {{RFC9205}}).
+-  There are no statically defined URI components ({{Section 3.2 of RFC9205}}).
 
 -  No minimum version of HTTP is specified by TIPS which is
-   recommended (Section 4.1 of {{RFC9205}}).
+   recommended ({{Section 4.1 of RFC9205}}).
 
--  This work follows the advice that "When specifying examples of
+-  The TIPS design follows the advice that "When specifying examples of
    protocol interactions, applications should document both the
    request and response messages with complete header sections,
-   preferably in HTTP/1.1 format" (Section 4.1 of {{RFC9205}}).
+   preferably in HTTP/1.1 format" ({{Section 4.1 of RFC9205}}).
 
--  TIPS uses URI templates which is recommended (Section 4.2 of
-   {{RFC9205}}).
+-  TIPS uses URI templates which is recommended ({{Section 4.2 of RFC9205}}).
 
 -  TIPS follows the pattern that "a client will begin interacting
    with a given application server by requesting an initial document
@@ -2050,24 +2040,33 @@ This work adheres fully to {{RFC9205}} for the following reasons:
    ensures that the deployment is as flexible as possible
    (potentially spanning multiple servers), allows evolution, and
    also gives the application the opportunity to tailor the
-   "discovery document" to the client" (Section 4.4.1 of {{RFC9205}}).
+   "discovery document" to the client" ({{Section 4.4.1 of RFC9205}}).
 
--  TIPS uses existing HTTP schemes (Section 4.4.2 of {{RFC9205}}).
+-  TIPS uses existing HTTP schemes ({{Section 4.4.2 of RFC9205}}).
 
 -  TIPS defines its errors "to use the most applicable status code"
-   (Section 4.6 of {{RFC9205}}).
+   ({{Section 4.6 of RFC9205}}).
 
 -  TIPS does not "make assumptions about the relationship between
    separate requests on a single transport connection; doing so
    breaks many of the assumptions of HTTP as a stateless protocol and
    will cause problems in interoperability, security, operability,
-   and evolution" (Section 4.11 of {{RFC9205}}).  The only relationship
+   and evolution" ({{Section 4.11 of RFC9205}}).  The only relationship
    between requests is that a client must make a request to first
    discover where a TIPS view of resource will be served, which is
-   consistent with URI discovery in Section 4.4.1 of {{RFC9205}}.
+   consistent with the URI discovery in {{Section 4.4.1 of RFC9205}}.
 
-*  Section Section 4.14 of {{RFC9205}} of RFC 9205 notes that there are
+*  {{Section 4.14 of RFC9205}} notes that there are
    quite a few caveats with using server push, mostly because of lack
-   of widespread support.  We, the authors, have considered these
+   of widespread support.  The authors have considered these
    factors and have still decided server push can be valuable in the
    TIPS use case.
+
+# Acknowledgments
+{:numbered="false"}
+
+The authors of this document would like to thank Mark Nottingham and
+Spencer Dawkins for providing invaluable reviews of earlier versions of this
+document, Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous
+feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba,
+Spencer Dawkins, and Sheng Jiang for the directorate reviews.
