@@ -163,6 +163,7 @@ server push. Specifically, this document specifies:
 
 -  Extensions to the ALTO Protocol for dynamic subscription and efficient
    uniform updates delivery of an incrementally changing network information
+
    resource.
 
 -  A new resource type that indicates the TIPS updates graph model for a
@@ -170,23 +171,23 @@ server push. Specifically, this document specifies:
 
 -  URI patterns to fetch the snapshots or incremental updates.
 
+{{sec-bcp-http}} discusses to what extent the TIPS design adheres to the Best
+Current Practices for building protocols with HTTP {{RFC9205}}.
+
 ## Requirements Language
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
-document are to be interpreted as described in BCP 14 {{RFC2119}}{{RFC8174}}
-when, and only when, they appear in all capitals, as shown here.
+{::boilerplate bcp14-tagged}
 
 ## Notations
 
-This document uses the same syntax and notations as introduced in Section 8.2 of
-{{RFC7285}} to specify the extensions to existing ALTO resources and services.
+This document uses the same syntax and notations as introduced in
+{{Section 8.2 of RFC7285}} to specify the extensions to existing ALTO resources and services.
 
 # TIPS Overview {#overview}
 
 ## Transport Requirements {#requirements}
 
-Current ALTO protocol and its extensions support two transport mechanisms:
+The ALTO Protocol and its extensions support two transport mechanisms:
 First, a client can direct request an ALTO resource and obtain a complete
 snapshot of that ALTO resource, as specified in the base protocol {{RFC7285}};
 Second, a client can subscribe to incremental changes of one or multiple ALTO
@@ -239,7 +240,7 @@ higher HTTP versions.
 
 ## TIPS Terminology {#terminology}
 
-This document uses the following terms:
+In addition to the terms defined in {{RFC7285}}, this document uses the following terms:
 
 Transport Information Publication Service (TIPS):
 : Is a new type of ALTO service, as specified in this document, to enable a
@@ -1769,14 +1770,14 @@ users (Section 15.4 of {{RFC7285}}) also still fully apply.
 
 The additional services (addition of update read service and update
 push service) provided by this extension extend the attack surface
-described in Section 15.1.1 of {{RFC7285}}.  Below, we discuss the
+described in Section 15.1.1 of {{RFC7285}}.  The following sub-sections discuss the
 additional risks and their remedies.
 
 ## TIPS: Denial-of-Service Attacks
 
 Allowing TIPS views enables a new class of Denial-of-Service attacks.
-In particular, For the TIPS server, an ALTO client or clients might
-create an unreasonable number of TIPS views.
+In particular, for the TIPS server, an ALTO client might
+create an excessive number of TIPS views.
 
 To avoid these attacks on the TIPS server, the server SHOULD choose
 to limit the number of active views and reject new requests when that
@@ -2023,7 +2024,7 @@ balancing flexibility (see {{load-balancing}} for a discussion on load balancing
 considerations). A future companion document may extend the protocol to support
 Design 2 or Design 3.
 
-# Adherence to "Building Protocols with HTTP"
+# Adherence to "Building Protocols with HTTP" BCP {#sec-bcp-http}
 
 This work adheres fully to {{RFC9205}} for the following reasons:
 
