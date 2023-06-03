@@ -132,57 +132,62 @@ protocols have been designed:
 Both protocols are designed for HTTP/1.x {{RFC9112}} and, ideally, they should
 be able to automatically take advantage of newer HTTP versions such as HTTP/2
 {{RFC9113}} and HTTP/3 {{RFC9114}}. However, there are issues with both
-protocols when higher HTTP versions are used. First, consider the ALTO base
+protocols when higher HTTP versions are used:
+
+- First, consider the ALTO base
 protocol, which is designed to transfer only complete information resources.
-Hence, a client can run the base protocol on top of HTTP/2 or HTTP/3 to request
-multiple information resources concurrently, in concurrent streams, but each
+A client can run the base protocol on top of HTTP/2 or HTTP/3 to request
+multiple information resources in concurrent streams, but each
 request must be for a complete information resource: there is no capability of
 transferring incremental updates. Hence, there can be large overhead when the
 client already has an information resource and then there are small changes to
-the resource. Next, consider ALTO/SSE. Although ALTO/SSE can transfer
+the resource.
+
+- Next, consider ALTO/SSE. Although ALTO/SSE can transfer
 incremental updates, it introduces a customized multiplexing protocol on top of
 HTTP, assuming a total-order message channel from the server to the client. The
 multiplexing design does not provide naming (i.e., providing resource
-identifier) to individual incremental updates. Hence, the design cannot use
+identifier) to individual incremental updates. Such a design cannot use
 concurrent per-stream server push or non-blocking per-stream client pull,
-available in HTTP/2 and HTTP/3, because both cases require the resource
+available in HTTP/2 and HTTP/3 because both cases require the resource
 identifier. Additionally, ALTO/SSE is a push-only protocol, which denies the
 client flexibility in choosing how and when it receives updates.
 
-This document introduces a new ALTO service called the Transport Information
+To mitigate these concerns, this document introduces a new ALTO service, called the Transport Information
 Publication Service (TIPS). TIPS uses an incremental RESTful design to provide
 an ALTO client with a new capability to explicitly, concurrently (non-blocking)
 request (pull) specific incremental updates using native HTTP/2 or HTTP/3, while
 still functioning for HTTP/1.x. TIPS also provides an ALTO server to
 concurrently push specific incremental updates using native HTTP/2 or HTTP/3
-server push. Specifically, this document specifies the following:
+server push. Specifically, this document specifies:
 
--  Extensions to the ALTO protocol to allow dynamic subscription and efficient
-   uniform update delivery of an incrementally changing network information
+-  Extensions to the ALTO Protocol for dynamic subscription and efficient
+   uniform updates delivery of an incrementally changing network information
+
    resource.
 
--  A new resource type that specifies the TIPS updates graph model for a
+-  A new resource type that indicates the TIPS updates graph model for a
    resource.
 
 -  URI patterns to fetch the snapshots or incremental updates.
 
+{{sec-bcp-http}} discusses to what extent the TIPS design adheres to the Best
+Current Practices for building protocols with HTTP {{RFC9205}}.
+
 ## Requirements Language
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
-document are to be interpreted as described in BCP 14 {{RFC2119}}{{RFC8174}}
-when, and only when, they appear in all capitals, as shown here.
+{::boilerplate bcp14-tagged}
 
 ## Notations
 
-This document uses the same syntax and notations as introduced in Section 8.2 of
-{{RFC7285}} to specify the extensions to existing ALTO resources and services.
+This document uses the same syntax and notations as introduced in
+{{Section 8.2 of RFC7285}} to specify the extensions to existing ALTO resources and services.
 
 # TIPS Overview {#overview}
 
 ## Transport Requirements {#requirements}
 
-Current ALTO protocol and its extensions support two transport mechanisms:
+The ALTO Protocol and its extensions support two transport mechanisms:
 First, a client can direct request an ALTO resource and obtain a complete
 snapshot of that ALTO resource, as specified in the base protocol {{RFC7285}};
 Second, a client can subscribe to incremental changes of one or multiple ALTO
@@ -237,7 +242,7 @@ This document assumes the deployment model discussed in  {{sec-dep-model}}.
 
 ## TIPS Terminology {#terminology}
 
-This document uses the following terms:
+In addition to the terms defined in {{RFC7285}}, this document uses the following terms:
 
 Transport Information Publication Service (TIPS):
 : Is a new type of ALTO service, as specified in this document, to enable a
@@ -2013,7 +2018,9 @@ balancing flexibility. See {{load-balancing}} for a discussion on load balancing
 considerations. Future documents may extend the protocol to support
 Design 2 or Design 3.
 
+
 # Conformance to "Building Protocols with HTTP" Best Current Practices
+
 
 This specification adheres fully to {{RFC9205}} as further elaborated below:
 
