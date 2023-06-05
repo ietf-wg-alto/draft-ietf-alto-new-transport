@@ -1803,10 +1803,10 @@ In particular, for the TIPS server, an ALTO client might
 create an excessive number of TIPS views.
 
 To avoid these attacks on the TIPS server, the server SHOULD choose
-to limit the number of active views and reject new requests when that
-threshold is reached.  TIPS allows predictive fetching and the server
-SHOULD also choose to limit the number of pending requests.  In these
-cases, the server SHOULD return the HTTP status "429 Too many
+to limit the number of active views and reject new requests when that threshold
+is reached. TIPS allows predictive fetching and the server SHOULD also choose to
+limit the number of pending requests. If a new request exceeds the threshold,
+the server SHOULD log the event and may return the HTTP status "429 Too many
 requests".
 
 It is important to note that the preceding approaches are not the
