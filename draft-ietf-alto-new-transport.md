@@ -912,7 +912,7 @@ tips-view-summary:
    edge.  If the client indicates server push, the recommended edge
    will be the first content pushed.
 
-If the request has any errors, the TIPS service MUST return an HTTP
+If the request has any errors, the TIPS service must return an HTTP
 "400 Bad Request" to the ALTO client; the body of the response
 follows the generic ALTO error response format specified in
 Section 8.5.2 of {{RFC7285}}.  Hence, an example ALTO error response
