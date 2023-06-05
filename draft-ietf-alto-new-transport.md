@@ -435,7 +435,7 @@ incrementally by taking the "shortcut" path from 103 and 105.
 ## Resource Location Schema {#schema}
 
 Update items are exposed as HTTP resources and the URLs of these items, which we
-can resource location schema, follow specific patterns. To access each
+call resource location schema, follow specific patterns. To access each
 individual update in an updates graph, consider the model represented as a
 "virtual" file system (adjacency list), contained within the root of a TIPS view
 URI (see {{open-resp}} for the definition of tips-view-uri). For example,
@@ -2019,7 +2019,7 @@ considerations. Future documents may extend the protocol to support
 Design 2 or Design 3.
 
 
-# Conformance to "Building Protocols with HTTP" Best Current Practices
+# Conformance to "Building Protocols with HTTP" Best Current Practices {#sec-bcp-http}
 
 
 This specification adheres fully to {{RFC9205}} as further elaborated below:
