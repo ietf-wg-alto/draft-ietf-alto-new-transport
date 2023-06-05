@@ -163,7 +163,6 @@ server push. Specifically, this document specifies:
 
 -  Extensions to the ALTO Protocol for dynamic subscription and efficient
    uniform updates delivery of an incrementally changing network information
-
    resource.
 
 -  A new resource type that indicates the TIPS updates graph model for a
@@ -188,7 +187,7 @@ This document uses the same syntax and notations as introduced in
 ## Transport Requirements {#requirements}
 
 The ALTO Protocol and its extensions support two transport mechanisms:
-First, a client can direct request an ALTO resource and obtain a complete
+First, a client can directly request an ALTO resource and obtain a complete
 snapshot of that ALTO resource, as specified in the base protocol {{RFC7285}};
 Second, a client can subscribe to incremental changes of one or multiple ALTO
 resources using the incremental update extension {{RFC8895}}, and a server pushes
@@ -393,7 +392,7 @@ assume the latest version is 105 and a client already has version 103. The
 target version 105 can either be directly fetched as a snapshot, computed
 incrementally by applying the incremental updates between 103 and 104, then 104
 and 105, or if the optional update from 103 to 105 exists, computed
-incrementally by taking the "shortcut" path from 103 and 105.
+incrementally by taking the "shortcut" path from 103 to 105.
 
 ~~~~ drawing
                                                         +======+
@@ -582,7 +581,7 @@ Note: in {{fig-workflow-pull}}, the update item at
 request until the update becomes available (long polling).
 
 A client that prefers server push can use the workflow as shown in
-{{fig-workflow-push}}. In this case, the client indicate for server push when it
+{{fig-workflow-push}}. In this case, the client indicates for server push when it
 creates the TIPS view. Future updates are pushed to the client as soon as they
 become available.
 
@@ -617,7 +616,7 @@ Client                                  TIPS
 
 ## TIPS with Different HTTP Versions
 
-The HTTP version of a "https" connection uses is negotiated between client and
+The HTTP version of a "https" connection is negotiated between client and
 server using the TLS ALPN extension, as specified in Section 3.1 of {{RFC9113}}
 for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For a "http" connection,
 the explicit announcement of HTTP/2 or HTTP/3 support by the server is outside
@@ -634,8 +633,8 @@ support server push, the use of TIPS with server push defined in
 with HTTP/1.x. If a client only capable of HTTP/1.x desires to concurrently
 monitor multiple resources at the same time, it must open multiple connections,
 one for each resource, so that an outstanding long-poll request can be issued
-for each resource to monitor for new updates. For HTTP/2 and /3, because of
-substreams, multiple resources can be monitored simultaneously.
+for each resource to monitor for new updates. For HTTP/2 and /3, with
+multiplexed streams, multiple resources can be monitored simultaneously.
 
 # TIPS Information Resource Directory (IRD) Announcement {#ird}
 
@@ -955,6 +954,13 @@ field exists, the "field" field MUST exist.
    resource would return for missing or invalid input (see
    {{RFC7285}}).
 
+Furthermore, it is RECOMMENDED that the server uses the following HTTP codes to
+indicate other errors, with the media type "application/alto-error+json".
+
+-  429 (Too Many Requests): when the number of TIPS views open requests exceeds
+   server threshold. Server may indicate when to re-try the request in the
+   "Re-Try After" headers.
+
 ##  Open Example
 
 For simplicity, assume that the ALTO server is using the Basic
@@ -1024,6 +1030,13 @@ without a DELETE request having been sent, the server MUST treat it
 as if the client had sent a DELETE request because the TIPS view is,
 at least from the client view, per-session based.
 
+It is RECOMMENDED that the server uses the following HTTP codes to
+indicate errors, with the media type "application/alto-error+json",
+regarding TIPS view close requests.
+
+-  404 (Not Found): if the requested TIPS view does not exist or is
+   closed.
+
 # TIPS Data Transfers - Client Pull {#pull}
 
 TIPS allows an ALTO client to retrieve the content of an update item
@@ -1036,20 +1049,18 @@ The client sends an HTTP GET request, where the media type of an
 update item resource MUST be the same as the "media-type" field of
 the update item on the specified edge in the updates graph.
 
-For example, if the client wants to query the content of the first
-update item (0 -> 101) whose media type is "application/alto-
-costmap+json", it must set the "Accept" header to "application/alto-
-costmap+json, application/alto-error+json" in the request.
-
 The GET request MUST have the following format:
 
 ~~~~
     GET /<tips-view-uri>/ug/<i>/<j>
 ~~~~
 
-For example, if the client wants to query the content of the first
-update item (0 -> 101), it will send a request to
-"/tips/2718281828459/ug/0/101".
+For example, consider the updates graph in {{fig-ug-schema}}. If the client
+wants to query the content of the first update item (0 -> 101) whose media type
+is "application/alto- costmap+json", it must send a request to
+"/tips/2718281828459/ug/0/101" and set the "Accept" header to "application/alto-
+costmap+json, application/alto-error+json". See {{iu-example}} for a concrete
+example.
 
 ## Response
 
@@ -1091,7 +1102,7 @@ regarding update item requests.
    requests exceeds server threshold.  Server may indicate when to
    re-try the request in the "Re-Try After" headers.
 
-##  Example
+##  Example {#iu-example}
 
 Assume the client wants to get the contents of the update item on
 edge 0 to 101.  The request is:
@@ -1163,6 +1174,16 @@ denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~~
+
+It is RECOMMENDED that the server uses the following HTTP codes to
+indicate errors, with the media type "application/alto-error+json",
+regarding new next edge requests.
+
+-  404 (Not Found): if the requested TIPS view does not exist or is
+   closed.
+
+-  415 (Unsupported Media Type): if the media type(s) accepted by the
+   client does not include the media type `application/alto-tips+json`.
 
 # TIPS Data Transfer - Server Push {#push}
 
