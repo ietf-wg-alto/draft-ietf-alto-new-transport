@@ -352,10 +352,11 @@ service. The server provides the TIPS service of two information resources (#1
 and #2) where we assume #1 is an ALTO map service, and #2 is a filterable
 service. There are 3 ALTO clients (Client 1, Client 2, and Client 3) that are
 connected to the ALTO server. Each client maintains a single HTTP connection
-with the ALTO server and uses the TIPS view to retrieve updates. Specifically, a
-TIPS view (tv1) is created for the map service #1, and is shared by multiple
-clients. For the filtering service #2, two different TIPS view (tv2 and tv3) are
-created upon different client requests.
+with the ALTO server and uses the TIPS view to retrieve updates (see the
+arguments in {{single-http}}). Specifically, a TIPS view (tv1) is created for
+the map service #1, and is shared by multiple clients. For the filtering service
+#2, two different TIPS view (tv2 and tv3) are created upon different client
+requests.
 
 # TIPS Updates Graph
 
@@ -613,6 +614,39 @@ Client                                  TIPS
   o
 ~~~~
 {: #fig-workflow-push artwork-align="center" title="ALTO TIPS Workflow Supporting Server Push"}
+
+## TIPS over a Single HTTP Connection {#single-http}
+
+A key requirement in the current new transport extension is that a client must
+interact with the ALTO server using a single persistent HTTP connection, and the
+life cycle of the TIPS views are bounded to that specific connection. This
+design is due to the following reasons:
+
+The first reason is to reduce the management complexity in modern server
+deployment technologies. As microservices are becoming the new trend of web
+development, requests to the same service are load balanced to different
+instances, even between the same source and destination addresses. However, TIPS
+views are stateful information which depends on the client's input. If requests
+from the same client session can be directed to different instances, the
+operator of the ALTO server must implement complex mapping management or load
+balancing mechanisms to make sure the requests arrive at the same server.
+
+The second reason is to simplify the state management of a single session. If
+multiple connections are associated with a single session, implementations of
+ALTO servers and clients must manage the state of the connections, e.g., whether
+a connection enables server push, which increases the complexity of both ALTO
+servers and clients.
+
+Third, single persistent HTTP connection offers an implicit way of life cycle
+management of TIPS views, which can be resource-consuming. Malicious users may
+create TIPS views and then disconnect, to get around the limits on concurrent
+TIPS views, if not implemented correctly by an ALTO server. Leaving the TIPS
+views alive after the HTTP connection is closed or timed out also makes session
+management complex: When a client reconnects, should it try to access the TIPS
+view before the disconnection or simply start a new session? Whether and when
+can the server remove the TIPS views? In the current extension, the idea is to
+avoid such complexity and enforce the consensus that a session will be
+automatically closed once the connection is closed or timed out.
 
 ## TIPS with Different HTTP Versions
 
@@ -2033,11 +2067,10 @@ Design Point: Component Resource Location
 - Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be
   on the same server
 
-This document specifies Design 1 in
-order to simplify session management, though at the expense of maximum load
-balancing flexibility. See {{load-balancing}} for a discussion on load balancing
-considerations. Future documents may extend the protocol to support
-Design 2 or Design 3.
+This document specifies Design 1 in order to simplify session management, though
+at the expense of maximum load balancing flexibility. See {{load-balancing}} for
+a discussion on load balancing considerations. Future documents may extend the
+protocol to support Design 2 or Design 3.
 
 
 # Conformance to "Building Protocols with HTTP" Best Current Practices {#sec-bcp-http}
