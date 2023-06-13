@@ -1881,6 +1881,8 @@ same process in {{RFC7285}}:
 
 *  application/alto-tipsparams+json: as described in {{open-req}};
 
+> Note to the RFC Editor: Please replace This-Document with the RFC number to be assigned to this document.
+
 ##  application/alto-tips+json Media Type
 
 Type name:
@@ -1900,16 +1902,14 @@ Encoding considerations:
   "application/json" media type. See {{RFC8259}}.
 
 Security considerations:
-: Security considerations relating to the generation and consumption of ALTO
-  Protocol messages are discussed in Section 10 of {{RFC8895}} and Section 15 of
-  {{RFC7285}}.
+: See the Security Considerations section of This-Document.
 
 Interoperability considerations:
 : This document specifies format of conforming messages and the interpretation
   thereof.
 
 Published specification:
-: {{open-resp}} of this document.
+: {{open-resp}} of This-Document.
 
 Applications that use this media type:
 : ALTO servers and ALTO clients either stand alone or are embedded within other
@@ -1949,6 +1949,9 @@ Author:
 Change controller:
 : Internet Engineering Task Force (mailto:iesg@ietf.org).
 
+Provisional registration?:
+: No
+
 ## application/alto-tipsparams+json Media Type
 
 Type name:
@@ -1968,16 +1971,14 @@ Encoding considerations:
    "application/json" media type. See {{RFC8259}}.
 
 Security considerations:
-: Security considerations relating to the generation and consumption of ALTO
-  Protocol messages are discussed in Section 10 of {{RFC8895}} and Section 15 of
-  {{RFC7285}}.
+: See the Security Considerations section of This-Document.
 
 Interoperability considerations:
 : This document specifies format of conforming messages and the interpretation
   thereof.
 
 Published specification:
-: {{open-req}} of this document.
+: {{open-req}} of This-Document.
 
 Applications that use this media type:
 : ALTO servers and ALTO clients either stand alone or are embedded within other
@@ -2016,6 +2017,9 @@ Author:
 
 Change controller:
 : Internet Engineering Task Force (mailto:iesg@ietf.org).
+
+Provisional registration?:
+: No
 
 --- back
 
