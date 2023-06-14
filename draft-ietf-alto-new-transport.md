@@ -87,6 +87,10 @@ normative:
 
 informative:
   RFC9205:
+  IANA-Media-Type:
+    title: Media Types
+    target: [https://www.iana.org/assignments/ipfix/ipfix.xhtml](https://www.iana.org/assignments/media-types/media-types.xhtml)
+    date: 2023-06
 
 --- abstract
 
@@ -1874,8 +1878,7 @@ and responses (Section 15 of {{RFC7285}}).
 
 # IANA Considerations
 
-IANA is requested to register the following media types following the
-same process in {{RFC7285}}:
+IANA is requested to register the following media types from the registry available at {{IANA-Media-Type}}:
 
 *  application/alto-tips+json: as described in {{open-resp}};
 
