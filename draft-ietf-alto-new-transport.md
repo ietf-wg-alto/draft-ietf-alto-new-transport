@@ -150,10 +150,10 @@ the resource.
 - Next, consider ALTO/SSE. Although ALTO/SSE can transfer
 incremental updates, it introduces a customized multiplexing protocol on top of
 HTTP, assuming a total-order message channel from the server to the client. The
-multiplexing design does not provide naming (i.e., providing resource
+multiplexing design does not provide naming (i.e., a resource
 identifier) to individual incremental updates. Such a design cannot use
 concurrent per-stream server push or non-blocking per-stream client pull,
-available in HTTP/2 and HTTP/3 because both cases require the resource
+available in HTTP/2 and HTTP/3, because both cases require a resource
 identifier. Additionally, ALTO/SSE is a push-only protocol, which denies the
 client flexibility in choosing how and when it receives updates.
 
@@ -161,12 +161,12 @@ To mitigate these concerns, this document introduces a new ALTO service, called 
 Publication Service (TIPS). TIPS uses an incremental RESTful design to provide
 an ALTO client with a new capability to explicitly, concurrently (non-blocking)
 request (pull) specific incremental updates using native HTTP/2 or HTTP/3, while
-still functioning for HTTP/1.x. TIPS also provides an ALTO server to
+still functioning for HTTP/1.x. TIPS also allows an ALTO server to
 concurrently push specific incremental updates using native HTTP/2 or HTTP/3
 server push. Specifically, this document specifies:
 
 -  Extensions to the ALTO Protocol for dynamic subscription and efficient
-   uniform updates delivery of an incrementally changing network information
+   uniform update delivery of an incrementally changing network information
    resource.
 
 -  A new resource type that indicates the TIPS updates graph model for a
@@ -654,9 +654,9 @@ automatically closed once the connection is closed or timed out.
 
 ## TIPS with Different HTTP Versions
 
-The HTTP version of a "https" connection is negotiated between client and
+The HTTP version of an "https" connection is negotiated between client and
 server using the TLS ALPN extension, as specified in Section 3.1 of {{RFC9113}}
-for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For a "http" connection,
+for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For an "http" connection,
 the explicit announcement of HTTP/2 or HTTP/3 support by the server is outside
 the scope of this document.
 
@@ -817,7 +817,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
     }
 ~~~
 
-Note that it is straightforward for an ALTO sever to run HTTP/2 and
+Note that it is straightforward for an ALTO server to run HTTP/2 and
 support concurrent retrieval of multiple resources such as "my-
 network-map" and "my-routingcost-map" using multiple HTTP/2 streams.
 
