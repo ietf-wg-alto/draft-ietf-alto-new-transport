@@ -89,7 +89,7 @@ informative:
   RFC9205:
   IANA-Media-Type:
     title: Media Types
-    target: [https://www.iana.org/assignments/ipfix/ipfix.xhtml](https://www.iana.org/assignments/media-types/media-types.xhtml)
+    target: https://www.iana.org/assignments/media-types/media-types.xhtml
     date: 2023-06
 
 --- abstract
