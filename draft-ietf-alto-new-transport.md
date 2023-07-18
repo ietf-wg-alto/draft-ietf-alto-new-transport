@@ -1049,7 +1049,7 @@ indicate other errors, with the media type "application/alto-error+json".
 For simplicity, assume that the ALTO server is using the Basic
 authentication.  If a client with username "client1" and password
 "helloalto" wants to create a TIPS view of an ALTO Cost Map resource
-with resource ID "my-routingcost-map", it can send the 
+with resource ID "my-routingcost-map", it can send the
 request depiced in {{ex-op}}.
 
 ~~~~
