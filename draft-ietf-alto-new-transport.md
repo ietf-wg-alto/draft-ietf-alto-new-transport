@@ -476,7 +476,7 @@ location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
 TIPS uses this directory schema to generate template URIs which allow
 clients to construct the location of incremental updates after receiving the
 tips-view-uri path from the server. The generic template for the location of the
-update item on the edge from node i to node j in the updates graph is:
+update item on the edge from node 'i' to node 'j' in the updates graph is:
 
 ~~~
     <tips-view-uri>/ug/<i>/<j>
@@ -679,19 +679,19 @@ multiplexed streams, multiple resources can be monitored simultaneously.
 ## TIPS Sequence Number Management
 
 Conceptually, the sequence number space of TIPS views satisfy the following
-requirements: First, for a specific client, it may expect to see the same
-sequence number for the same version, to avoid occasional disconnections.
+requirements: First, a specific client may expect to see the same
+sequence number for the same version to avoid occasional disconnections.
 Second, the coupling of sequence numbers should be minimized for ALTO resources
 monitored by multiple clients.
 
-Thus, the sequence number space is constant for each TIPS view per client but is
+Thus, the sequence number space is constant for each TIPS view per-client but is
 independent across TIPS views. Note that
 
 1. For the same TIPS resource queried by different clients, multiple TIPS views
    will be created, one for each client, whose sequence number spaces are
    independent.
 
-2. Independence implies that the clients must not assume there is a consensus of
+2. Independence implies that ALTO clients must not assume there is a consensus of
    how different versions map to sequence numbers but does not force the
    sequence numbers to be different. See {{shared-tips-view}} for cases where an
    ALTO server may desire to use the same sequence number space across TIPS
@@ -726,6 +726,7 @@ TIPSCapabilities:
         ResourceID -> String;
      } IncrementalUpdateMediaTypes;
 ~~~
+{: #tips-cap artwork-align="center" title="TIPSCapabilities"}
 
 with fields:
 
@@ -780,9 +781,9 @@ TIPS service. If the client observes in an update of R1 that the version tag for
 R0 has changed, it must make a request to retrieve the full content of R0, which
 is likely to be less efficient than receiving the incremental updates of R0.
 
-## Example
+## An Example
 
-Extending the IRD example in Section 8.1 of {{RFC8895}}, below is the IRD of an
+Extending the IRD example in Section 8.1 of {{RFC8895}}, {{ex-ird}} is the IRD of an
 ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
 
 ~~~
@@ -806,7 +807,6 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
         "cost-type-names": ["num-hopcount"]
       }
     },
-
     "my-simple-filtered-cost-map": {
       "uri": "https://alto.example.com/costmap/filtered/simple",
       "media-type": "application/alto-costmap+json",
@@ -857,6 +857,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
       }
     }
 ~~~
+{: #ex-ird artwork-align="center" title="Example of an ALTO Server Supporting ALTO Base Protocol, ALTO/SSE, and ALTO TIPS"}
 
 Note that it is straightforward for an ALTO server to run HTTP/2 and
 support concurrent retrieval of multiple resources such as "my-
@@ -892,6 +893,7 @@ TIPSReq, where:
        [Boolean     server-push;]
     } TIPSReq;
 ~~~
+{: #open-req artwork-align="center" title="TIPSReq"}
 
 
 with the following fields:
@@ -951,6 +953,7 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~
+{: #open-resp artwork-align="center" title="AddTIPSResponse"}
 
 with the following fields:
 
@@ -995,7 +998,7 @@ If the request has any errors, the TIPS service must return an HTTP
 "400 Bad Request" to the ALTO client; the body of the response
 follows the generic ALTO error response format specified in
 Section 8.5.2 of {{RFC7285}}.  Hence, an example ALTO error response
-has the format:
+has the format shown in {{ex-bad-reques}}.
 
 ~~~~
     HTTP/1.1 400 Bad Request
@@ -1011,6 +1014,7 @@ has the format:
         }
     }
 ~~~~
+{: #ex-bad-request artwork-align="center" title="ALTO Error Example"}
 
 Note that "field" and "value" are optional fields.  If the "value"
 field exists, the "field" field MUST exist.
@@ -1045,8 +1049,8 @@ indicate other errors, with the media type "application/alto-error+json".
 For simplicity, assume that the ALTO server is using the Basic
 authentication.  If a client with username "client1" and password
 "helloalto" wants to create a TIPS view of an ALTO Cost Map resource
-with resource ID "my-routingcost-map", it can send the following
-request:
+with resource ID "my-routingcost-map", it can send the
+request depiced in {{ex-op}}.
 
 ~~~~
     POST /tips HTTP/1.1
@@ -1060,9 +1064,10 @@ request:
       "resource-id": "my-routingcost-map"
     }
 ~~~~
+{: #ex-op artwork-align="center" title="Open Example"}
 
-If the operation is successful, the ALTO server returns the following
-message:
+If the operation is successful, the ALTO server returns the
+message shown in {{ex-op-rep}}.
 
 ~~~~
     HTTP/1.1 200 OK
@@ -1084,6 +1089,7 @@ message:
         }
     }
 ~~~~
+{: #ex-op-rep artwork-align="center" title="Response Example"}
 
 ## Close Request {#close-req}
 
@@ -1184,15 +1190,16 @@ regarding update item requests.
 ##  Example {#iu-example}
 
 Assume the client wants to get the contents of the update item on
-edge 0 to 101.  The request is:
+edge 0 to 101.  The format of the request is shown in {{ex-ge}}.
 
 ~~~~
     GET /tips/2718281828459/ug/0/101 HTTP/1.1
     Host: alto.example.com
     Accept: application/alto-costmap+json, application/alto-error+json
 ~~~~
+{: #ex-get artwork-align="center" title="GET Example"}
 
-And the response will be:
+The response is shown in {{ex-get-res}}.
 
 ~~~~
     HTTP/1.1 200 OK
@@ -1201,6 +1208,7 @@ And the response will be:
 
     { ... full replacement of my-routingcost-map ... }
 ~~~~
+{: #ex-get-res artwork-align="center" title="Response to a GET Request"}
 
 ## New Next Edge Recommendation
 
@@ -1334,7 +1342,7 @@ enabled. The requested URL is the root path of the TIPS view, appended with
     GET /<tips-view-uri>/push
 ~~~~
 
-The server returns an JSON object with content type
+The server returns a JSON object with content type
 "application/alto-tipsparams+json". The response MUST include only one field
 "server-push". If the server push is enabled, the value of the "server-push"
 field MUST be the JSONBool value "true" (without the quote marks), and otherwise
