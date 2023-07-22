@@ -100,7 +100,7 @@ sequence of information resources, and the server responds with the complete
 content of each resource one at a time.
 
 ALTO incremental updates using Server-Sent Events (SSE) (RFC 8895) defines a
-multiplexing protocol on top of HTTP/1.1, so that an ALTO server can
+multiplexing protocol on top of HTTP/1.x, so that an ALTO server can
 incrementally push resource updates to clients whenever monitored network
 information resources change, allowing the clients to monitor multiple resources
 at the same time. However, HTTP/2 and later versions already support concurrent,
@@ -110,9 +110,7 @@ To take advantage of newer HTTP features, this document introduces the ALTO
 Transport Information Publication Service (TIPS). TIPS uses an incremental
 RESTful design to give an ALTO client the new capability to explicitly,
 concurrently (non-blocking) request (pull) specific incremental updates using
-native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1. TIPS also
-provides for an ALTO server to concurrently push specific incremental updates
-using native HTTP/2 or HTTP/3 server push.
+native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 
 --- middle
 
@@ -138,32 +136,40 @@ be able to automatically take advantage of newer HTTP versions such as HTTP/2
 {{RFC9113}} and HTTP/3 {{RFC9114}}. However, there are issues with both
 protocols when higher HTTP versions are used:
 
-- First, consider the ALTO base
-protocol, which is designed to transfer only complete information resources.
-A client can run the base protocol on top of HTTP/2 or HTTP/3 to request
-multiple information resources in concurrent streams, but each
-request must be for a complete information resource: there is no capability of
-transferring incremental updates. Hence, there can be large overhead when the
-client already has an information resource and then there are small changes to
-the resource.
+- First, consider the ALTO base protocol, which is designed to transfer only
+  complete information resources. A client can run the base protocol on top of
+  HTTP/2 or HTTP/3 to request multiple information resources in concurrent
+  streams, but each request must be for a complete information resource: there is
+  no capability of transferring incremental updates. Hence, there can be large
+  overhead when the client already has an information resource and then there are
+  small changes to the resource.
 
-- Next, consider ALTO/SSE. Although ALTO/SSE can transfer
-incremental updates, it introduces a customized multiplexing protocol on top of
-HTTP, assuming a total-order message channel from the server to the client. The
-multiplexing design does not provide naming (i.e., a resource
-identifier) to individual incremental updates. Such a design cannot use
-concurrent per-stream server push or non-blocking per-stream client pull,
-available in HTTP/2 and HTTP/3, because both cases require a resource
-identifier. Additionally, ALTO/SSE is a push-only protocol, which denies the
-client flexibility in choosing how and when it receives updates.
+- Next, consider ALTO/SSE {{RFC8895}}. Although ALTO/SSE can transfer
+  incremental updates, it introduces a customized multiplexing protocol on top
+  of HTTP, assuming a total-order message channel from the server to the client.
+  The multiplexing design does not provide naming (i.e., a resource identifier)
+  to individual incremental updates. Such a design cannot use concurrent data
+  streams available in HTTP/2 and HTTP/3, because both cases require a resource
+  identifier. Additionally, ALTO/SSE is a push-only protocol, which denies the
+  client flexibility in choosing how and when it receives updates.
 
 To mitigate these concerns, this document introduces a new ALTO service, called
 the Transport Information Publication Service (TIPS). TIPS uses an incremental
 RESTful design to provide an ALTO client with a new capability to explicitly,
 concurrently (non-blocking) request (pull) specific incremental updates using
-native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1. TIPS also allows
-an ALTO server to concurrently push specific incremental updates using native
-HTTP/2 or HTTP/3 server push. Specifically, this document specifies:
+native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
+
+Despite the benefits, however, ALTO/SSE {{RFC8895}}, which solves a similar
+problem, has its own pros. First, SSE is a mature technique with a
+well-established ecosystem that can simplify the development. Second, SSE
+naturally supports the push mode even with HTTP/1.0, which is more efficient
+when the updates are frequent. HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}}
+introduce server push, which may enhance TIPS with the push mode. While this
+feature is currently not widely implemented, we provide a non-normative
+specification of push-mode TIPS as an alternative design that has potential
+gains but is not mature enough yet.
+
+Specifically, this document specifies:
 
 -  Extensions to the ALTO Protocol for dynamic subscription and efficient
    uniform update delivery of an incrementally changing network information
@@ -238,8 +244,7 @@ the changes (snapshots and incremental updates) of an ALTO resource, referred to
 as a TIPS view. Along with the data model, this document also specifies a
 unified naming for the snapshots and incremental updates, independent of the
 HTTP version. Thus, these updates can be concurrently requested. Prefetching is
-realized using long polling in HTTP/1.1 and using long polling or server push in
-higher HTTP versions.
+realized using long polling.
 
 This document assumes the deployment model discussed in  {{sec-dep-model}}.
 
@@ -305,6 +310,7 @@ ID#i-#j:
 
 Receiver set (rs):
 : Contains the set of clients who have requested to receive server push updates.
+  This term is not used in the normative specification.
 
 
 ~~~~ drawing
@@ -466,8 +472,6 @@ location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
     |  |  \_ 105
     |  \_ 105
     |     \_ 106
-    |_ push         // server push metadata
-    |  \_ ...
     \_ meta         // TIPS view meta
        \_ ...
 ~~~~
@@ -535,9 +539,9 @@ example) cannot be obtained by a client that does not have the previous version
 
 There are two ways a client can receive updates for a resource:
 
-1.  Client Pull (see {{pull}});
+1.  Client Pull;
 
-2.  Server Push (see {{push}}).
+2.  Server Push.
 
 At a high level, an ALTO client first uses the TIPS service to indicate the
 information resource(s) that the client wants to monitor. For each requested
@@ -546,9 +550,12 @@ the root of a TIPS view, and a summary of the current view, which contains, at
 the minimum, the start-seq and end-seq of the update graph and a
 server-recommended edge to consume first.
 
-In the simplest use case, for client pull, the TIPS view summary provides enough
-information for the client to continuously pull each additional update,
-following the workflow in {{fig-workflow-pull}}.
+For client pull, the TIPS view summary provides enough information for the
+client to continuously pull each additional update, following the workflow in
+{{fig-workflow-pull}}. Detailed specification of this mode is given in {{pull}}.
+Note that in {{fig-workflow-pull}}, the update item at
+`/<tips-view-uri1>/ug/<j>/<j+1>` may not yet exist, so the server holds the
+request until the update becomes available (long polling).
 
 ~~~~ drawing
 Client                                  TIPS
@@ -583,43 +590,9 @@ Client                                  TIPS
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
-Note: in {{fig-workflow-pull}}, the update item at
-`/<tips-view-uri1>/ug/<j>/<j+1>` may not yet exist, so the server holds the
-request until the update becomes available (long polling).
-
-A client that prefers server push can use the workflow as shown in
-{{fig-workflow-push}}. In this case, the client indicates for server push when it
-creates the TIPS view. Future updates are pushed to the client as soon as they
-become available.
-
-~~~~ drawing
-Client                                  TIPS
-  o                                       .
-  | Open persistent HTTP connection       .
-  |-------------------------------------->|
-  |                                       .
-  | POST to create/receive a TIPS view    .
-  |      for resource 1 and add           .
-  |      self to receiver set             .
-  | ------------------------------------> |
-  | <tips-view-uri1>, <tips-view-summary> .
-  |<------------------------------------- |
-  |                                       .
-  | PUSH <tips-view-uri1>/ug/<i>/<j>      .
-  | <-------------------------------------|
-  |                                       .
-  | PUSH <tips-view-uri1>/ug/<j>/<j+1>    .
-  | <-------------------------------------|
-  |                                       .
-  | PUT to remove self from receiver      .
-  |      set of resource 1                .
-  |-------------------------------------> |
-  |                                       .
-  | Close HTTP connection                 .
-  |-------------------------------------->|
-  o
-~~~~
-{: #fig-workflow-push artwork-align="center" title="ALTO TIPS Workflow Supporting Server Push"}
+For server push, the TIPS requires support of HTTP server push, a new feature in
+HTTP/2 and HTTP/3 that is not widely supported yet. A non-normative, unreviewed
+specification for this mode is given in {{push}}.
 
 ## TIPS over a Single HTTP Connection {#single-http}
 
@@ -639,9 +612,8 @@ balancing mechanisms to make sure the requests arrive at the same server.
 
 The second reason is to simplify the state management of a single session. If
 multiple connections are associated with a single session, implementations of
-ALTO servers and clients must manage the state of the connections, e.g., whether
-a connection enables server push, which increases the complexity of both ALTO
-servers and clients.
+ALTO servers and clients must manage the state of the connections, which
+increases the complexity of both ALTO servers and clients.
 
 Third, single persistent HTTP connection offers an implicit way of life cycle
 management of TIPS views, which can be resource-consuming. Malicious users may
@@ -662,19 +634,16 @@ for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For an "http" connection,
 the explicit announcement of HTTP/2 or HTTP/3 support by the server is outside
 the scope of this document.
 
-While TIPS is designed to take advantage of newer HTTP features like
-server push and substreams for concurrent fetch, TIPS still functions
-with HTTP/1.1 for client poll defined in {{pull}}, with the
-limitation that it cannot cancel any outstanding requests or fetch
-resources concurrently over the same connection due to the blocking
-nature of HTTP/1.1 requests.  Additionally, because HTTP/1.1 does not
-support server push, the use of TIPS with server push defined in
-{{push}} is not available if a client connects to an ALTO server
-with HTTP/1.1. If a client only capable of HTTP/1.1 desires to concurrently
-monitor multiple resources at the same time, it must open multiple connections,
-one for each resource, so that an outstanding long-poll request can be issued
-for each resource to monitor for new updates. For HTTP/2 and /3, with
-multiplexed streams, multiple resources can be monitored simultaneously.
+While TIPS is designed to take advantage of newer HTTP features like server push
+and substreams for concurrent fetch, TIPS still functions with HTTP/1.1 for
+client poll defined in {{pull}}, with the limitation that it cannot cancel any
+outstanding requests or fetch resources concurrently over the same connection
+due to the blocking nature of HTTP/1.1 requests. If a client only capable of
+HTTP/1.1 desires to concurrently monitor multiple resources at the same time, it
+should open multiple connections, one for each resource, so that an outstanding
+long-poll request can be issued for each resource to monitor for new updates.
+For HTTP/2 and /3, with multiplexed streams, multiple resources can be monitored
+simultaneously.
 
 ## TIPS Sequence Number Management
 
@@ -708,7 +677,7 @@ as follows.
 The media type of the Transport Information Publication Service resource is
 "application/alto-tips+json".
 
-## Capabilities
+## Capabilities {#caps}
 
 The capabilities field of TIPS is modeled on that defined in
 Section 6.3 of {{RFC8895}}.
@@ -719,7 +688,6 @@ TIPSCapabilities:
 ~~~
      object {
        IncrementalUpdateMediaTypes incremental-change-media-types;
-       Boolean                     support-server-push;
      } TIPSCapabilities;
 
      object-map {
@@ -728,7 +696,7 @@ TIPSCapabilities:
 ~~~
 {: #tips-cap artwork-align="center" title="TIPSCapabilities"}
 
-with fields:
+with field:
 
 incremental-change-media-types:
 :  If a TIPS can provide updates with incremental changes for a
@@ -752,13 +720,6 @@ incremental-change-media-types:
    capability of the TIPS.  If the server does not support JSON patch
    to handle such a case, the server then needs to send a full
    replacement.
-
-support-server-push:
-:  The "support-server-push" field specifies whether the given TIPS
-   supports server push.  If the "support-server-push" field is TRUE,
-   this TIPS will allow a client to start or stop server push.  If
-   the field is FALSE or not present, this TIPS does not provide
-   server push.
 
 ## Uses
 
@@ -853,7 +814,6 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
           "my-hopcount-map": "application/merge-patch+json",
           "my-simple-filtered-cost-map": "application/merge-patch+json"
         },
-        "support-server-push": true
       }
     }
 ~~~
@@ -890,10 +850,9 @@ TIPSReq, where:
        ResourceID   resource-id;
        [JSONString  tag;]
        [Object      input;]
-       [Boolean     server-push;]
     } TIPSReq;
 ~~~
-{: #open-req artwork-align="center" title="TIPSReq"}
+{: #fig-open-req artwork-align="center" title="TIPSReq"}
 
 
 with the following fields:
@@ -920,12 +879,6 @@ input:
    ALTO client MUST set the "input" field to a JSON object with the
    parameters that the resource expects.
 
-server-push:
-:  Set to TRUE if a client desires to receive updates via server
-   push.  If the value is FALSE or not present, the client does not
-   accept server push updates.  See {{push}} for detailed
-   specifications.
-
 ## Open Response {#open-resp}
 
 The response to a valid request MUST be a JSON object of type
@@ -939,7 +892,6 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 
     object {
       UpdatesGraphSummary   updates-graph-summary;
-      [Boolean              server-push;]
     } TIPSViewSummary;
 
     object {
@@ -953,7 +905,7 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~
-{: #open-resp artwork-align="center" title="AddTIPSResponse"}
+{: #fig-open-resp artwork-align="center" title="AddTIPSResponse"}
 
 with the following fields:
 
@@ -974,9 +926,7 @@ tips-view-uri:
    However, the exact mechanism is left to the TIPS provider.
 
 tips-view-summary:
-:  Contains both an updates-graph-summary and an optional server-push
-   boolean value which is set to TRUE if and only if the client
-   indicates server push.
+:  Contains an updates-graph-summary.
 
    The updates-graph-summary field contains the starting sequence
    number (start-seq) of the updates graph and the last sequence
@@ -991,14 +941,13 @@ tips-view-summary:
    snapshot.  If the snapshot is bigger, the server should recommend
    the first incremental update edge starting from client's tagged
    version.  Else, the server should recommend the latest snapshot
-   edge.  If the client indicates server push, the recommended edge
-   will be the first content pushed.
+   edge.
 
 If the request has any errors, the TIPS service must return an HTTP
 "400 Bad Request" to the ALTO client; the body of the response
 follows the generic ALTO error response format specified in
 Section 8.5.2 of {{RFC7285}}.  Hence, an example ALTO error response
-has the format shown in {{ex-bad-reques}}.
+has the format shown in {{ex-bad-request}}.
 
 ~~~~
     HTTP/1.1 400 Bad Request
@@ -1072,7 +1021,7 @@ message shown in {{ex-op-rep}}.
 ~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
-    Content-Length: 291
+    Content-Length: 288
 
     {
         "tips-view-uri": "/tips/2718281828459",
@@ -1084,8 +1033,7 @@ message shown in {{ex-op-rep}}.
               "seq-i": 0,
               "seq-j": 105
             }
-          },
-          "server-push": false
+          }
         }
     }
 ~~~~
@@ -1190,7 +1138,7 @@ regarding update item requests.
 ##  Example {#iu-example}
 
 Assume the client wants to get the contents of the update item on
-edge 0 to 101.  The format of the request is shown in {{ex-ge}}.
+edge 0 to 101.  The format of the request is shown in {{ex-get}}.
 
 ~~~~
     GET /tips/2718281828459/ug/0/101 HTTP/1.1
@@ -1246,8 +1194,8 @@ tag of the resource the client already has is optional:
 ###  Response
 
 The response to a valid request MUST be a JSON object of type
-UpdatesGraphSummary (defined in {{open-resp}} but reproduced below as well),
-denoted as media type "application/alto-tips+json":
+UpdatesGraphSummary (defined in {{open-resp}} but reproduced in {{fig-resp}} as
+well), denoted as media type "application/alto-tips+json":
 
 ~~~~
     object {
@@ -1261,6 +1209,8 @@ denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~~
+{: #fig-resp artwork-align="center" title="Data Format of TIPS Response"}
+
 
 It is RECOMMENDED that the server uses the following HTTP codes to
 indicate errors, with the media type "application/alto-error+json",
@@ -1271,381 +1221,6 @@ regarding new next edge requests.
 
 -  415 (Unsupported Media Type): if the media type(s) accepted by the
    client does not include the media type `application/alto-tips+json`.
-
-# TIPS Data Transfer - Server Push {#push}
-
-TIPS allows an ALTO client to receive an update item pushed by the
-ALTO server.
-
-If a client registers for server push, it should not request updates
-via pull to avoid receiving the same information twice, unless the
-client does not receive the expected updates (see {{client-processing}}).
-
-##  Manage Server Push
-
-A client starts to receive server push when it is added to the
-receiver set.  A client can read the status of the push state and
-remove itself from the receiver set to stop server push.
-
-###  Start Server Push
-
-A client can add itself explicitly to the receiver set or add itself
-to the receiver set when requesting the TIPS view.  Before a client
-starts receiving server push for a TIPS view, it MUST enable server
-push in HTTP, i.e., following Section 8.4 of {{RFC9113}} for HTTP/2 and
-Section 4.6 of {{RFC9114}} for HTTP/3.  If the client does not enable
-HTTP server push, the ALTO server MUST return an ALTO error with the
-`E_INVALID_FIELD_VALUE` code and set the "field" to "server-push".
-
-Explicit add: A client can explicitly add itself in the receiver set
-by using the HTTP PUT method with media type "application/alto-
-tipsparams+json", where the client may optionally specify a starting
-edge (next-edge) from which it would like to receive updates:
-
-~~~~
-    PUT /<tips-view-uri>/push
-
-    object {
-      Boolean     server-push;
-      [NextEdge    next-edge;]
-    } PushState;
-
-    object {
-      JSONNumber       seq-i;
-      JSONNumber       seq-j;
-    } NextEdge;
-~~~~
-
-with the following fields:
-
-server-push:
-:  Set to true if the client desires to receive server push updates.
-
-next-edge:
-:  Optional field to request a starting edge to be pushed if the
-   client has pulled the updates graph directory and has calculated
-   the path it desires to take.  The server MAY push this edge first
-   if available.
-
-Short cut add: When requesting a TIPS view, an ALTO client can start
-server push by setting the option "server-push" field to be true
-using the HTTP POST method defined in {{open-req}}.
-
-### Read Push State
-
-A client can use the HTTP GET method, with accept header set to
-"application/alto-tipsparams+json" to check whether server push is correctly
-enabled. The requested URL is the root path of the TIPS view, appended with
-"push", as shown below.
-
-~~~~
-    GET /<tips-view-uri>/push
-~~~~
-
-The server returns a JSON object with content type
-"application/alto-tipsparams+json". The response MUST include only one field
-"server-push". If the server push is enabled, the value of the "server-push"
-field MUST be the JSONBool value "true" (without the quote marks), and otherwise
-JSONBool value "false" (without the quote marks).
-
-### Stop Push
-
-A client can stop receiving server push updates either explicitly or
-implicitly.
-
-Explicit stop:
-:  A client stops push by using the HTTP PUT method to `/<tips-view- uri>/push`,
-   with content type "application/alto-tipsparams+json" and setting server-push
-   to FALSE:
-
-Implicit stop:
-:  There are two ways. First, TIPS view is connection ephemeral: the close of
-   connection or stream for the TIPS view deletes the TIPS view from the view
-   of the client.
-
-   Second, the client sends a DELETE `/<tips-view-uri>` request, indicating it
-   no longer is interested in the resource, which also deletes the
-   client from the push receiver set if present.
-
-Note that a client may choose to explicitly stop server push for a
-resource, but may not delete the TIPS view so that it can switch
-seamlessly from server push to client pull in the case that the
-server push frequency is undesirable, without having to request a new
-TIPS view.
-
-## Scheduling Server Push Updates
-
-The objective of the server is to push the latest version to the
-client using the lowest cost (sum of size) of the updates.  Hence, it
-is RECOMMENDED that the server computes the push path using the
-following algorithm, upon each event computing a push:
-
--  Compute client current version (nc). During initialization, if the TIPS view
-   request has a tag, find that version; otherwise nc = 0
-
--  Compute the shortest path from the current version to the latest version, nc,
-   n1, ... ne (latest version). Note that the shortest path may not involve the
-   tagged version and instead follow the edge from 0 to the latest snapshot.
-
--  push `/<tips-view-uri>/ug/nc/n1`
-
-Note
-
--  Initialization: If the client specifically requests a starting
-   edge to be pushed, the server MAY start with that edge even if it
-   is not the shortest path.
-
--  Push state: the server MUST maintain the last entry pushed to the
-   client (and hence per client, per connection state) and schedule
-   next update push accordingly.
-
-##  Server Push Stream Management
-
-The server push MUST satisfy the following requirements:
-
--  `PUSH_PROMISE` frames MUST be sent in stream `SID_tq` to serialize and allow
-   the client to know the push order;
-
--  Each `PUSH_PROMISE` frame chooses a new server-selected stream ID, and the
-   stream is closed after push.
-
--  The client MUST NOT cancel a `PUSH_PROMISE` (see {{Section 8.4.2 of RFC9113}}
-   for canceling pushed resource in HTTP/2 or {{Section 4.6 of RFC9114}} in
-   HTTP/3) to avoid complex server state management.
-
-## Examples
-
-The examples below are for HTTP/2 and based on the example update graph in
-{{data-model}}.
-
-### Starting Server Push
-
-Below is the request from a client to an ALTO server which enables server push
-when creating a TIPS view.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = POST
-        :scheme = https
-        :path = /tips
-        host = alto.example.com
-        accept = application/alto-tips+json,
-                 application/alto-error+json
-        content-type = application/alto-tipsparams+json
-        content-length = 67
-
-    DATA
-      - END_STREAM
-      {
-        "resource-id": "my-routingcost-map",
-        "server-push": true
-      }
-~~~~
-
-And below is the response the server returns to the client. Note that the
-END_STREAM bit is not set.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-tips+json
-        content-length = 196
-
-    DATA
-      - END_STREAM
-      {
-        "tips-view-uri": "/tips/2718281828459",
-        "tips-view-summary": {
-          "updates-graph-summary": {
-            "start-seq": 101,
-            "end-seq": 106,
-            "start-edge-rec" : {
-              "seq-i": 0,
-              "seq-j": 105
-            }
-          },
-          "server-push": true
-        }
-      }
-~~~~
-
-### Querying the Push State
-
-Now assume the client queries the server whether server push is successfully
-enabled. Below is the request:
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/push
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/alto-tipsparams+json
-~~~~
-
-And this is the response.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-tipsparams+json
-        content-length = 519
-
-    DATA
-      - END_STREAM
-      {
-        "server-push": true
-      }
-~~~~
-
-### Receiving Server Push
-
-Below shows the example of how the server may push the updates to the client.
-
-First, the ALTO server sends a PUSH_PROMISE in the same stream that is left open
-when creating the TIPS view. As there is no direct edge from 0 to 106, the first
-update is from 0 to 105.
-
-~~~~
-    PUSH_PROMISE
-      - END_STREAM
-        Promised Stream 4
-        HEADER BLOCK
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/ug/0/105
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/alto-costmap+json
-~~~~
-
-Then, the content of the pushed update (a full replacement) is delivered through
-stream 4, as announced in the PUSH_PROMISE frame.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-costmap+json
-        content-length = 539
-
-    DATA
-      + END_STREAM
-      {
-        "meta" : {
-          "dependent-vtags" : [{
-              "resource-id": "my-network-map",
-              "tag": "da65eca2eb7a10ce8b059740b0b2e3f8eb1d4785"
-            }],
-          "cost-type" : {
-            "cost-mode"  : "numerical",
-            "cost-metric": "routingcost"
-          },
-          "vtag": {
-            "resource-id" : "my-routingcost-map",
-            "tag" : "3ee2cb7e8d63d9fab71b9b34cbf764436315542e"
-          }
-        },
-        "cost-map" : {
-          "PID1": { "PID1": 1,  "PID2": 5,  "PID3": 10 },
-          "PID2": { "PID1": 5,  "PID2": 1,  "PID3": 15 },
-          "PID3": { "PID1": 20, "PID2": 15  }
-        }
-    }
-~~~~
-
-As the latest version has sequence number 106, the ALTO server sends another
-PUSH_PROMISE in the same stream that is left open when creating the TIPS view to
-transit from 105 to 106.
-
-~~~~
-    PUSH_PROMISE
-      - END_STREAM
-        Promised Stream 6
-        HEADER BLOCK
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/ug/105/106
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/merge-patch+json
-~~~~
-
-Then, the content of the pushed update (an incremental update as a JSON merge
-patch) is delivered through stream 6, as announced in the PUSH_PROMISE frame.
-
-~~~~
-    HEADERS
-      + END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/merge-patch+json
-        content-length = 266
-
-    DATA
-      + END_STREAM
-      {
-        "meta": {
-            "vtag": {
-              "tag": "c0ce023b8678a7b9ec00324673b98e54656d1f6d"
-            }
-        },
-        "cost-map": {
-          "PID1": {
-            "PID2": 9
-          },
-          "PID3": {
-            "PID1": null,
-            "PID3": 1
-          }
-        }
-      }
-~~~~
-
-### Stopping Server Push
-
-Below is an example of explicitly stopping the server push. The client sends a
-PUT request to the push state of the TIPS view and set the "server-push" value
-to "false".
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = PUT
-        :scheme = https
-        :path = /tips/2718281828459/push
-        host = alto.example.com
-        accept = application/alto-error+json
-        content-type = application/alto-tipsparams+json
-        content-length = 29
-
-    DATA
-      - END_STREAM
-      {
-        "server-push": false
-      }
-~~~~
-
-The server simply returns an empty message with status code 200, to indicate
-that the operation succeeds.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-~~~~
 
 # Operation and Processing Considerations
 
@@ -2164,7 +1739,6 @@ at the expense of maximum load balancing flexibility. See {{load-balancing}} for
 a discussion on load balancing considerations. Future documents may extend the
 protocol to support Design 2 or Design 3.
 
-
 # Conformance to "Building Protocols with HTTP" Best Current Practices {#sec-bcp-http}
 
 
@@ -2217,11 +1791,541 @@ This specification adheres fully to {{RFC9205}} as further elaborated below:
    factors and have still decided server push can be valuable in the
    TIPS use case.
 
+# Push-mode TIPS using HTTP Server Push
+
+In this section, we give a non-normative specification of the push-mode TIPS. It
+is intended to not be part of the standard protocol extension, because of the
+lack of server push support and increased protocol complexity. However,
+push-mode TIPS can potentially improve performance (e.g., latency) in more
+dynamic environments and use cases, with wait-free message delivery. Using
+native server push also results in minimal changes to the current protocol.
+Thus, a preliminary push-mode TIPS extension using native server push is
+specified here as a reference for future push-mode TIPS protocol designs.
+
+## Basic Workflow
+
+A client that prefers server push can use the workflow as shown in
+{{fig-workflow-push}}. In this case, the client indicates for server push when it
+creates the TIPS view. Future updates are pushed to the client as soon as they
+become available.
+
+~~~~ drawing
+Client                                  TIPS
+  o                                       .
+  | Open persistent HTTP connection       .
+  |-------------------------------------->|
+  |                                       .
+  | POST to create/receive a TIPS view    .
+  |      for resource 1 and add           .
+  |      self to receiver set             .
+  | ------------------------------------> |
+  | <tips-view-uri1>, <tips-view-summary> .
+  |<------------------------------------- |
+  |                                       .
+  | PUSH <tips-view-uri1>/ug/<i>/<j>      .
+  | <-------------------------------------|
+  |                                       .
+  | PUSH <tips-view-uri1>/ug/<j>/<j+1>    .
+  | <-------------------------------------|
+  |                                       .
+  | PUT to remove self from receiver      .
+  |      set of resource 1                .
+  |-------------------------------------> |
+  |                                       .
+  | Close HTTP connection                 .
+  |-------------------------------------->|
+  o
+~~~~
+{: #fig-workflow-push artwork-align="center" title="ALTO TIPS Workflow Supporting Server Push"}
+
+## TIPS Information Resource Directory (IRD) Announcement {#ird-push}
+
+The specifications for media type, uses, requests and responses of the push-mode
+TIPS is the same as specified in {{caps}}.
+
+### Capabilities
+
+The capabilities field of push-mode TIPS is modeled on that defined in {{caps}}.
+
+Specifically, the capabilities are defined as an object of type
+PushTIPSCapabilities:
+
+~~~
+     object {
+       [Boolean                     support-server-push;]
+     } PushTIPSCapabilities: TIPSCapabilities;
+~~~
+
+with field:
+
+support-server-push:
+:  The "support-server-push" field specifies whether the given TIPS
+   supports server push.  If the "support-server-push" field is TRUE,
+   this TIPS will allow a client to start or stop server push.  If
+   the field is FALSE or not present, this TIPS does not provide
+   server push.
+
+### Example
+
+~~~~
+    "update-my-costs-tips-with-server-push": {
+      "uri": "https://alto.example.com/updates-new/costs",
+      "media-type": "application/alto-tips+json",
+      "accepts": "application/alto-tipsparams+json",
+      "uses": [
+          "my-network-map",
+          "my-routingcost-map",
+          "my-hopcount-map",
+          "my-simple-filtered-cost-map"
+      ],
+      "capabilities": {
+        "incremental-change-media-types": {
+          "my-network-map": "application/json-patch+json",
+          "my-routingcost-map": "application/merge-patch+json",
+          "my-hopcount-map": "application/merge-patch+json",
+          "my-simple-filtered-cost-map": "application/merge-patch+json"
+        },
+        "support-server-push": true
+      }
+    }
+~~~~
+
+## Push-mode TIPS Open/Close
+
+### Open Request {#push-open-req}
+
+An ALTO client requests that the server provide a TIPS view for a given resource
+by sending an HTTP POST body with the media type
+"application/alto-tipsparams+json". That body contains a JSON object of type
+PushTIPSReq, where:
+
+~~~
+    object {
+       [Boolean     server-push;]
+    } PushTIPSReq: TIPSReq;
+~~~
+
+with the following field:
+
+server-push:
+:  Set to TRUE if a client desires to receive updates via server
+   push.  If the value is FALSE or not present, the client does not
+   accept server push updates.  See {{push}} for detailed
+   specifications.
+
+### Open Response
+
+The push-mode TIPS requires extending the contents of `tips-view-summary` field
+of AddTIPSResponse:
+
+~~~
+    object {
+      [Boolean              server-push;]
+    } PushTIPSViewSummary : TIPSViewSummary;
+~~~
+
+with the following field:
+
+server-push:
+:  An optional server-push boolean value which is set to TRUE if and only if the
+   client indicates server push. If the client indicates server push, the
+   recommended edge in the updates-graph-summary field will be the first content
+   pushed.
+
+## TIPS Data Transfer - Server Push {#push}
+
+TIPS allows an ALTO client to receive an update item pushed by the
+ALTO server.
+
+If a client registers for server push, it should not request updates
+via pull to avoid receiving the same information twice, unless the
+client does not receive the expected updates (see {{client-processing}}).
+
+###  Manage Server Push
+
+A client starts to receive server push when it is added to the
+receiver set.  A client can read the status of the push state and
+remove itself from the receiver set to stop server push.
+
+####  Start Server Push
+
+A client can add itself explicitly to the receiver set or add itself
+to the receiver set when requesting the TIPS view.  Before a client
+starts receiving server push for a TIPS view, it MUST enable server
+push in HTTP, i.e., following Section 8.4 of {{RFC9113}} for HTTP/2 and
+Section 4.6 of {{RFC9114}} for HTTP/3.  If the client does not enable
+HTTP server push, the ALTO server MUST return an ALTO error with the
+`E_INVALID_FIELD_VALUE` code and set the "field" to "server-push".
+
+Explicit add: A client can explicitly add itself in the receiver set
+by using the HTTP PUT method with media type "application/alto-
+tipsparams+json", where the client may optionally specify a starting
+edge (next-edge) from which it would like to receive updates:
+
+~~~~
+    PUT /<tips-view-uri>/push
+
+    object {
+      Boolean     server-push;
+      [NextEdge    next-edge;]
+    } PushState;
+
+    object {
+      JSONNumber       seq-i;
+      JSONNumber       seq-j;
+    } NextEdge;
+~~~~
+
+with the following fields:
+
+server-push:
+:  Set to true if the client desires to receive server push updates.
+
+next-edge:
+:  Optional field to request a starting edge to be pushed if the
+   client has pulled the updates graph directory and has calculated
+   the path it desires to take.  The server MAY push this edge first
+   if available.
+
+Short cut add: When requesting a TIPS view, an ALTO client can start
+server push by setting the option "server-push" field to be true
+using the HTTP POST method defined in {{open-req}}.
+
+#### Read Push State
+
+A client can use the HTTP GET method, with accept header set to
+"application/alto-tipsparams+json" to check whether server push is correctly
+enabled. The requested URL is the root path of the TIPS view, appended with
+"push", as shown below.
+
+~~~~
+    GET /<tips-view-uri>/push
+~~~~
+
+The server returns an JSON object with content type
+"application/alto-tipsparams+json". The response MUST include only one field
+"server-push". If the server push is enabled, the value of the "server-push"
+field MUST be the JSONBool value "true" (without the quote marks), and otherwise
+JSONBool value "false" (without the quote marks).
+
+#### Stop Push
+
+A client can stop receiving server push updates either explicitly or
+implicitly.
+
+Explicit stop:
+:  A client stops push by using the HTTP PUT method to `/<tips-view- uri>/push`,
+   with content type "application/alto-tipsparams+json" and setting server-push
+   to FALSE:
+
+Implicit stop:
+:  There are two ways. First, TIPS view is connection ephemeral: the close of
+   connection or stream for the TIPS view deletes the TIPS view from the view
+   of the client.
+
+   Second, the client sends a DELETE `/<tips-view-uri>` request, indicating it
+   no longer is interested in the resource, which also deletes the
+   client from the push receiver set if present.
+
+Note that a client may choose to explicitly stop server push for a
+resource, but may not delete the TIPS view so that it can switch
+seamlessly from server push to client pull in the case that the
+server push frequency is undesirable, without having to request a new
+TIPS view.
+
+### Scheduling Server Push Updates
+
+The objective of the server is to push the latest version to the
+client using the lowest cost (sum of size) of the updates.  Hence, it
+is RECOMMENDED that the server computes the push path using the
+following algorithm, upon each event computing a push:
+
+-  Compute client current version (nc). During initialization, if the TIPS view
+   request has a tag, find that version; otherwise nc = 0
+
+-  Compute the shortest path from the current version to the latest version, nc,
+   n1, ... ne (latest version). Note that the shortest path may not involve the
+   tagged version and instead follow the edge from 0 to the latest snapshot.
+
+-  Push `/<tips-view-uri>/ug/nc/n1`.
+
+Note
+
+-  Initialization: If the client specifically requests a starting
+   edge to be pushed, the server MAY start with that edge even if it
+   is not the shortest path.
+
+-  Push state: the server MUST maintain the last entry pushed to the
+   client (and hence per client, per connection state) and schedule
+   next update push accordingly.
+
+###  Server Push Stream Management
+
+Let `SID_tv` denote the stream that creates the TIPS view. The server push MUST
+satisfy the following requirements:
+
+-  `PUSH_PROMISE` frames MUST be sent in stream `SID_tv` to serialize and allow
+   the client to know the push order;
+
+-  The  `PUSH_PROMISE` frame chooses a new server-selected stream ID, and the
+   stream is closed after push.
+
+-  Canceling an update pushed by the server ({{Section 8.4.2 of RFC9113}} for
+   HTTP/2 or {{Section 4.6 of RFC9114}} for HTTP/3) makes the state management
+   complex. Thus, a client MUST NOT cancel a schedule update.
+
+### Examples
+
+The examples below are for HTTP/2 and based on the example update graph in
+{{data-model}}.
+
+#### Starting Server Push
+
+{{fig-ex-ssp}} is an example request from a client to an ALTO server which
+enables server push when creating a TIPS view.
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :method = POST
+        :scheme = https
+        :path = /tips
+        host = alto.example.com
+        accept = application/alto-tips+json,
+                 application/alto-error+json
+        content-type = application/alto-tipsparams+json
+        content-length = 67
+
+    DATA
+      - END_STREAM
+      {
+        "resource-id": "my-routingcost-map",
+        "server-push": true
+      }
+~~~~
+{: #fig-ex-ssp artwork-align="center" title="Example Request to Start Server Push"}
+
+And {{fig-ex-ssp-resp}} is the response the server returns to the client. Note
+that the END_STREAM bit is not set.
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :status = 200
+        content-type = application/alto-tips+json
+        content-length = 196
+
+    DATA
+      - END_STREAM
+      {
+        "tips-view-uri": "/tips/2718281828459",
+        "tips-view-summary": {
+          "updates-graph-summary": {
+            "start-seq": 101,
+            "end-seq": 106,
+            "start-edge-rec" : {
+              "seq-i": 0,
+              "seq-j": 105
+            }
+          },
+          "server-push": true
+        }
+      }
+~~~~
+{: #fig-ex-ssp-resp artwork-align="center" title="Example Response to a Start Server Push Request"}
+
+#### Querying the Push State
+
+Now assume the client queries the server whether server push is successfully
+enabled. {{fig-ps-req}} is the request:
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :method = GET
+        :scheme = https
+        :path = /tips/2718281828459/push
+        host = alto.example.com
+        accept = application/alto-error+json,
+                      application/alto-tipsparams+json
+~~~~
+{: #fig-ps-req artwork-align="center" title="Example Request to Query Push State"}
+
+And {{fig-ps-resp}} is the response.
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :status = 200
+        content-type = application/alto-tipsparams+json
+        content-length = 519
+
+    DATA
+      - END_STREAM
+      {
+        "server-push": true
+      }
+~~~~
+{: #fig-ps-resp artwork-align="center" title="Example Response of the Push State Request"}
+
+#### Receiving Server Push
+
+Below shows the example of how the server may push the updates to the client.
+
+First, the ALTO server sends a PUSH_PROMISE in the same stream that is left open
+when creating the TIPS view. As there is no direct edge from 0 to 106, the first
+update is from 0 to 105, as shown in {{fig-push-1}}.
+
+~~~~
+    PUSH_PROMISE
+      - END_STREAM
+        Promised Stream 4
+        HEADER BLOCK
+        :method = GET
+        :scheme = https
+        :path = /tips/2718281828459/ug/0/105
+        host = alto.example.com
+        accept = application/alto-error+json,
+                      application/alto-costmap+json
+~~~~
+{: #fig-push-1 artwork-align="center" title="An Example PUSH_PROMISE Frame with a Pushed Update from 0 to 105"}
+
+Then, the content of the pushed update (a full replacement) is delivered through
+stream 4, as announced in the PUSH_PROMISE frame in {{fig-push-1}}.
+{{fig-push-2}} shows the content of the message.
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :status = 200
+        content-type = application/alto-costmap+json
+        content-length = 539
+
+    DATA
+      + END_STREAM
+      {
+        "meta" : {
+          "dependent-vtags" : [{
+              "resource-id": "my-network-map",
+              "tag": "da65eca2eb7a10ce8b059740b0b2e3f8eb1d4785"
+            }],
+          "cost-type" : {
+            "cost-mode"  : "numerical",
+            "cost-metric": "routingcost"
+          },
+          "vtag": {
+            "resource-id" : "my-routingcost-map",
+            "tag" : "3ee2cb7e8d63d9fab71b9b34cbf764436315542e"
+          }
+        },
+        "cost-map" : {
+          "PID1": { "PID1": 1,  "PID2": 5,  "PID3": 10 },
+          "PID2": { "PID1": 5,  "PID2": 1,  "PID3": 15 },
+          "PID3": { "PID1": 20, "PID2": 15  }
+        }
+    }
+~~~~
+{: #fig-push-2 artwork-align="center" title="Content of the Pushed Update from 0 to 105"}
+
+As the latest version has sequence number 106, the ALTO server sends another
+PUSH_PROMISE in the same stream that is left open when creating the TIPS view to
+transit from 105 to 106, as shown in {{fig-push-3}}.
+
+~~~~
+    PUSH_PROMISE
+      - END_STREAM
+        Promised Stream 6
+        HEADER BLOCK
+        :method = GET
+        :scheme = https
+        :path = /tips/2718281828459/ug/105/106
+        host = alto.example.com
+        accept = application/alto-error+json,
+                      application/merge-patch+json
+~~~~
+{: #fig-push-3 artwork-align="center" title="Another Example of PUSH_PROMISE Frame with a Pushed Update from 105 to 106"}
+
+Then, the content of the pushed update (an incremental update as a JSON merge
+patch) is delivered through stream 6, as announced in the PUSH_PROMISE frame.
+{{fig-push-4}} shows the content of the update message.
+
+~~~~
+    HEADERS
+      + END_STREAM
+      + END_HEADERS
+        :status = 200
+        content-type = application/merge-patch+json
+        content-length = 266
+
+    DATA
+      + END_STREAM
+      {
+        "meta": {
+            "vtag": {
+              "tag": "c0ce023b8678a7b9ec00324673b98e54656d1f6d"
+            }
+        },
+        "cost-map": {
+          "PID1": {
+            "PID2": 9
+          },
+          "PID3": {
+            "PID1": null,
+            "PID3": 1
+          }
+        }
+      }
+~~~~
+{: #fig-push-4 artwork-align="center" title="Content of the Pushed Update from 105 to 106"}
+
+#### Stopping Server Push
+
+{{fig-stop-req}} is an example of explicitly stopping the server push. The client sends a
+PUT request to the push state of the TIPS view and set the "server-push" value
+to "false".
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :method = PUT
+        :scheme = https
+        :path = /tips/2718281828459/push
+        host = alto.example.com
+        accept = application/alto-error+json
+        content-type = application/alto-tipsparams+json
+        content-length = 29
+
+    DATA
+      - END_STREAM
+      {
+        "server-push": false
+      }
+~~~~
+{: #fig-stop-req artwork-align="center" title="Example Request to Stop Server Push"}
+
+The server simply returns an empty message with status code 200, to indicate
+that the operation succeeds, ashown in {{fig-stop-resp}}.
+
+~~~~
+    HEADERS
+      - END_STREAM
+      + END_HEADERS
+        :status = 200
+~~~~
+{: #fig-stop-resp artwork-align="center" title="Example Response of the Stop Server Push Request"}
+
 # Acknowledgments
 {:numbered="false"}
 
-The authors of this document would like to thank Mark Nottingham and
-Spencer Dawkins for providing invaluable reviews of earlier versions of this
-document, Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous
-feedback, and Russ White, Donald Eastlake, Martin Thomson, Bernard Adoba,
-Spencer Dawkins, and Sheng Jiang for the directorate reviews.
+The authors of this document would like to thank Mark Nottingham and Spencer
+Dawkins for providing invaluable reviews of earlier versions of this document,
+Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous feedback, Russ
+White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins, and
+Sheng Jiang for the directorate reviews, and Martin Duke for the Area Director
+Review.
