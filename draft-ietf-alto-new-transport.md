@@ -691,7 +691,7 @@ TIPSCapabilities:
         ResourceID -> String;
      } IncrementalUpdateMediaTypes;
 ~~~
-{: #tips-cap artwork-align="center" title="TIPSCapabilities"}
+{: #tips-cap artwork-align="left" title="TIPSCapabilities"}
 
 with field:
 
@@ -814,7 +814,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
       }
     }
 ~~~
-{: #ex-ird artwork-align="center" title="Example of an ALTO Server Supporting ALTO Base Protocol, ALTO/SSE, and ALTO TIPS"}
+{: #ex-ird artwork-align="left" title="Example of an ALTO Server Supporting ALTO Base Protocol, ALTO/SSE, and ALTO TIPS"}
 
 Note that it is straightforward for an ALTO server to run HTTP/2 and
 support concurrent retrieval of multiple resources such as "my-
@@ -849,7 +849,7 @@ TIPSReq, where:
        [Object      input;]
     } TIPSReq;
 ~~~
-{: #fig-open-req artwork-align="center" title="TIPSReq"}
+{: #fig-open-req artwork-align="left" title="TIPSReq"}
 
 
 with the following fields:
@@ -902,7 +902,7 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~
-{: #fig-open-resp artwork-align="center" title="AddTIPSResponse"}
+{: #fig-open-resp artwork-align="left" title="AddTIPSResponse"}
 
 with the following fields:
 
@@ -960,7 +960,7 @@ has the format shown in {{ex-bad-request}}.
         }
     }
 ~~~~
-{: #ex-bad-request artwork-align="center" title="ALTO Error Example"}
+{: #ex-bad-request artwork-align="left" title="ALTO Error Example"}
 
 Note that "field" and "value" are optional fields.  If the "value"
 field exists, the "field" field MUST exist.
@@ -1010,7 +1010,7 @@ request depiced in {{ex-op}}.
       "resource-id": "my-routingcost-map"
     }
 ~~~~
-{: #ex-op artwork-align="center" title="Open Example"}
+{: #ex-op artwork-align="left" title="Open Example"}
 
 If the operation is successful, the ALTO server returns the
 message shown in {{ex-op-rep}}.
@@ -1034,7 +1034,7 @@ message shown in {{ex-op-rep}}.
         }
     }
 ~~~~
-{: #ex-op-rep artwork-align="center" title="Response Example"}
+{: #ex-op-rep artwork-align="left" title="Response Example"}
 
 ## Close Request {#close-req}
 
@@ -1140,9 +1140,10 @@ edge 0 to 101.  The format of the request is shown in {{ex-get}}.
 ~~~~
     GET /tips/2718281828459/ug/0/101 HTTP/1.1
     Host: alto.example.com
-    Accept: application/alto-costmap+json, application/alto-error+json
+    Accept: application/alto-costmap+json, \
+              application/alto-error+json
 ~~~~
-{: #ex-get artwork-align="center" title="GET Example"}
+{: #ex-get artwork-align="left" title="GET Example"}
 
 The response is shown in {{ex-get-res}}.
 
@@ -1153,7 +1154,7 @@ The response is shown in {{ex-get-res}}.
 
     { ... full replacement of my-routingcost-map ... }
 ~~~~
-{: #ex-get-res artwork-align="center" title="Response to a GET Request"}
+{: #ex-get-res artwork-align="left" title="Response to a GET Request"}
 
 ## New Next Edge Recommendation
 
@@ -1206,7 +1207,7 @@ well), denoted as media type "application/alto-tips+json":
       JSONNumber       seq-j;
     } StartEdgeRec;
 ~~~~
-{: #fig-resp artwork-align="center" title="Data Format of TIPS Response"}
+{: #fig-resp artwork-align="left" title="UpdatesGraphSummary"}
 
 
 It is RECOMMENDED that the server uses the following HTTP codes to
@@ -1886,6 +1887,7 @@ support-server-push:
       }
     }
 ~~~~
+{: #fig-sp-ird artwork-align="left" title="Sample IRD Entry for TIPS with Server Push"}
 
 ## Push-mode TIPS Open/Close
 
@@ -2101,7 +2103,7 @@ enables server push when creating a TIPS view.
         "server-push": true
       }
 ~~~~
-{: #fig-ex-ssp artwork-align="center" title="Example Request to Start Server Push"}
+{: #fig-ex-ssp artwork-align="left" title="Example Request to Start Server Push"}
 
 And {{fig-ex-ssp-resp}} is the response the server returns to the client. Note
 that the END_STREAM bit is not set.
@@ -2131,7 +2133,7 @@ that the END_STREAM bit is not set.
         }
       }
 ~~~~
-{: #fig-ex-ssp-resp artwork-align="center" title="Example Response to a Start Server Push Request"}
+{: #fig-ex-ssp-resp artwork-align="left" title="Example Response to a Start Server Push Request"}
 
 #### Querying the Push State
 
@@ -2149,7 +2151,7 @@ enabled. {{fig-ps-req}} is the request:
         accept = application/alto-error+json,
                       application/alto-tipsparams+json
 ~~~~
-{: #fig-ps-req artwork-align="center" title="Example Request to Query Push State"}
+{: #fig-ps-req artwork-align="left" title="Example Request to Query Push State"}
 
 And {{fig-ps-resp}} is the response.
 
@@ -2167,7 +2169,7 @@ And {{fig-ps-resp}} is the response.
         "server-push": true
       }
 ~~~~
-{: #fig-ps-resp artwork-align="center" title="Example Response of the Push State Request"}
+{: #fig-ps-resp artwork-align="left" title="Example Response of the Push State Request"}
 
 #### Receiving Server Push
 
@@ -2189,7 +2191,7 @@ update is from 0 to 105, as shown in {{fig-push-1}}.
         accept = application/alto-error+json,
                       application/alto-costmap+json
 ~~~~
-{: #fig-push-1 artwork-align="center" title="An Example PUSH_PROMISE Frame with a Pushed Update from 0 to 105"}
+{: #fig-push-1 artwork-align="left" title="An Example PUSH_PROMISE Frame with a Pushed Update from 0 to 105"}
 
 Then, the content of the pushed update (a full replacement) is delivered through
 stream 4, as announced in the PUSH_PROMISE frame in {{fig-push-1}}.
@@ -2227,7 +2229,7 @@ stream 4, as announced in the PUSH_PROMISE frame in {{fig-push-1}}.
         }
     }
 ~~~~
-{: #fig-push-2 artwork-align="center" title="Content of the Pushed Update from 0 to 105"}
+{: #fig-push-2 artwork-align="left" title="Content of the Pushed Update from 0 to 105"}
 
 As the latest version has sequence number 106, the ALTO server sends another
 PUSH_PROMISE in the same stream that is left open when creating the TIPS view to
@@ -2245,7 +2247,7 @@ transit from 105 to 106, as shown in {{fig-push-3}}.
         accept = application/alto-error+json,
                       application/merge-patch+json
 ~~~~
-{: #fig-push-3 artwork-align="center" title="Another Example of PUSH_PROMISE Frame with a Pushed Update from 105 to 106"}
+{: #fig-push-3 artwork-align="left" title="Another Example of PUSH_PROMISE Frame with a Pushed Update from 105 to 106"}
 
 Then, the content of the pushed update (an incremental update as a JSON merge
 patch) is delivered through stream 6, as announced in the PUSH_PROMISE frame.
@@ -2278,7 +2280,7 @@ patch) is delivered through stream 6, as announced in the PUSH_PROMISE frame.
         }
       }
 ~~~~
-{: #fig-push-4 artwork-align="center" title="Content of the Pushed Update from 105 to 106"}
+{: #fig-push-4 artwork-align="left" title="Content of the Pushed Update from 105 to 106"}
 
 #### Stopping Server Push
 
@@ -2304,7 +2306,7 @@ to "false".
         "server-push": false
       }
 ~~~~
-{: #fig-stop-req artwork-align="center" title="Example Request to Stop Server Push"}
+{: #fig-stop-req artwork-align="left" title="Example Request to Stop Server Push"}
 
 The server simply returns an empty message with status code 200, to indicate
 that the operation succeeds, ashown in {{fig-stop-resp}}.
@@ -2315,7 +2317,7 @@ that the operation succeeds, ashown in {{fig-stop-resp}}.
       + END_HEADERS
         :status = 200
 ~~~~
-{: #fig-stop-resp artwork-align="center" title="Example Response of the Stop Server Push Request"}
+{: #fig-stop-resp artwork-align="left" title="Example Response of the Stop Server Push Request"}
 
 # Acknowledgments
 {:numbered="false"}
