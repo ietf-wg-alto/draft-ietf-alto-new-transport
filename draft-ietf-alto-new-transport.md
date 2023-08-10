@@ -131,16 +131,16 @@ protocols have been designed:
    concurrently, and incrementally push updates to that client whenever
    monitored resources change.
 
-Both protocols are designed for HTTP/1.1 {{RFC9112}} and, ideally, they should
-be able to automatically take advantage of newer HTTP versions such as HTTP/2
-{{RFC9113}} and HTTP/3 {{RFC9114}}. However, there are issues with both
-protocols when higher HTTP versions are used:
+Both protocols are designed for HTTP/1.1 {{RFC9112}}, but HTTP/2 {{RFC9113}}
+and HTTP/3 {{RFC9114}}
+can support HTTP/1.1 workflows. However, HTTP/2 and HTTP/3 provide features that
+can improve on certain properties of ALTO and ALTO/SSE.
 
 - First, consider the ALTO base protocol, which is designed to transfer only
   complete information resources. A client can run the base protocol on top of
   HTTP/2 or HTTP/3 to request multiple information resources in concurrent
   streams, but each request must be for a complete information resource: there is
-  no capability of transferring incremental updates. Hence, there can be large
+  no capability it transmit incremental updates. Hence, there can be large
   overhead when the client already has an information resource and then there are
   small changes to the resource.
 
@@ -156,18 +156,19 @@ protocols when higher HTTP versions are used:
 To mitigate these concerns, this document introduces a new ALTO service, called
 the Transport Information Publication Service (TIPS). TIPS uses an incremental
 RESTful design to provide an ALTO client with a new capability to explicitly,
-concurrently (non-blocking) request (pull) specific incremental updates using
+concurrently issue non-blocking requests for specific incremental updates using
 native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 
 Despite the benefits, however, ALTO/SSE {{RFC8895}}, which solves a similar
-problem, has its own pros. First, SSE is a mature technique with a
-well-established ecosystem that can simplify the development. Second, SSE
-naturally supports the push mode even with HTTP/1.0, which is more efficient
-when the updates are frequent. HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}}
-introduce server push, which may enhance TIPS with the push mode. While this
-feature is currently not widely implemented, we provide a non-normative
-specification of push-mode TIPS as an alternative design that has potential
-gains but is not mature enough yet.
+problem, has its own advantagess. First, SSE is a mature technique with a
+well-established ecosystem that can simplify development. Second, SSE
+does not require multiple connections to receive updates for multiple objects
+over HTTP/1.1.
+
+HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}}
+also specify server push, which might enhance TIPS. While push
+is currently not widely implemented, we provide a non-normative
+specification of push-mode TIPS as an alternative design in an appendix.
 
 Specifically, this document specifies:
 
@@ -589,10 +590,6 @@ Client                                  TIPS
   o
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
-
-For server push, the TIPS requires support of HTTP server push, a new feature in
-HTTP/2 and HTTP/3 that is not widely supported yet. A non-normative, unreviewed
-specification for this mode is given in {{push}}.
 
 ## TIPS over a Single HTTP Connection {#single-http}
 
