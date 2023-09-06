@@ -140,7 +140,7 @@ can improve on certain properties of ALTO and ALTO/SSE.
   complete information resources. A client can run the base protocol on top of
   HTTP/2 or HTTP/3 to request multiple information resources in concurrent
   streams, but each request must be for a complete information resource: there is
-  no capability it transmit incremental updates. Hence, there can be large
+  no capability it transmits incremental updates. Hence, there can be large
   overhead when the client already has an information resource and then there are
   small changes to the resource.
 
@@ -167,8 +167,8 @@ over HTTP/1.1.
 
 HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}}
 also specify server push, which might enhance TIPS. While push
-is currently not widely implemented, we provide a non-normative
-specification of push-mode TIPS as an alternative design in an appendix.
+is currently not widely implemented, this document provides a non-normative
+specification of push-mode TIPS as an alternative design in {{push}}.
 
 Specifically, this document specifies:
 
@@ -278,8 +278,8 @@ Updates graph (ug):
 Version:
 : Represents a historical content of an information resource. For an information
   resource, each version is associated with and uniquely identified by a
-  monotonically and consecutively increased sequence number. We use the term
-  "version s" to refer to the version associated with sequence number s.
+  monotonically and consecutively increased sequence number. This document uses the term
+  "version s" to refer to the version associated with sequence number "s".
 
 Start sequence number (start-seq):
 : Is the smallest non-zero sequence number in an updates graph.
@@ -360,7 +360,7 @@ tvi/rs = receiver set of tvi (for server push)
 
 {{fig-overview}} shows an example illustrating an overview of the ALTO TIPS
 service. The server provides the TIPS service of two information resources (#1
-and #2) where we assume #1 is an ALTO map service, and #2 is a filterable
+and #2) where #1 is an ALTO map service, and #2 is a filterable
 service. There are 3 ALTO clients (Client 1, Client 2, and Client 3) that are
 connected to the ALTO server. Each client maintains a single HTTP connection
 with the ALTO server and uses the TIPS view to retrieve updates (see the
@@ -400,8 +400,7 @@ mandatory incremental updates (e.g., ID103-104), dotted lines represent optional
 incremental updates (e.g., ID103-105), and thin lines represent snapshots (e.g.,
 ID0-103). Note that node content is path independent: the content of node v can
 be obtained by applying the updates from any path that ends at v. For example,
-assume the latest version is 105 and a client already has version 103. We say
-the base version of the client is 103 as it serves as a base upon which
+assume the latest version is 105 and a client already has version 103. The base version of the client is 103 as it serves as a base upon which
 incremental updates can be applied. The target version 105 can either be
 directly fetched as a snapshot, computed incrementally by applying the
 incremental updates between 103 and 104, then 104 and 105, or if the optional
@@ -1790,7 +1789,7 @@ This specification adheres fully to {{RFC9205}} as further elaborated below:
 
 # Push-mode TIPS using HTTP Server Push
 
-In this section, we give a non-normative specification of the push-mode TIPS. It
+This section gives a non-normative specification of the push-mode TIPS. It
 is intended to not be part of the standard protocol extension, because of the
 lack of server push support and increased protocol complexity. However,
 push-mode TIPS can potentially improve performance (e.g., latency) in more
