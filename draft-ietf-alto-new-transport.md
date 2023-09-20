@@ -26,6 +26,16 @@ pi:
 
 author:
   -
+    ins: K. Gao
+    name: Kai Gao
+    street: "No.24 South Section 1, Yihuan Road"
+    city: Chengdu
+    code: 610000
+    country: China
+    org: Sichuan University
+    email: kaigao@scu.edu.cn
+
+  -
     ins: R. Schott
     name: Roland Schott
     street: Ida-Rhodes-Straße 2
@@ -44,16 +54,6 @@ author:
     country: USA
     org: Yale University
     email: yry@cs.yale.edu
-
-  -
-    ins: K. Gao
-    name: Kai Gao
-    street: "No.24 South Section 1, Yihuan Road"
-    city: Chengdu
-    code: 610000
-    country: China
-    org: Sichuan University
-    email: kaigao@scu.edu.cn
 
   -
     ins: L. Delwiche
@@ -591,12 +591,16 @@ Client                                  TIPS
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
-## TIPS over a Single HTTP Connection {#single-http}
+For server push, the TIPS requires support of HTTP server push, a new feature in
+HTTP/2 and HTTP/3 that is not widely supported yet. A non-normative, unreviewed
+specification for this mode is given in {{push}}.
+
+## TIPS Management over a Single HTTP Connection {#single-http}
 
 A key requirement in the current new transport extension is that a client must
-interact with the ALTO server using a single persistent HTTP connection, and the
-life cycle of the TIPS views are bounded to that specific connection. This
-design is due to the following reasons:
+interact with the ALTO server using a single persistent HTTP connection to
+manage a TIPS view, and the life cycle of the TIPS view are bounded to that
+specific connection. This design is due to the following reasons:
 
 The first reason is to reduce the management complexity in modern server
 deployment technologies. As microservices are becoming the new trend of web
@@ -613,15 +617,15 @@ ALTO servers and clients must manage the state of the connections, which
 increases the complexity of both ALTO servers and clients.
 
 Third, single persistent HTTP connection offers an implicit way of life cycle
-management of TIPS views, which can be resource-consuming. Malicious users may
-create TIPS views and then disconnect, to get around the limits on concurrent
-TIPS views, if not implemented correctly by an ALTO server. Leaving the TIPS
-views alive after the HTTP connection is closed or timed out also makes session
-management complex: When a client reconnects, should it try to access the TIPS
-view before the disconnection or simply start a new session? Whether and when
-can the server remove the TIPS views? In the current extension, the idea is to
-avoid such complexity and enforce the consensus that a session will be
-automatically closed once the connection is closed or timed out.
+management of TIPS views, which otherwise can be resource-consuming. Malicious
+users may create TIPS views and then disconnect, to get around the limits on
+concurrent TIPS views, if not implemented correctly by an ALTO server. Leaving
+the TIPS views alive after the HTTP connection is closed or timed out also makes
+session management complex: When a client reconnects, should it try to access
+the TIPS view before the disconnection or simply start a new session? Whether
+and when can the server remove the TIPS views? In the current extension, the
+idea is to avoid such complexity and enforce the consensus that a session will
+be automatically closed once the connection is closed or timed out.
 
 ## TIPS with Different HTTP Versions
 
@@ -642,26 +646,41 @@ long-poll request can be issued for each resource to monitor for new updates.
 For HTTP/2 and /3, with multiplexed streams, multiple resources can be monitored
 simultaneously.
 
-## TIPS Sequence Number Management
+## Handling Connection Failures {#failure}
 
-Conceptually, the sequence number space of TIPS views satisfy the following
-requirements: First, a specific client may expect to see the same
-sequence number for the same version to avoid occasional disconnections.
-Second, the coupling of sequence numbers should be minimized for ALTO resources
-monitored by multiple clients.
+While only one HTTP connection is used to manage a TIPS view, fetching
+incremental updates may use multiple connections, e.g., to allow concurrent,
+out-of-order downloading for HTTP/1.1 and HTTP/2. In case of connection
+failures, there are two cases:
 
-Thus, the sequence number space is constant for each TIPS view per-client but is
-independent across TIPS views. Note that
+1. The connection used to open the TIPS view (referred to as Type 1 connection)
+   is disconnected.
 
-1. For the same TIPS resource queried by different clients, multiple TIPS views
-   will be created, one for each client, whose sequence number spaces are
-   independent.
+2. A connection fetching updates for a TIPS view (referred to as Type 2
+   connection) is disconnected.
 
-2. Independence implies that ALTO clients must not assume there is a consensus of
-   how different versions map to sequence numbers but does not force the
-   sequence numbers to be different. See {{shared-tips-view}} for cases where an
-   ALTO server may desire to use the same sequence number space across TIPS
-   views.
+For case 2, the client only needs to resend the request in the current design.
+For case 1, however, the client needs to resend an open request to the server,
+and all unfinished data transfer requests will fail, even if they are on a
+different connection, because the old TIPS view is removed and the new TIPS view
+may have a different base URL and sequence number.
+
+The alternative design is to keep the base URL and sequence number for a TIPS
+view, e.g., identified by the client and content of the open request, for a
+graceful period. While this design may increase the efficiency of transferring
+TIPS updates, it has the following drawbacks:
+
+1. The server needs to store the state of the previous TIPS view, leading to
+   additional resource consumption and potential DoS attacks.
+
+2. The client and server need to properly handle transfers in the transient
+   period, i.e., after the disconnection and before the new TIPS view is
+   created, which can be complex.
+
+As we expect HTTP disconnection to be an occasional event, the efficiency gain
+of keeping the state is unlikely to be significant but the drawbacks are
+permanent. Thus, this document chooses the stateless design for security and
+simplicity.
 
 # TIPS Information Resource Directory (IRD) Announcement {#ird}
 
