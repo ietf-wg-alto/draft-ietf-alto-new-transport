@@ -263,9 +263,9 @@ Network information resource:
 
 TIPS view (tv):
 : Is defined in this document to be the container of incremental transport
-  information about the network information resource. Though the TIPS view may
-  include other transport information, it has two basic components: updates
-  graph (ug) and receiver set (rs).
+  information about the network information resource. The TIPS view has one
+  basic component, updates graph (ug), but may include other transport
+  information.
 
 Updates graph (ug):
 : Is a directed, acyclic graph whose nodes represent the set of versions of an
@@ -308,11 +308,6 @@ ID#i-#j:
 : Denotes the update item on a specific edge in the updates graph to transition
   from version i to version j, where i and j are the sequence numbers of the
   source node and the target node of the edge, respectively.
-
-Receiver set (rs):
-: Contains the set of clients who have requested to receive server push updates.
-  This term is not used in the normative specification.
-
 
 ~~~~ drawing
                                    +-------------+
@@ -537,12 +532,6 @@ example) cannot be obtained by a client that does not have the previous version
 
 ## Workflow Overview
 
-There are two ways a client can receive updates for a resource:
-
-1.  Client Pull;
-
-2.  Server Push.
-
 At a high level, an ALTO client first uses the TIPS service to indicate the
 information resource(s) that the client wants to monitor. For each requested
 resource, the server returns a JSON object that contains a URI, which points to
@@ -550,12 +539,12 @@ the root of a TIPS view, and a summary of the current view, which contains, at
 the minimum, the start-seq and end-seq of the update graph and a
 server-recommended edge to consume first.
 
-For client pull, the TIPS view summary provides enough information for the
-client to continuously pull each additional update, following the workflow in
-{{fig-workflow-pull}}. Detailed specification of this mode is given in {{pull}}.
-Note that in {{fig-workflow-pull}}, the update item at
-`/<tips-view-uri1>/ug/<j>/<j+1>` may not yet exist, so the server holds the
-request until the update becomes available (long polling).
+The TIPS view summary provides enough information for the client to continuously
+pull each additional update, following the workflow in {{fig-workflow-pull}}.
+Detailed specification of this mode is given in {{pull}}. Note that in
+{{fig-workflow-pull}}, the update item at `/<tips-view-uri1>/ug/<j>/<j+1>` may
+not yet exist, so the server holds the request until the update becomes
+available (long polling).
 
 ~~~~ drawing
 Client                                  TIPS
@@ -590,9 +579,9 @@ Client                                  TIPS
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
-For server push, the TIPS requires support of HTTP server push, a new feature in
-HTTP/2 and HTTP/3 that is not widely supported yet. A non-normative, unreviewed
-specification for this mode is given in {{push}}.
+An alternate design would use server push, which is an HTTP feature not widely
+implemented. A non-normative description of this approach is in the appendix (
+{{push}}).
 
 ## TIPS Management over a Single HTTP Connection {#single-http}
 
@@ -636,7 +625,7 @@ the scope of this document.
 
 While TIPS is designed to take advantage of newer HTTP features like server push
 and substreams for concurrent fetch, TIPS still functions with HTTP/1.1 for
-client poll defined in {{pull}}, with the limitation that it cannot cancel any
+client pull defined in {{pull}}, with the limitation that it cannot cancel any
 outstanding requests or fetch resources concurrently over the same connection
 due to the blocking nature of HTTP/1.1 requests. If a client only capable of
 HTTP/1.1 desires to concurrently monitor multiple resources at the same time, it
@@ -649,8 +638,8 @@ simultaneously.
 
 While only one HTTP connection is used to manage a TIPS view, fetching
 incremental updates may use multiple connections, e.g., to allow concurrent,
-out-of-order downloading for HTTP/1.1 and HTTP/2. In case of connection
-failures, there are two cases:
+out-of-order downloading for HTTP/1.1. In case of connection failures, there are
+two cases:
 
 1. The connection used to open the TIPS view (referred to as Type 1 connection)
    is disconnected.
@@ -1817,6 +1806,16 @@ dynamic environments and use cases, with wait-free message delivery. Using
 native server push also results in minimal changes to the current protocol.
 Thus, a preliminary push-mode TIPS extension using native server push is
 specified here as a reference for future push-mode TIPS protocol designs.
+
+## Terminology {#push-terminology}
+
+The push extension uses the same terminologies as defined in {{terminology}}
+with the following additional term:
+
+Receiver set (rs):
+: Contains the set of clients who have requested to receive server push updates.
+  This term is not used in the normative specification.
+
 
 ## Basic Workflow
 
