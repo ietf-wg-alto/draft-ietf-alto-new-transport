@@ -483,67 +483,80 @@ example) cannot be obtained by a client that does not have the previous version
 
 ## Workflow
 
-At a high level, an ALTO client first uses the TIPS service to indicate the
-information resource(s) that the client wants to monitor. For each requested
-resource, the server returns a JSON object that contains a URL, which points to
-the root of a TIPS view, and a summary of the current view, which contains, at
-the minimum, the start-seq and end-seq of the update graph and a
-server-recommended edge to consume first.
+At a high level, an ALTO client first uses the TIPS service (denoted as TIPS-F
+and F is for frontend) to indicate the information resource(s) that the client
+wants to monitor. For each requested resource, the server returns a JSON object
+that contains a URI, which points to the root of a TIPS view (denoted as
+TIPS-V), and a summary of the current view, which contains the information to
+correctly interact with the current view. With the URI to the root of a TIPS
+view, clients can construct URIs (see {{schema}}) to fetch incremental updates
+and to report liveness.
 
-The TIPS view summary provides enough information for the client to continuously
-pull each additional update, following the workflow in {{fig-workflow-pull}}.
-Detailed specification of this mode is given in {{pull}}. Note that in
-{{fig-workflow-pull}}, the update item at `<tips-view-root>/ug/<j>/<j+1>` may
-not yet exist, so the server holds the request until the update becomes
-available (long polling).
+An example workflow is as shown in {{fig-workflow-pull}}. After the TIPS-F
+service receives the request from the client to monitor the updates of an ALTO
+resource, it creates a TIPS view service and returns the corresponding
+information to the client. The URI points to that specific TIPS-V instance and
+the summary contains a heartbeat interval, the start-seq and end-seq of the
+update graph and a server-recommended edge to consume first, e.g., from i to j.
 
-The client must periodically send a heartbeat signal by making a POST request to
-`/<tips-view-uri1>/heartbeat` to indicate that the client is still active.
-Otherwise, the server may close the TIPS view to release the resources. See
-details in {{tips-heartbeat}}.
+An ALTO client can then continuously pull each additional update with the
+information. For example, the client in {{fig-workflow-pull}} first fetches the
+update from i to j, and then from j to j+1. Note that the update item at
+`<tips-view-root>/ug/<j>/<j+1>` may not yet exist, so the server holds the
+request until the update becomes available (long polling).
+
+In the meantime, the client must periodically send a heartbeat signal by making
+a POST request to `/<tips-view-path>/hb` to indicate that the client is still
+active. Otherwise, the server may close the TIPS view to release the resources.
+See details in {{tips-heartbeat}}.
+
+Once the client no longer needs the TIPS view, it can send a DELETE request to
+the TIPS-V service.
 
 ~~~~ drawing
-Client                                  TIPS
-  o                                       .
-  | POST to create/receive a TIPS view    .
-  |           for resource 1              .
-  |-------------------------------------> |
-  | <tips-view-uri1>, <tips-view-summary> .
-  | <-------------------------------------|
-  |                                       .
-  | GET /<tips-view-uri1>/ug/<i>/<j>      .
-  |-------------------------------------> |
-  | content on edge i to j                .
-  | <-------------------------------------|
-  |                                       .
-  | GET /<tips-view-uri1>/ug/<j>/<j+1>    .
-  |-------------------------------------> |
-  |                                       .
-  | POST /<tips-view-uri1>/heartbeat      .
-  |-------------------------------------> |
-  |                                       .
-  | content on edge j to j+1              .
-  | <-------------------------------------|
-  |                                       .
-  | DELETE TIPS view for resource 1       .
-  |-------------------------------------> |
-  |                                       .
+Client                                 TIPS-F           TIPS-V
+  o                                       .                .
+  | POST to create/receive a TIPS view    .  Create TIPS   .
+  |           for resource 1              .      View      .
+  |-------------------------------------> |.-.-.-.-.-.-.-> |
+  | <tips-view-uri>, <tips-view-summary>  .                |
+  | <-------------------------------------| <-.-.-.-.-.-.-.|
+  |                                                        .
+  | GET /<tips-view-path>/ug/<i>/<j>                       .
+  |------------------------------------------------------> |
+  | content on edge i to j                                 |
+  | <------------------------------------------------------|
+  |                                                        .
+  | GET /<tips-view-path>/ug/<j>/<j+1>                     .
+  |------------------------------------------------------> |
+  |                                                        |
+  | POST /<tips-view-path>/hb                              |
+  |------------------------------------------------------> |
+  |                                                        |
+  | content on edge j to j+1                               |
+  | <------------------------------------------------------|
+  |                                                        .
+  | DELETE <tips-view-path>                                .
+  |------------------------------------------------------> |
+  |                                                        o
   o
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
 ## Resource Location Schema {#schema}
 
-Update items are exposed as HTTP resources and the URLs of these items, which we
-call resource location schema, follow specific patterns. To access each
-individual update in an updates graph, consider the model represented as a
-"virtual" file system (adjacency list), contained within the root of a TIPS view
-URI (see {{open-resp}} for the definition of tips-view-uri). For example,
-assuming that the update graph of a TIPS view is as shown in {{fig-ug}}, the
-location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
+The resource location schema defines how client constructs URI to fetch
+incremental updates and to report liveness through heartbeat requests.
+
+To access each individual update in an updates graph, consider the model
+represented as a "virtual" file system (adjacency list), contained within the
+root of a TIPS view URI (see {{open-resp}} for the definition of tips-view-uri).
+For example, assuming that the update graph of a TIPS view is as shown in
+{{fig-ug}}, the location schema of this TIPS view will have the format as in
+{{fig-ug-schema}}.
 
 ~~~~ drawing
-  <tips-view-root>  // root path to a TIPS view
+  <tips-view-path>  // root path to a TIPS view
     |_ ug    // updates graph
     |  |_ 0
     |  |  |_ 101    // full 101 snapshot
@@ -560,18 +573,18 @@ location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
     |  |  \_ 105
     |  \_ 105
     |     \_ 106
-    \_ meta         // TIPS view meta
-       \_ ...
+    |_ hb           // heartbeat
+    \_ ...
 ~~~~
 {: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
 
 TIPS uses this directory schema to generate template URIs which allow
 clients to construct the location of incremental updates after receiving the
-tips-view-uri path from the server. The generic template for the location of the
+tips-view-uri from the server. The generic template for the location of the
 update item on the edge from node 'i' to node 'j' in the updates graph is:
 
 ~~~
-    <tips-view-root>/ug/<i>/<j>
+    schema://<tips-view-host>/<tips-view-path>/ug/<i>/<j>
 ~~~
 
 Due to the sequential nature of the update item IDs, a client can long poll a
@@ -581,9 +594,21 @@ the sequence number of the current last node (denoted as end-seq) in the graph
 to the next sequential node (with the sequence number of end-seq + 1):
 
 ~~~
-    GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
+    schema://<tips-view-host>/<tips-view-path>/ug/<end-seq>/<end-seq + 1>
 ~~~
 
+Incremental updates of a TIPS view are read-only. Thus, they are fetched using
+the HTTP GET method.
+
+In the meantime, the URI of the heartbeat service of a TIPS view has the
+following format:
+
+~~~
+    schema://<tips-view-host>/<tips-view-path>/hb
+~~~
+
+To avoid the message hitting an HTTP cache, the heartbeat request must use the
+POST method.
 
 # TIPS Information Resource Directory (IRD) Announcement {#ird}
 
@@ -803,7 +828,7 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 
 ~~~
     object {
-      URL               tips-view-url;
+      URI               tips-view-uri;
       TIPSViewSummary   tips-view-summary;
     } AddTIPSResponse;
 
@@ -828,12 +853,21 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 with the following fields:
 
 tips-view-uri:
-:  Uniform Resource Locator (URL) to the requested TIPS view. The value of this
-   field must conform to {{RFC3986}} with the additional
+:  URI to the requested TIPS view. The value of this field must have the
+   following format:
 
-   Relative URI to the TIPS view of a network resource, which MUST be unique per
-   client session, and is de-aliased by the server to refer to the actual
-   location of the TIPS view which may be shared by other clients.
+   ~~~
+       schema "://" tips-view-host "/" tips-view-path
+
+       tips-view-host = host [ ":" port]
+       tips-view-path = path
+   ~~~
+
+   where schema must be "http" or "https" unless specified by a future
+   extension, and host, port, path are as specified in Sections 3.2.2, 3.2.3,
+   and 3.3 in {{RFC3986}}. The URI MUST be unique per client session and may be
+   de-aliased by the server to refer to the actual location of the TIPS view
+   which may be shared by other clients.
 
 :  When creating the URI for the TIPS view, TIPS MUST NOT use other
    properties of an HTTP request, such as cookies or the client's IP
@@ -951,10 +985,10 @@ message shown in {{ex-op-rep}}.
 ~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
-    Content-Length: 263
+    Content-Length: 287
 
     {
-      "tips-view-uri": "/tips/2718281828459",
+      "tips-view-uri": "https://alto.example.com/tips/2718281828459",
       "tips-view-summary": {
         "updates-graph-summary": {
           "start-seq": 101,
@@ -977,7 +1011,8 @@ specific TIPS view by sending a heartbeat request every heartbeat-interval
 second(s). The heartbeat request MUST have the follow format:
 
 ~~~~
-    POST /<tips-view-uri>/heartbeat
+    POST /<tips-view-path>/heartbeat HTTP/1.1
+    HOST: <tips-view-host>
 ~~~~
 
 The body of the request must be empty.
@@ -1007,7 +1042,8 @@ tips-view-uri and the HTTP DELETE method. The DELETE request MUST have the
 following format:
 
 ~~~~
-    DELETE /<tips-view-uri>
+    DELETE /<tips-view-path> HTTP/1.1
+    HOST: <tips-view-host>
 ~~~~
 
 The response to a valid request must be 200 if success, and the
@@ -1042,7 +1078,8 @@ the update item on the specified edge in the updates graph.
 The GET request MUST have the following format:
 
 ~~~~
-    GET /<tips-view-uri>/ug/<i>/<j>
+    GET /<tips-view-path>/ug/<i>/<j>
+    HOST: <tips-view-host>
 ~~~~
 
 For example, consider the updates graph in {{fig-ug-schema}}. If the client
@@ -1130,13 +1167,13 @@ consume based on its current version of the resource.
 
 ###  Request
 
-An ALTO client requests that the server provide a next edge
-recommendation for a given TIPS view by sending an HTTP POST request
-with the media type "application/alto-tipsparams+json".  The URI has
-the form:
+An ALTO client requests that the server provide a next edge recommendation for a
+given TIPS view by sending an HTTP POST request with the media type
+"application/alto-tipsparams+json". The request has the form:
 
 ~~~~
-    POST /<tips-view-uri>/ug
+    POST /<tips-view-path>/ug HTTP/1.1
+    HOST: <tips-view-host>
 ~~~~
 
 The POST body have the following form, where providing the version
@@ -1182,38 +1219,6 @@ regarding new next edge requests.
 
 # Operation and Processing Considerations
 
-##  Considerations for Load Balancing {#load-balancing}
-
-TIPS allow clients to make concurrent pulls of the incremental
-updates potentially through different HTTP connections.  As a
-consequence, it introduces additional complexities when the ALTO
-server is being load balanced -- a feature widely used to build
-scalable and fault-tolerant web services.  For example, a request may
-be incorrectly processed if the following two conditions both hold:
-
--  the backend servers are stateful, i.e., the TIPS view is created
-   and stored only on a single server;
-
--  the ALTO server is using layer-4 load balancing, i.e., the
-   requests are distributed based on the TCP 5-tuple.
-
-Thus, additional considerations are required to enable correct load
-balancing for TIPS, including:
-
--  Use a stateless architecture: One solution is to follow the
-   stateless computing pattern: states about the TIPS view are not
-   maintained by the backend servers but are stored in a distributed
-   database.  Thus, concurrent requests to the same TIPS view can be
-   processed on arbitrary stateless backend servers, which all
-   fetches data from the same database.
-
--  Configure the load balancers properly: In case when the backend
-   servers are stateful, the load balancers must be properly
-   configured to guarantee that requests of the same TIPS view always
-   arrive at the same server.  For example, an operator or a provider
-   of an ALTO server may configure layer-7 load balancers that
-   distribute requests based on URL or cookies.
-
 ## Considerations for Choosing Updates
 
 When implementing TIPS, a developer should be cognizant of the
@@ -1258,6 +1263,48 @@ operations and delete the prefix one by one.
 Therefore, each TIPS instance may choose to encode the updates using
 JSON merge patch or JSON patch based on the type of changes in
 network maps.
+
+##  Considerations for Load Balancing {#load-balancing}
+
+There are two levels of load balancing in TIPS. The first level is to balance
+the load of TIPS views for different clients, and the second is to balance the
+load of incremental updates.
+
+Load balancing of TIPS views can either be achieved at the application layer or
+at the infrastructure layer. For example, an ALTO server may set the
+<tips-view-host> to different subdomains to distribute TIPS views, or simply use
+the same host of the TIPS service and rely on load balancers to distribute the
+load.
+
+TIPS allow clients to make concurrent pulls of the incremental
+updates potentially through different HTTP connections.  As a
+consequence, it introduces additional complexities when the ALTO
+server is being load balanced -- a feature widely used to build
+scalable and fault-tolerant web services.  For example, a request may
+be incorrectly processed if the following two conditions both hold:
+
+-  the backend servers are stateful, i.e., the TIPS view is created
+   and stored only on a single server;
+
+-  the ALTO server is using layer-4 load balancing, i.e., the
+   requests are distributed based on the TCP 5-tuple.
+
+Thus, additional considerations are required to enable correct load
+balancing for TIPS, including:
+
+-  Use a stateless architecture: One solution is to follow the
+   stateless computing pattern: states about the TIPS view are not
+   maintained by the backend servers but are stored in a distributed
+   database.  Thus, concurrent requests to the same TIPS view can be
+   processed on arbitrary stateless backend servers, which all
+   fetches data from the same database.
+
+-  Configure the load balancers properly: In case when the backend
+   servers are stateful, the load balancers must be properly
+   configured to guarantee that requests of the same TIPS view always
+   arrive at the same server.  For example, an operator or a provider
+   of an ALTO server may configure layer-7 load balancers that
+   distribute requests based on the <tips-view-path> component in the URI.
 
 ## Considerations for Cross-Resource Dependency Scheduling
 
@@ -1310,14 +1357,14 @@ a resource, the ALTO client should apply those updates to the current
 version of the resource.
 
 However, because resources can depend on other resources (e.g., cost
-maps depend on network maps), an ALTO client MUST NOT use a dependent
+maps depend on network maps), an ALTO client must not use a dependent
 resource if the resource on which it depends has changed.  There are
 at least two ways an ALTO client can do that.  The following
 paragraphs illustrate these techniques by referring to network and
 cost map messages, although these techniques apply to any dependent
 resources.
 
-Note that when a network map changes, the server SHOULD send the
+Note that when a network map changes, the server should send the
 network map update message before sending the updates for the
 dependent cost maps.
 
@@ -1327,35 +1374,24 @@ the associated cost maps until the ALTO client receives the update
 messages for all dependent cost maps.  The ALTO client then applies
 all network and cost map updates atomically.
 
-Alternatively, the ALTO client MAY update the network map
+Alternatively, the ALTO client may update the network map
 immediately.  In this case, the cost maps using the network map
 become invalid because they are inconsistent with the current network
-map; hence, the ALTO client MUST mark each such dependent cost map as
-temporarily invalid and MUST NOT use each such cost map until the
+map; hence, the ALTO client must mark each such dependent cost map as
+temporarily invalid and must not use each such cost map until the
 ALTO client receives a cost map update indicating that it is based on
 the new network map version tag.
 
-When implementing server push, the server SHOULD send updates for
-dependent resource (i.e., the cost maps in the preceding example) in
-a timely fashion.  However, if the ALTO client does not receive the
-expected updates, a simple recovery method is that the ALTO client
-uses client pull to request the missing update.  The ALTO client MAY
-retain the version tag of the last version of any tagged resources
-and search those version tags when identifying the new updates to
-pull.  Although not as efficient as possible, this recovery method is
-simple and reliable.
-
-Though a server SHOULD send update items sequentially, it is possible
-that a client receives the update items out of order (in the case of
-a retransmitted update item or a result of concurrent fetch).  The
-client MUST buffer the update items if they arrive out of order and
-then apply them sequentially (based upon the sequence numbers) due to
-the operation of JSON merge patch and JSON patch.
+Though a server should send update items sequentially, it is possible that a
+client receives the update items out of order (in the case of a retransmitted
+update item or a result of concurrent fetch). The client must buffer the update
+items if they arrive out of order and then apply them sequentially (based upon
+the sequence numbers) due to the operation of JSON merge patch and JSON patch.
 
 ## Considerations for Updates to Filtered Cost Maps
 
 If TIPS provides updates to a Filtered Cost Map that allows
-constraint tests, then an ALTO client MAY request updates to a
+constraint tests, then an ALTO client may request updates to a
 Filtered Cost Map request with a constraint test.  In this case, when
 a cost changes, the updates graph MUST have an update if the new
 value satisfies the test.  If the new value does not, whether there
@@ -1666,16 +1702,16 @@ Conceptually, the TIPS system consists of three types of resources:
  |      | incremental |     |     |           |     |-------->|     |  |
  |      | transfer    |     |     |           |     |         |     |  |
  |      | resource    |     |     |           |     |         |     |  |
- |      |<------------|-----|     |           +-----+         +-----+  |
- |Client|             |     |     |                                    |
+ |      |<------------|-----------------------|     |         |     |  |
+ |Client|             |     |     |           +-----+         +-----+  |
  |      | "iget" base |     |     |                                    |
  |      | resource 2  |     |     |           +-----+         +-----+  |
  |      |-------------|---->|     |           |     |         |     |  |
  |      | incremental |     |     |           |     |         |     |  |
- |      | transfer    |     |     |           |     | ------->|     |  |
- |      | resource    |     |     |           |     |         |     |  |
- |      |<------------|-----|     |           |     |         |     |  |
- +------+             |     +-----+           +-----+         +-----+  |
+ |      | transfer    |     +-----+           |     | ------->|     |  |
+ |      | resource    |                       |     |         |     |  |
+ |      |<------------|-----------------------|     |         |     |  |
+ +------+             |                       +-----+         +-----+  |
                       |                                                |
                       +------------------------------------------------+
 ~~~~
@@ -1692,7 +1728,7 @@ Design Point: Component Resource Location
 - Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be
   on the same server
 
-This document specifies Design 1 in order to simplify session management, though
+This document specifies Design 3 in order to simplify session management, though
 at the expense of maximum load balancing flexibility. See {{load-balancing}} for
 a discussion on load balancing considerations. Future documents may extend the
 protocol to support Design 2 or Design 3.
