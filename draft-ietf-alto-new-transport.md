@@ -481,7 +481,7 @@ example) cannot be obtained by a client that does not have the previous version
 
 # TIPS Workflow and Resource Location Schema {#workflow}
 
-## Workflow
+## Workflow {#workflow-overview}
 
 At a high level, an ALTO client first uses the TIPS service (denoted as TIPS-F
 and F is for frontend) to indicate the information resource(s) that the client
@@ -502,7 +502,7 @@ update graph and a server-recommended edge to consume first, e.g., from i to j.
 An ALTO client can then continuously pull each additional update with the
 information. For example, the client in {{fig-workflow-pull}} first fetches the
 update from i to j, and then from j to j+1. Note that the update item at
-`<tips-view-root>/ug/<j>/<j+1>` may not yet exist, so the server holds the
+`<tips-view-uri>/ug/<j>/<j+1>` may not yet exist, so the server holds the
 request until the update becomes available (long polling).
 
 In the meantime, the client must periodically send a heartbeat signal by making
@@ -584,7 +584,7 @@ tips-view-uri from the server. The generic template for the location of the
 update item on the edge from node 'i' to node 'j' in the updates graph is:
 
 ~~~
-    schema://<tips-view-host>/<tips-view-path>/ug/<i>/<j>
+    <tips-view-uri>/ug/<i>/<j>
 ~~~
 
 Due to the sequential nature of the update item IDs, a client can long poll a
@@ -594,7 +594,7 @@ the sequence number of the current last node (denoted as end-seq) in the graph
 to the next sequential node (with the sequence number of end-seq + 1):
 
 ~~~
-    schema://<tips-view-host>/<tips-view-path>/ug/<end-seq>/<end-seq + 1>
+    <tips-view-uri>/ug/<end-seq>/<end-seq + 1>
 ~~~
 
 Incremental updates of a TIPS view are read-only. Thus, they are fetched using
@@ -604,7 +604,7 @@ In the meantime, the URI of the heartbeat service of a TIPS view has the
 following format:
 
 ~~~
-    schema://<tips-view-host>/<tips-view-path>/hb
+    <tips-view-uri>/hb
 ~~~
 
 To avoid the message hitting an HTTP cache, the heartbeat request must use the
@@ -1271,10 +1271,9 @@ the load of TIPS views for different clients, and the second is to balance the
 load of incremental updates.
 
 Load balancing of TIPS views can either be achieved at the application layer or
-at the infrastructure layer. For example, an ALTO server may set the
-<tips-view-host> to different subdomains to distribute TIPS views, or simply use
-the same host of the TIPS service and rely on load balancers to distribute the
-load.
+at the infrastructure layer. For example, an ALTO server may set `<tips-view-host>`
+to different subdomains to distribute TIPS views, or simply use the same host of
+the TIPS service and rely on load balancers to distribute the load.
 
 TIPS allow clients to make concurrent pulls of the incremental
 updates potentially through different HTTP connections.  As a
@@ -1304,7 +1303,7 @@ balancing for TIPS, including:
    configured to guarantee that requests of the same TIPS view always
    arrive at the same server.  For example, an operator or a provider
    of an ALTO server may configure layer-7 load balancers that
-   distribute requests based on the <tips-view-path> component in the URI.
+   distribute requests based on the tips-view-path component in the URI.
 
 ## Considerations for Cross-Resource Dependency Scheduling
 
@@ -1728,10 +1727,14 @@ Design Point: Component Resource Location
 - Design 3 (Dir + Data): R2 and R3 must remain together, though R1 might not be
   on the same server
 
-This document specifies Design 3 in order to simplify session management, though
-at the expense of maximum load balancing flexibility. See {{load-balancing}} for
-a discussion on load balancing considerations. Future documents may extend the
-protocol to support Design 2 or Design 3.
+This document supports Design 1 and Design 3. For Design 1, the TIPS service
+simply needs to always use the same host for the TIPS views. For Design 3, the
+TIPS service can set tips-view-host to a different server. Note that the
+deployment flexibility is at the logical level, as these services
+can be distinguished by different paths and potentially be routed to different
+physical servers by layer-7 load balancing. See {{load-balancing}} for a
+discussion on load balancing considerations. Future documents may extend the
+protocol to support Design 2.
 
 # Conformance to "Building Protocols with HTTP" Best Current Practices {#sec-bcp-http}
 
