@@ -84,6 +84,7 @@ normative:
   RFC9112:
   RFC9113:
   RFC9114:
+  RFC3986:
 
 informative:
   RFC9205:
@@ -162,13 +163,11 @@ native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 Despite the benefits, however, ALTO/SSE {{RFC8895}}, which solves a similar
 problem, has its own advantagess. First, SSE is a mature technique with a
 well-established ecosystem that can simplify development. Second, SSE
-does not require multiple connections to receive updates for multiple objects
+does not allow multiple connections to receive updates for multiple objects
 over HTTP/1.1.
 
-HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}}
-also specify server push, which might enhance TIPS. While push
-is currently not widely implemented, this document provides a non-normative
-specification of push-mode TIPS as an alternative design in {{push}}.
+HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}} also specify server push, which might
+enhance TIPS. We discuss push-mode TIPS as an alternative design in {{push}}.
 
 Specifically, this document specifies:
 
@@ -333,23 +332,23 @@ ID#i-#j:
 | | +--------+    |          |     +--------+        +--------+   |  | |
 | |     |         |          |           |             |          |  | |
 | | +--------+ +--------+ +--------+ +--------+ +--------+ +--------+| |
-| | | tv1/ug | | tv1/rs | | tv2/ug | | tv2/rs | | tv3/ug | | tv3/rs || |
+| | | tv1/ug | | tv1/hb | | tv2/ug | | tv2/hb | | tv3/ug | | tv3/hb || |
 | | +--------+ +--------+ +--------+ +--------+ +--------+ +--------+| |
-| +----|\---------/\---------|---------/---------------|-------------+ |
-|      | \       /  \        |        /                |               |
-+------|--\-----/----\-------|-------/-----------------|---------------+
-       |   \   /      \      |      /                  |
-       |    +-/-----+  \     |     /                   |
-       |     /       \  \    |    /  A single          |   A single
-     ==|====/==     ==\==\===|===/== HTTP/2 or /3    ==|== HTTP/1.1
-       |   /           \  \  |  /    connection        |   connection
+| +----|\---------/\---------|---------/---------------|------|------+ |
+|      | \       /  \        |        /                |      |        |
++------|--\-----/----\-------|-------/-----------------|------|--------+
+       |   \   /      \      |      /                  |      +
+       |    +-/-----+  \     |     /                   |     /
+       |     /       \  \    |    /                    |    /
+       |    /         \  \   |   /                     |   /
+       |   /           \  \  |  /                      |  |
    +----------+       +----------+                 +----------+
    | Client 1 |       | Client 2 |                 | Client 3 |
    +----------+       +----------+                 +----------+
 
 tvi   = TIPS view i
 tvi/ug = incremental updates graph associated with tvi
-tvi/rs = receiver set of tvi (for server push)
+tvi/hb = client liveness check for tvi
 ~~~~
 {: #fig-overview artwork-align="center" title="Overview of ALTO TIPS"}
 
@@ -357,12 +356,16 @@ tvi/rs = receiver set of tvi (for server push)
 service. The server provides the TIPS service of two information resources (#1
 and #2) where #1 is an ALTO map service, and #2 is a filterable
 service. There are 3 ALTO clients (Client 1, Client 2, and Client 3) that are
-connected to the ALTO server. Each client maintains a single HTTP connection
-with the ALTO server and uses the TIPS view to retrieve updates (see the
-arguments in {{single-http}}). Specifically, a TIPS view (tv1) is created for
-the map service #1, and is shared by multiple clients. For the filtering service
-#2, two different TIPS view (tv2 and tv3) are created upon different client
-requests with different filter sets.
+connected to the ALTO server.
+
+Each client uses the TIPS view to retrieve updates. Specifically, a TIPS view
+(tv1) is created for the map service #1, and is shared by multiple clients. For
+the filtering service #2, two different TIPS view (tv2 and tv3) are created upon
+different client requests with different filter sets.
+
+A heartbeat mechanism is used to detect the liveness of clients using TIPS. It
+allows the ALTO server to identify unused TIPS views, e.g., because of
+accidentally crashed ALTO clients, and release the resources of such views.
 
 # TIPS Updates Graph
 
@@ -395,12 +398,12 @@ mandatory incremental updates (e.g., ID103-104), dotted lines represent optional
 incremental updates (e.g., ID103-105), and thin lines represent snapshots (e.g.,
 ID0-103). Note that node content is path independent: the content of node v can
 be obtained by applying the updates from any path that ends at v. For example,
-assume the latest version is 105 and a client already has version 103. The base version of the client is 103 as it serves as a base upon which
-incremental updates can be applied. The target version 105 can either be
-directly fetched as a snapshot, computed incrementally by applying the
-incremental updates between 103 and 104, then 104 and 105, or if the optional
-update from 103 to 105 exists, computed incrementally by taking the "shortcut"
-path from 103 to 105.
+assume the latest version is 105 and a client already has version 103. The base
+version of the client is 103 as it serves as a base upon which incremental
+updates can be applied. The target version 105 can either be directly fetched as
+a snapshot, computed incrementally by applying the incremental updates between
+103 and 104, then 104 and 105, or if the optional update from 103 to 105 exists,
+computed incrementally by taking the "shortcut" path from 103 to 105.
 
 ~~~~ drawing
                                                         +======+
@@ -439,58 +442,6 @@ path from 103 to 105.
 ~~~~
 {: #fig-ug artwork-align="center" title="TIPS Model Example"}
 
-## Resource Location Schema {#schema}
-
-Update items are exposed as HTTP resources and the URLs of these items, which we
-call resource location schema, follow specific patterns. To access each
-individual update in an updates graph, consider the model represented as a
-"virtual" file system (adjacency list), contained within the root of a TIPS view
-URI (see {{open-resp}} for the definition of tips-view-uri). For example,
-assuming that the update graph of a TIPS view is as shown in {{fig-ug}}, the
-location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
-
-~~~~ drawing
-  <tips-view-uri>  // relative URI to a TIPS view
-    |_ ug    // updates graph
-    |  |_ 0
-    |  |  |_ 101    // full 101 snapshot
-    |  |  |_ 103
-    |  |  \_ 105
-    |  |_ 101
-    |  |  \_ 102    // 101 -> 102 incremental update
-    |  |_ 102
-    |  |  \_ 103
-    |  |_ 103
-    |  |  |_ 104
-    |  |  \_ 105    // optional shortcut 103 -> 105 incr. update
-    |  |_ 104
-    |  |  \_ 105
-    |  \_ 105
-    |     \_ 106
-    \_ meta         // TIPS view meta
-       \_ ...
-~~~~
-{: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
-
-TIPS uses this directory schema to generate template URIs which allow
-clients to construct the location of incremental updates after receiving the
-tips-view-uri path from the server. The generic template for the location of the
-update item on the edge from node 'i' to node 'j' in the updates graph is:
-
-~~~
-    <tips-view-uri>/ug/<i>/<j>
-~~~
-
-Due to the sequential nature of the update item IDs, a client can long poll a
-future update that does not yet exist (e.g., the incremental update from 106 to
-107) by constructing the URI for the next edge that will be added, starting from
-the sequence number of the current last node (denoted as end-seq) in the graph
-to the next sequential node (with the sequence number of end-seq + 1):
-
-~~~
-    GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
-~~~
-
 ## Updates Graph Modification Invariants
 
 A server may change its updates graph (to compact, to add nodes,
@@ -528,13 +479,13 @@ the right content of version 102 (in the first example) or 104 (in the second
 example) cannot be obtained by a client that does not have the previous version
 101 or 103, respectively.
 
-# TIPS High Level Workflow {#workflow}
+# TIPS Workflow and Resource Location Schema {#workflow}
 
-## Workflow Overview
+## Workflow
 
 At a high level, an ALTO client first uses the TIPS service to indicate the
 information resource(s) that the client wants to monitor. For each requested
-resource, the server returns a JSON object that contains a URI, which points to
+resource, the server returns a JSON object that contains a URL, which points to
 the root of a TIPS view, and a summary of the current view, which contains, at
 the minimum, the start-seq and end-seq of the update graph and a
 server-recommended edge to consume first.
@@ -542,133 +493,97 @@ server-recommended edge to consume first.
 The TIPS view summary provides enough information for the client to continuously
 pull each additional update, following the workflow in {{fig-workflow-pull}}.
 Detailed specification of this mode is given in {{pull}}. Note that in
-{{fig-workflow-pull}}, the update item at `/<tips-view-uri1>/ug/<j>/<j+1>` may
+{{fig-workflow-pull}}, the update item at `<tips-view-root>/ug/<j>/<j+1>` may
 not yet exist, so the server holds the request until the update becomes
 available (long polling).
+
+The client must periodically send a heartbeat signal by making a POST request to
+`/<tips-view-uri1>/heartbeat` to indicate that the client is still active.
+Otherwise, the server may close the TIPS view to release the resources. See
+details in {{tips-heartbeat}}.
 
 ~~~~ drawing
 Client                                  TIPS
   o                                       .
-  | Open persistent HTTP connection       .
-  |-------------------------------------->|
-  |                                       .
   | POST to create/receive a TIPS view    .
   |           for resource 1              .
-  | ------------------------------------> |
+  |-------------------------------------> |
   | <tips-view-uri1>, <tips-view-summary> .
-  |<------------------------------------- |
+  | <-------------------------------------|
   |                                       .
   | GET /<tips-view-uri1>/ug/<i>/<j>      .
-  | --------------------------------------|
+  |-------------------------------------> |
   | content on edge i to j                .
-  |<--------------------------------------|
+  | <-------------------------------------|
   |                                       .
   | GET /<tips-view-uri1>/ug/<j>/<j+1>    .
-  | ------------------------------------->|
+  |-------------------------------------> |
   |                                       .
+  | POST /<tips-view-uri1>/heartbeat      .
+  |-------------------------------------> |
   |                                       .
   | content on edge j to j+1              .
-  |<--------------------------------------|
+  | <-------------------------------------|
   |                                       .
   | DELETE TIPS view for resource 1       .
   |-------------------------------------> |
   |                                       .
-  | Close HTTP connection                 .
-  |-------------------------------------->|
   o
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
-An alternate design would use server push, which is an HTTP feature not widely
-implemented. A non-normative description of this approach is in the appendix (
-{{push}}).
+## Resource Location Schema {#schema}
 
-## TIPS Management over a Single HTTP Connection {#single-http}
+Update items are exposed as HTTP resources and the URLs of these items, which we
+call resource location schema, follow specific patterns. To access each
+individual update in an updates graph, consider the model represented as a
+"virtual" file system (adjacency list), contained within the root of a TIPS view
+URI (see {{open-resp}} for the definition of tips-view-uri). For example,
+assuming that the update graph of a TIPS view is as shown in {{fig-ug}}, the
+location schema of this TIPS view will have the format as in {{fig-ug-schema}}.
 
-A key requirement in the current new transport extension is that a client must
-interact with the ALTO server using a single persistent HTTP connection to
-manage a TIPS view, and the life cycle of the TIPS view are bounded to that
-specific connection. This design is due to the following reasons:
+~~~~ drawing
+  <tips-view-root>  // root path to a TIPS view
+    |_ ug    // updates graph
+    |  |_ 0
+    |  |  |_ 101    // full 101 snapshot
+    |  |  |_ 103
+    |  |  \_ 105
+    |  |_ 101
+    |  |  \_ 102    // 101 -> 102 incremental update
+    |  |_ 102
+    |  |  \_ 103
+    |  |_ 103
+    |  |  |_ 104
+    |  |  \_ 105    // optional shortcut 103 -> 105 incr. update
+    |  |_ 104
+    |  |  \_ 105
+    |  \_ 105
+    |     \_ 106
+    \_ meta         // TIPS view meta
+       \_ ...
+~~~~
+{: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
 
-The first reason is to reduce the management complexity in modern server
-deployment technologies. As microservices are becoming the new trend of web
-development, requests to the same service are load balanced to different
-instances, even between the same source and destination addresses. However, TIPS
-views are stateful information which depends on the client's input. If requests
-from the same client session can be directed to different instances, the
-operator of the ALTO server must implement complex mapping management or load
-balancing mechanisms to make sure the requests arrive at the same server.
+TIPS uses this directory schema to generate template URIs which allow
+clients to construct the location of incremental updates after receiving the
+tips-view-uri path from the server. The generic template for the location of the
+update item on the edge from node 'i' to node 'j' in the updates graph is:
 
-The second reason is to simplify the state management of a single session. If
-multiple connections are associated with a single session, implementations of
-ALTO servers and clients must manage the state of the connections, which
-increases the complexity of both ALTO servers and clients.
+~~~
+    <tips-view-root>/ug/<i>/<j>
+~~~
 
-Third, single persistent HTTP connection offers an implicit way of life cycle
-management of TIPS views, which otherwise can be resource-consuming. Malicious
-users may create TIPS views and then disconnect, to get around the limits on
-concurrent TIPS views, if not implemented correctly by an ALTO server. Leaving
-the TIPS views alive after the HTTP connection is closed or timed out also makes
-session management complex: When a client reconnects, should it try to access
-the TIPS view before the disconnection or simply start a new session? Whether
-and when can the server remove the TIPS views? In the current extension, the
-idea is to avoid such complexity and enforce the consensus that a session will
-be automatically closed once the connection is closed or timed out.
+Due to the sequential nature of the update item IDs, a client can long poll a
+future update that does not yet exist (e.g., the incremental update from 106 to
+107) by constructing the URI for the next edge that will be added, starting from
+the sequence number of the current last node (denoted as end-seq) in the graph
+to the next sequential node (with the sequence number of end-seq + 1):
 
-## TIPS with Different HTTP Versions
+~~~
+    GET /<tips-view-uri>/ug/<end-seq>/<end-seq + 1>
+~~~
 
-The HTTP version of an "https" connection is negotiated between client and
-server using the TLS ALPN extension, as specified in Section 3.1 of {{RFC9113}}
-for HTTP/2 and Section 3.1 of {{RFC9114}} for HTTP/3. For an "http" connection,
-the explicit announcement of HTTP/2 or HTTP/3 support by the server is outside
-the scope of this document.
-
-While TIPS is designed to take advantage of newer HTTP features like server push
-and substreams for concurrent fetch, TIPS still functions with HTTP/1.1 for
-client pull defined in {{pull}}, with the limitation that it cannot cancel any
-outstanding requests or fetch resources concurrently over the same connection
-due to the blocking nature of HTTP/1.1 requests. If a client only capable of
-HTTP/1.1 desires to concurrently monitor multiple resources at the same time, it
-should open multiple connections, one for each resource, so that an outstanding
-long-poll request can be issued for each resource to monitor for new updates.
-For HTTP/2 and /3, with multiplexed streams, multiple resources can be monitored
-simultaneously.
-
-## Handling Connection Failures {#failure}
-
-While only one HTTP connection is used to manage a TIPS view, fetching
-incremental updates may use multiple connections, e.g., to allow concurrent,
-out-of-order downloading for HTTP/1.1. In case of connection failures, there are
-two cases:
-
-1. The connection used to open the TIPS view (referred to as Type 1 connection)
-   is disconnected.
-
-2. A connection fetching updates for a TIPS view (referred to as Type 2
-   connection) is disconnected.
-
-For case 2, the client only needs to resend the request in the current design.
-For case 1, however, the client needs to resend an open request to the server,
-and all unfinished data transfer requests will fail, even if they are on a
-different connection, because the old TIPS view is removed and the new TIPS view
-may have a different base URL and sequence number.
-
-The alternative design is to keep the base URL and sequence number for a TIPS
-view, e.g., identified by the client and content of the open request, for a
-graceful period. While this design may increase the efficiency of transferring
-TIPS updates, it has the following drawbacks:
-
-1. The server needs to store the state of the previous TIPS view, leading to
-   additional resource consumption and potential DoS attacks.
-
-2. The client and server need to properly handle transfers in the transient
-   period, i.e., after the disconnection and before the new TIPS view is
-   created, which can be complex.
-
-As we expect HTTP disconnection to be an occasional event, the efficiency gain
-of keeping the state is unlikely to be significant but the drawbacks are
-permanent. Thus, this document chooses the stateless design for security and
-simplicity.
 
 # TIPS Information Resource Directory (IRD) Announcement {#ird}
 
@@ -827,20 +742,18 @@ Note that it is straightforward for an ALTO server to run HTTP/2 and
 support concurrent retrieval of multiple resources such as "my-
 network-map" and "my-routingcost-map" using multiple HTTP/2 streams.
 
-The resource "update-my-costs-tips" provides an ALTO TIPS based
-connection, and this is indicated by the media-type "application/
-alto-tips+json".
+The resource "update-my-costs-tips" provides an ALTO TIPS service, and this is
+indicated by the media-type "application/ alto-tips+json".
 
-# TIPS Open/Close
+# TIPS Management
 
-Upon request, a server sends a TIPS view to a client.  This TIPS view
-may be created at the time of the request or may already exist
-(either because another client has an active connection to a TIPS
-view for the same requested network resource or because the server
-perpetually maintains a TIPS view for an often-requested resource).
-The server MAY keep track of which clients have an active connection
-to each TIPS view to determine whether or not it should delete a TIPS
-view and its corresponding updates graph and associated data.
+Upon request, a server sends a TIPS view to a client. This TIPS view may be
+created at the time of the request or may already exist (either because another
+client has already created a TIPS view for the same requested network resource
+or because the server perpetually maintains a TIPS view for an often-requested
+resource). The server MAY keep track of which clients are subscribing to each
+TIPS view to determine whether or not it should delete a TIPS view and its
+corresponding updates graph and associated data.
 
 ## Open Request {#open-req}
 
@@ -890,12 +803,13 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 
 ~~~
     object {
-      JSONString        tips-view-uri;
+      URL               tips-view-url;
       TIPSViewSummary   tips-view-summary;
     } AddTIPSResponse;
 
     object {
       UpdatesGraphSummary   updates-graph-summary;
+      JSONNumber            heartbeat-interval;
     } TIPSViewSummary;
 
     object {
@@ -914,15 +828,17 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 with the following fields:
 
 tips-view-uri:
-:  Relative URI to the TIPS view of a network resource, which MUST be
-   unique per connection, and is de-aliased by the server to refer to
-   the actual location of the TIPS view which may be shared by other
-   clients.
+:  Uniform Resource Locator (URL) to the requested TIPS view. The value of this
+   field must conform to {{RFC3986}} with the additional
+
+   Relative URI to the TIPS view of a network resource, which MUST be unique per
+   client session, and is de-aliased by the server to refer to the actual
+   location of the TIPS view which may be shared by other clients.
 
 :  When creating the URI for the TIPS view, TIPS MUST NOT use other
    properties of an HTTP request, such as cookies or the client's IP
    address, to determine the TIPS view.  Furthermore, TIPS MUST NOT
-   reuse a URI for a different object in the same connection.
+   reuse a URI for a different object in the same user session.
 
 :  It is expected that there is an internal mechanism to map a tips-
    view-uri to the TIPS view to be accessed.  For example, TIPS may
@@ -930,7 +846,7 @@ tips-view-uri:
    However, the exact mechanism is left to the TIPS provider.
 
 tips-view-summary:
-:  Contains an updates-graph-summary.
+:  Contains an updates-graph-summary and a heartbeat-interval.
 
    The updates-graph-summary field contains the starting sequence
    number (start-seq) of the updates graph and the last sequence
@@ -947,6 +863,17 @@ tips-view-summary:
    version.  Else, the server should recommend the latest snapshot
    edge.
 
+   The heartbeat-interval field contains the interval length of the heartbeat.
+   The time unit is second and the value MUST be interpreted as a floating
+   number.
+
+   The client is expected to send a heartbeat message (see {{tips-heartbeat}})
+   for each TIPS view that it is currently using, at least every
+   heartbeat-interval seconds. It is RECOMMENDED that the ALTO server picks an
+   appropriate value for the heartbeat-interval field: if the value is too big,
+   it may waste additional resources to maintain unused TIPS views; but if the
+   value is too small, the normal use of the TIPS service might be disrupted.
+
 If the request has any errors, the TIPS service must return an HTTP
 "400 Bad Request" to the ALTO client; the body of the response
 follows the generic ALTO error response format specified in
@@ -957,7 +884,6 @@ has the format shown in {{ex-bad-request}}.
     HTTP/1.1 400 Bad Request
     Content-Length: 131
     Content-Type: application/alto-error+json
-    Connection: close
 
     {
         "meta":{
@@ -1025,34 +951,59 @@ message shown in {{ex-op-rep}}.
 ~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
-    Content-Length: 288
+    Content-Length: 263
 
     {
-        "tips-view-uri": "/tips/2718281828459",
-        "tips-view-summary": {
-          "updates-graph-summary": {
-            "start-seq": 101,
-            "end-seq": 106,
-            "start-edge-rec" : {
-              "seq-i": 0,
-              "seq-j": 105
-            }
+      "tips-view-uri": "/tips/2718281828459",
+      "tips-view-summary": {
+        "updates-graph-summary": {
+          "start-seq": 101,
+          "end-seq": 106,
+          "start-edge-rec" : {
+            "seq-i": 0,
+            "seq-j": 105
           }
-        }
+        },
+        "heartbeat-interval": 5
+      }
     }
 ~~~~
 {: #ex-op-rep artwork-align="left" title="Response Example"}
 
-## Close Request {#close-req}
+## Heartbeat Request and Response {#tips-heartbeat}
+
+Upon creating a TIPS view, the ALTO client must indicate its liveness to that
+specific TIPS view by sending a heartbeat request every heartbeat-interval
+second(s). The heartbeat request MUST have the follow format:
+
+~~~~
+    POST /<tips-view-uri>/heartbeat
+~~~~
+
+The body of the request must be empty.
+
+The response to a heartbeat request must have status code 200 if the server has
+acknowledged the heartbeat message, and the corresponding error code if there is
+any error. When the request is successful, the body of the response must be empty.
+
+It is RECOMMENDED that the server uses the following HTTP codes to
+indicate errors, with the media type "application/alto-error+json",
+regarding TIPS view heartbeat requests.
+
+-  404 (Not Found): if the requested TIPS view does not exist or is
+   closed.
+
+An ALTO server should close a TIPS view if multiple consecutive heartbeat
+requests are not received for that TIPS view. The maximum number of missing
+heartbeat requests is specific to the server implementation, e.g.,
+statically configured for the server, specific to the resource and/or client,
+or dynamically set based on the server load, etc.
+
+## Close Request and Response {#close-req}
 
 An ALTO client can indicate it no longer desires to pull/receive updates for a
 specific network resource by "deleting" the TIPS view using the returned
-tips-view-uri and the HTTP DELETE method. Whether or not the server actually
-deletes the TIPS view is implementation dependent. For example, an ALTO server
-may maintain a set of clients that subscribe to the TIPS view of a resource: a
-client that deletes the view is removed from the set, and the TIPS view is only
-removed when the dependent set becomes empty. See other potential
-implementations in {{shared-tips-view}}. The DELETE request MUST have the
+tips-view-uri and the HTTP DELETE method. The DELETE request MUST have the
 following format:
 
 ~~~~
@@ -1062,17 +1013,19 @@ following format:
 The response to a valid request must be 200 if success, and the
 corresponding error code if there is any error.
 
-If the connection between the client and TIPS provider is severed
-without a DELETE request having been sent, the server MUST treat it
-as if the client had sent a DELETE request because the TIPS view is,
-at least from the client view, per-session based.
-
 It is RECOMMENDED that the server uses the following HTTP codes to
 indicate errors, with the media type "application/alto-error+json",
 regarding TIPS view close requests.
 
 -  404 (Not Found): if the requested TIPS view does not exist or is
    closed.
+
+It must be noted that whether or not the server actually releases the resources
+associated with the TIPS view is implementation dependent. For example, an ALTO
+server may maintain a set of clients that subscribe to the TIPS view of a
+resource: a client that deletes the view is removed from the set, and the TIPS
+view is only removed when the dependent set becomes empty. See other potential
+implementations in {{shared-tips-view}}.
 
 # TIPS Data Transfers - Client Pull {#pull}
 
@@ -1796,545 +1749,31 @@ This specification adheres fully to {{RFC9205}} as further elaborated below:
    factors and have still decided server push can be valuable in the
    TIPS use case.
 
-# Push-mode TIPS using HTTP Server Push
-
-This section gives a non-normative specification of the push-mode TIPS. It
-is intended to not be part of the standard protocol extension, because of the
-lack of server push support and increased protocol complexity. However,
-push-mode TIPS can potentially improve performance (e.g., latency) in more
-dynamic environments and use cases, with wait-free message delivery. Using
-native server push also results in minimal changes to the current protocol.
-Thus, a preliminary push-mode TIPS extension using native server push is
-specified here as a reference for future push-mode TIPS protocol designs.
-
-## Terminology {#push-terminology}
-
-The push extension uses the same terminologies as defined in {{terminology}}
-with the following additional term:
-
-Receiver set (rs):
-: Contains the set of clients who have requested to receive server push updates.
-  This term is not used in the normative specification.
-
-
-## Basic Workflow
-
-A client that prefers server push can use the workflow as shown in
-{{fig-workflow-push}}. In this case, the client indicates for server push when it
-creates the TIPS view. Future updates are pushed to the client as soon as they
-become available.
-
-~~~~ drawing
-Client                                  TIPS
-  o                                       .
-  | Open persistent HTTP connection       .
-  |-------------------------------------->|
-  |                                       .
-  | POST to create/receive a TIPS view    .
-  |      for resource 1 and add           .
-  |      self to receiver set             .
-  | ------------------------------------> |
-  | <tips-view-uri1>, <tips-view-summary> .
-  |<------------------------------------- |
-  |                                       .
-  | PUSH <tips-view-uri1>/ug/<i>/<j>      .
-  | <-------------------------------------|
-  |                                       .
-  | PUSH <tips-view-uri1>/ug/<j>/<j+1>    .
-  | <-------------------------------------|
-  |                                       .
-  | PUT to remove self from receiver      .
-  |      set of resource 1                .
-  |-------------------------------------> |
-  |                                       .
-  | Close HTTP connection                 .
-  |-------------------------------------->|
-  o
-~~~~
-{: #fig-workflow-push artwork-align="center" title="ALTO TIPS Workflow Supporting Server Push"}
-
-## TIPS Information Resource Directory (IRD) Announcement {#ird-push}
-
-The specifications for media type, uses, requests and responses of the push-mode
-TIPS is the same as specified in {{caps}}.
-
-### Capabilities
-
-The capabilities field of push-mode TIPS is modeled on that defined in {{caps}}.
-
-Specifically, the capabilities are defined as an object of type
-PushTIPSCapabilities:
-
-~~~
-     object {
-       [Boolean                     support-server-push;]
-     } PushTIPSCapabilities: TIPSCapabilities;
-~~~
-
-with field:
-
-support-server-push:
-:  The "support-server-push" field specifies whether the given TIPS
-   supports server push.  If the "support-server-push" field is TRUE,
-   this TIPS will allow a client to start or stop server push.  If
-   the field is FALSE or not present, this TIPS does not provide
-   server push.
-
-### Example
-
-~~~~
-    "update-my-costs-tips-with-server-push": {
-      "uri": "https://alto.example.com/updates-new/costs",
-      "media-type": "application/alto-tips+json",
-      "accepts": "application/alto-tipsparams+json",
-      "uses": [
-          "my-network-map",
-          "my-routingcost-map",
-          "my-hopcount-map",
-          "my-simple-filtered-cost-map"
-      ],
-      "capabilities": {
-        "incremental-change-media-types": {
-          "my-network-map": "application/json-patch+json",
-          "my-routingcost-map": "application/merge-patch+json",
-          "my-hopcount-map": "application/merge-patch+json",
-          "my-simple-filtered-cost-map": "application/merge-patch+json"
-        },
-        "support-server-push": true
-      }
-    }
-~~~~
-{: #fig-sp-ird artwork-align="left" title="Sample IRD Entry for TIPS with Server Push"}
-
-## Push-mode TIPS Open/Close
-
-### Open Request {#push-open-req}
-
-An ALTO client requests that the server provide a TIPS view for a given resource
-by sending an HTTP POST body with the media type
-"application/alto-tipsparams+json". That body contains a JSON object of type
-PushTIPSReq, where:
-
-~~~
-    object {
-       [Boolean     server-push;]
-    } PushTIPSReq: TIPSReq;
-~~~
-
-with the following field:
-
-server-push:
-:  Set to TRUE if a client desires to receive updates via server
-   push.  If the value is FALSE or not present, the client does not
-   accept server push updates.  See {{push}} for detailed
-   specifications.
-
-### Open Response
-
-The push-mode TIPS requires extending the contents of `tips-view-summary` field
-of AddTIPSResponse:
-
-~~~
-    object {
-      [Boolean              server-push;]
-    } PushTIPSViewSummary : TIPSViewSummary;
-~~~
-
-with the following field:
-
-server-push:
-:  An optional server-push boolean value which is set to TRUE if and only if the
-   client indicates server push. If the client indicates server push, the
-   recommended edge in the updates-graph-summary field will be the first content
-   pushed.
-
-## TIPS Data Transfer - Server Push {#push}
-
-TIPS allows an ALTO client to receive an update item pushed by the
-ALTO server.
-
-If a client registers for server push, it should not request updates
-via pull to avoid receiving the same information twice, unless the
-client does not receive the expected updates (see {{client-processing}}).
-
-###  Manage Server Push
-
-A client starts to receive server push when it is added to the
-receiver set.  A client can read the status of the push state and
-remove itself from the receiver set to stop server push.
-
-####  Start Server Push
-
-A client can add itself explicitly to the receiver set or add itself
-to the receiver set when requesting the TIPS view.  Before a client
-starts receiving server push for a TIPS view, it MUST enable server
-push in HTTP, i.e., following Section 8.4 of {{RFC9113}} for HTTP/2 and
-Section 4.6 of {{RFC9114}} for HTTP/3.  If the client does not enable
-HTTP server push, the ALTO server MUST return an ALTO error with the
-`E_INVALID_FIELD_VALUE` code and set the "field" to "server-push".
-
-Explicit add: A client can explicitly add itself in the receiver set
-by using the HTTP PUT method with media type "application/alto-
-tipsparams+json", where the client may optionally specify a starting
-edge (next-edge) from which it would like to receive updates:
-
-~~~~
-    PUT /<tips-view-uri>/push
-
-    object {
-      Boolean     server-push;
-      [NextEdge    next-edge;]
-    } PushState;
-
-    object {
-      JSONNumber       seq-i;
-      JSONNumber       seq-j;
-    } NextEdge;
-~~~~
-
-with the following fields:
-
-server-push:
-:  Set to true if the client desires to receive server push updates.
-
-next-edge:
-:  Optional field to request a starting edge to be pushed if the
-   client has pulled the updates graph directory and has calculated
-   the path it desires to take.  The server MAY push this edge first
-   if available.
-
-Short cut add: When requesting a TIPS view, an ALTO client can start
-server push by setting the option "server-push" field to be true
-using the HTTP POST method defined in {{open-req}}.
-
-#### Read Push State
-
-A client can use the HTTP GET method, with accept header set to
-"application/alto-tipsparams+json" to check whether server push is correctly
-enabled. The requested URL is the root path of the TIPS view, appended with
-"push", as shown below.
-
-~~~~
-    GET /<tips-view-uri>/push
-~~~~
-
-The server returns an JSON object with content type
-"application/alto-tipsparams+json". The response MUST include only one field
-"server-push". If the server push is enabled, the value of the "server-push"
-field MUST be the JSONBool value "true" (without the quote marks), and otherwise
-JSONBool value "false" (without the quote marks).
-
-#### Stop Push
-
-A client can stop receiving server push updates either explicitly or
-implicitly.
-
-Explicit stop:
-:  A client stops push by using the HTTP PUT method to `/<tips-view- uri>/push`,
-   with content type "application/alto-tipsparams+json" and setting server-push
-   to FALSE:
-
-Implicit stop:
-:  There are two ways. First, TIPS view is connection ephemeral: the close of
-   connection or stream for the TIPS view deletes the TIPS view from the view
-   of the client.
-
-   Second, the client sends a DELETE `/<tips-view-uri>` request, indicating it
-   no longer is interested in the resource, which also deletes the
-   client from the push receiver set if present.
-
-Note that a client may choose to explicitly stop server push for a
-resource, but may not delete the TIPS view so that it can switch
-seamlessly from server push to client pull in the case that the
-server push frequency is undesirable, without having to request a new
-TIPS view.
-
-### Scheduling Server Push Updates
-
-The objective of the server is to push the latest version to the
-client using the lowest cost (sum of size) of the updates.  Hence, it
-is RECOMMENDED that the server computes the push path using the
-following algorithm, upon each event computing a push:
-
--  Compute client current version (nc). During initialization, if the TIPS view
-   request has a tag, find that version; otherwise nc = 0
-
--  Compute the shortest path from the current version to the latest version, nc,
-   n1, ... ne (latest version). Note that the shortest path may not involve the
-   tagged version and instead follow the edge from 0 to the latest snapshot.
-
--  Push `/<tips-view-uri>/ug/nc/n1`.
-
-Note
-
--  Initialization: If the client specifically requests a starting
-   edge to be pushed, the server MAY start with that edge even if it
-   is not the shortest path.
-
--  Push state: the server MUST maintain the last entry pushed to the
-   client (and hence per client, per connection state) and schedule
-   next update push accordingly.
-
-###  Server Push Stream Management
-
-Let `SID_tv` denote the stream that creates the TIPS view. The server push MUST
-satisfy the following requirements:
-
--  `PUSH_PROMISE` frames MUST be sent in stream `SID_tv` to serialize and allow
-   the client to know the push order;
-
--  The  `PUSH_PROMISE` frame chooses a new server-selected stream ID, and the
-   stream is closed after push.
-
--  Canceling an update pushed by the server ({{Section 8.4.2 of RFC9113}} for
-   HTTP/2 or {{Section 4.6 of RFC9114}} for HTTP/3) makes the state management
-   complex. Thus, a client MUST NOT cancel a schedule update.
-
-### Examples
-
-The examples below are for HTTP/2 and based on the example update graph in
-{{data-model}}.
-
-#### Starting Server Push
-
-{{fig-ex-ssp}} is an example request from a client to an ALTO server which
-enables server push when creating a TIPS view.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = POST
-        :scheme = https
-        :path = /tips
-        host = alto.example.com
-        accept = application/alto-tips+json,
-                 application/alto-error+json
-        content-type = application/alto-tipsparams+json
-        content-length = 67
-
-    DATA
-      - END_STREAM
-      {
-        "resource-id": "my-routingcost-map",
-        "server-push": true
-      }
-~~~~
-{: #fig-ex-ssp artwork-align="left" title="Example Request to Start Server Push"}
-
-And {{fig-ex-ssp-resp}} is the response the server returns to the client. Note
-that the END_STREAM bit is not set.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-tips+json
-        content-length = 196
-
-    DATA
-      - END_STREAM
-      {
-        "tips-view-uri": "/tips/2718281828459",
-        "tips-view-summary": {
-          "updates-graph-summary": {
-            "start-seq": 101,
-            "end-seq": 106,
-            "start-edge-rec" : {
-              "seq-i": 0,
-              "seq-j": 105
-            }
-          },
-          "server-push": true
-        }
-      }
-~~~~
-{: #fig-ex-ssp-resp artwork-align="left" title="Example Response to a Start Server Push Request"}
-
-#### Querying the Push State
-
-Now assume the client queries the server whether server push is successfully
-enabled. {{fig-ps-req}} is the request:
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/push
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/alto-tipsparams+json
-~~~~
-{: #fig-ps-req artwork-align="left" title="Example Request to Query Push State"}
-
-And {{fig-ps-resp}} is the response.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-tipsparams+json
-        content-length = 519
-
-    DATA
-      - END_STREAM
-      {
-        "server-push": true
-      }
-~~~~
-{: #fig-ps-resp artwork-align="left" title="Example Response of the Push State Request"}
-
-#### Receiving Server Push
-
-Below shows the example of how the server may push the updates to the client.
-
-First, the ALTO server sends a PUSH_PROMISE in the same stream that is left open
-when creating the TIPS view. As there is no direct edge from 0 to 106, the first
-update is from 0 to 105, as shown in {{fig-push-1}}.
-
-~~~~
-    PUSH_PROMISE
-      - END_STREAM
-        Promised Stream 4
-        HEADER BLOCK
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/ug/0/105
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/alto-costmap+json
-~~~~
-{: #fig-push-1 artwork-align="left" title="An Example PUSH_PROMISE Frame with a Pushed Update from 0 to 105"}
-
-Then, the content of the pushed update (a full replacement) is delivered through
-stream 4, as announced in the PUSH_PROMISE frame in {{fig-push-1}}.
-{{fig-push-2}} shows the content of the message.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/alto-costmap+json
-        content-length = 539
-
-    DATA
-      + END_STREAM
-      {
-        "meta" : {
-          "dependent-vtags" : [{
-              "resource-id": "my-network-map",
-              "tag": "da65eca2eb7a10ce8b059740b0b2e3f8eb1d4785"
-            }],
-          "cost-type" : {
-            "cost-mode"  : "numerical",
-            "cost-metric": "routingcost"
-          },
-          "vtag": {
-            "resource-id" : "my-routingcost-map",
-            "tag" : "3ee2cb7e8d63d9fab71b9b34cbf764436315542e"
-          }
-        },
-        "cost-map" : {
-          "PID1": { "PID1": 1,  "PID2": 5,  "PID3": 10 },
-          "PID2": { "PID1": 5,  "PID2": 1,  "PID3": 15 },
-          "PID3": { "PID1": 20, "PID2": 15  }
-        }
-    }
-~~~~
-{: #fig-push-2 artwork-align="left" title="Content of the Pushed Update from 0 to 105"}
-
-As the latest version has sequence number 106, the ALTO server sends another
-PUSH_PROMISE in the same stream that is left open when creating the TIPS view to
-transit from 105 to 106, as shown in {{fig-push-3}}.
-
-~~~~
-    PUSH_PROMISE
-      - END_STREAM
-        Promised Stream 6
-        HEADER BLOCK
-        :method = GET
-        :scheme = https
-        :path = /tips/2718281828459/ug/105/106
-        host = alto.example.com
-        accept = application/alto-error+json,
-                      application/merge-patch+json
-~~~~
-{: #fig-push-3 artwork-align="left" title="Another Example of PUSH_PROMISE Frame with a Pushed Update from 105 to 106"}
-
-Then, the content of the pushed update (an incremental update as a JSON merge
-patch) is delivered through stream 6, as announced in the PUSH_PROMISE frame.
-{{fig-push-4}} shows the content of the update message.
-
-~~~~
-    HEADERS
-      + END_STREAM
-      + END_HEADERS
-        :status = 200
-        content-type = application/merge-patch+json
-        content-length = 266
-
-    DATA
-      + END_STREAM
-      {
-        "meta": {
-            "vtag": {
-              "tag": "c0ce023b8678a7b9ec00324673b98e54656d1f6d"
-            }
-        },
-        "cost-map": {
-          "PID1": {
-            "PID2": 9
-          },
-          "PID3": {
-            "PID1": null,
-            "PID3": 1
-          }
-        }
-      }
-~~~~
-{: #fig-push-4 artwork-align="left" title="Content of the Pushed Update from 105 to 106"}
-
-#### Stopping Server Push
-
-{{fig-stop-req}} is an example of explicitly stopping the server push. The client sends a
-PUT request to the push state of the TIPS view and set the "server-push" value
-to "false".
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :method = PUT
-        :scheme = https
-        :path = /tips/2718281828459/push
-        host = alto.example.com
-        accept = application/alto-error+json
-        content-type = application/alto-tipsparams+json
-        content-length = 29
-
-    DATA
-      - END_STREAM
-      {
-        "server-push": false
-      }
-~~~~
-{: #fig-stop-req artwork-align="left" title="Example Request to Stop Server Push"}
-
-The server simply returns an empty message with status code 200, to indicate
-that the operation succeeds, ashown in {{fig-stop-resp}}.
-
-~~~~
-    HEADERS
-      - END_STREAM
-      + END_HEADERS
-        :status = 200
-~~~~
-{: #fig-stop-resp artwork-align="left" title="Example Response of the Stop Server Push Request"}
+# Push-mode TIPS using HTTP Server Push {#push}
+
+TIPS allows ALTO clients to subscribe to incremental updates of an ALTO
+resource, and the specification in this document is based on the current best
+practice of building such a service using native HTTP. Earlier versions of this
+document had investigated the possibility of enabling push-mode TIPS, i.e., by
+taking advantage of the server push feature in HTTP/2 and HTTP/3.
+
+In the ideal case, push-mode TIPS can potentially improve performance (e.g.,
+latency) in more dynamic environments and use cases, with wait-free message
+delivery. Using native server push also results in minimal changes to the
+current protocol. While not adopted due to the lack of server push support and
+increased protocol complexity, push-mode TIPS remains a potential direction of
+protocol improvement.
+
+# Persistent HTTP Connections
+
+Previous versions of this document use persistent HTTP connections to detect the
+liveness of clients. This design is replaced with the heartbeat mechanism
+because it does not conform well with the best current practice of HTTP. For
+example, if an ALTO client is accessing a TIPS view over an HTTP proxy, the
+connection is not established directly between the ALTO client and the ALTO
+server, but between the ALTO client and the proxy and between the proxy and the
+ALTO server. Thus, using persistent connections may not correctly detect the
+right liveness state.
 
 # Acknowledgments
 {:numbered="false"}
@@ -2343,5 +1782,5 @@ The authors of this document would like to thank Mark Nottingham and Spencer
 Dawkins for providing invaluable reviews of earlier versions of this document,
 Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous feedback, Russ
 White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins, and
-Sheng Jiang for the directorate reviews, and Martin Duke for the Area Director
-Review.
+Sheng Jiang for the directorate reviews, Martin Duke for the Area Director
+review, and Mohamed Boucadair for shepherding the document.
