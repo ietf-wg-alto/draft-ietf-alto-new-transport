@@ -97,7 +97,7 @@ informative:
 
 The ALTO Protocol (RFC 7285) leverages HTTP/1.1 and is designed for the simple,
 sequential request-reply use case, in which an ALTO client requests a
-sequence of information resources, and the server responds with the complete
+sequence of information resources and the server responds with the complete
 content of each resource one at a time.
 
 ALTO incremental updates using Server-Sent Events (SSE) (RFC 8895) defines a
@@ -128,20 +128,19 @@ protocols have been designed:
 
 2. ALTO incremental updates using Server-Sent Events (ALTO/SSE) {{RFC8895}},
    which is designed for an ALTO client to indicate to the server that it wants
-   to receive updates for a set of resources, and the server can then
-   concurrently, and incrementally push updates to that client whenever
+   to receive updates for a set of resources and the server can then
+   concurrently and incrementally push updates to that client whenever
    monitored resources change.
 
-Both protocols are designed for HTTP/1.1 {{RFC9112}}, but HTTP/2 {{RFC9113}}
-and HTTP/3 {{RFC9114}}
-can support HTTP/1.1 workflows. However, HTTP/2 and HTTP/3 provide features that
-can improve on certain properties of ALTO and ALTO/SSE.
+Both protocols are designed for HTTP/1.1 {{RFC9112}}, but HTTP/2 {{RFC9113}} and
+HTTP/3 {{RFC9114}} can support HTTP/1.1 workflows. However, HTTP/2 and HTTP/3
+provide features that can improve certain properties of ALTO and ALTO/SSE.
 
 - First, consider the ALTO base protocol, which is designed to transfer only
   complete information resources. A client can run the base protocol on top of
   HTTP/2 or HTTP/3 to request multiple information resources in concurrent
   streams, but each request must be for a complete information resource: there is
-  no capability it transmits incremental updates. Hence, there can be large
+  no capability it transmits incremental updates. Hence, there can be a large
   overhead when the client already has an information resource and then there are
   small changes to the resource.
 
@@ -154,17 +153,17 @@ can improve on certain properties of ALTO and ALTO/SSE.
   identifier. Additionally, ALTO/SSE is a push-only protocol, which denies the
   client flexibility in choosing how and when it receives updates.
 
-To mitigate these concerns, this document introduces a new ALTO service, called
+To mitigate these concerns, this document introduces a new ALTO service called
 the Transport Information Publication Service (TIPS). TIPS uses an incremental
 RESTful design to provide an ALTO client with a new capability to explicitly,
 concurrently issue non-blocking requests for specific incremental updates using
 native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 
 Despite the benefits, however, ALTO/SSE {{RFC8895}}, which solves a similar
-problem, has its own advantagess. First, SSE is a mature technique with a
-well-established ecosystem that can simplify development. Second, SSE
-does not allow multiple connections to receive updates for multiple objects
-over HTTP/1.1.
+problem, has its advantages. First, SSE is a mature technique with a
+well-established ecosystem that can simplify development. Second, SSE does not
+allow multiple connections to receive updates for multiple objects over
+HTTP/1.1.
 
 HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}} also specify server push, which might
 enhance TIPS. We discuss push-mode TIPS as an alternative design in {{push}}.
@@ -299,7 +298,7 @@ Incremental update:
 
 Update item:
 : Refers to the content on an edge of the updates graph, which can be either a
-  snapshot or incremental update. An update item can be considered as a pair
+  snapshot or an incremental update. An update item can be considered as a pair
   (op, data) where op denotes whether the item is an incremental update or a
   snapshot, and data is the content of the item.
 
@@ -360,7 +359,7 @@ connected to the ALTO server.
 
 Each client uses the TIPS view to retrieve updates. Specifically, a TIPS view
 (tv1) is created for the map service #1, and is shared by multiple clients. For
-the filtering service #2, two different TIPS view (tv2 and tv3) are created upon
+the filtering service #2, two different TIPS views (tv2 and tv3) are created upon
 different client requests with different filter sets.
 
 A heartbeat mechanism is used to detect the liveness of clients using TIPS. It
@@ -381,17 +380,17 @@ snapshots can be represented using the following directed acyclic graph model,
 where the server tracks the change of the resource maps with version IDs that are
 assigned sequentially (i.e., incremented by 1 each time):
 
--  Each node in the graph is a version of the resource, where a tag identifies
+-  Each node in the graph is a version of the resource, where a tag identifies the
    content of the version (tag is valid only within the scope of resource).
    Version 0 is reserved as the initial state (empty/null).
 
--  Each edge is an update item. In particular, edge from i to j is the update
+-  Each edge is an update item. In particular, the edge from i to j is the update
    item to transit from version i to version j.
 
--  Version is path independent (different paths arrive at the same version/node
+-  Version is path-independent (different paths arrive at the same version/node
    has the same content)
 
-A concrete example is as shown in {{fig-ug}}. There are 7 nodes in the graph,
+A concrete example is shown in {{fig-ug}}. There are 7 nodes in the graph,
 representing 7 different versions of the resource. Edges in the figure represent
 the updates from the source version to the target version. Thick lines represent
 mandatory incremental updates (e.g., ID103-104), dotted lines represent optional
@@ -492,12 +491,12 @@ correctly interact with the current view. With the URI to the root of a TIPS
 view, clients can construct URIs (see {{schema}}) to fetch incremental updates
 and to report liveness.
 
-An example workflow is as shown in {{fig-workflow-pull}}. After the TIPS-F
+An example workflow is shown in {{fig-workflow-pull}}. After the TIPS-F
 service receives the request from the client to monitor the updates of an ALTO
 resource, it creates a TIPS view service and returns the corresponding
 information to the client. The URI points to that specific TIPS-V instance and
 the summary contains a heartbeat interval, the start-seq and end-seq of the
-update graph and a server-recommended edge to consume first, e.g., from i to j.
+update graph, and a server-recommended edge to consume first, e.g., from i to j.
 
 An ALTO client can then continuously pull each additional update with the
 information. For example, the client in {{fig-workflow-pull}} first fetches the
@@ -545,10 +544,10 @@ Client                                 TIPS-F           TIPS-V
 
 ## Resource Location Schema {#schema}
 
-The resource location schema defines how client constructs URI to fetch
+The resource location schema defines how a client constructs URI to fetch
 incremental updates and to report liveness through heartbeat requests.
 
-To access each individual update in an updates graph, consider the model
+To access each update in an updates graph, consider the model
 represented as a "virtual" file system (adjacency list), contained within the
 root of a TIPS view URI (see {{open-resp}} for the definition of tips-view-uri).
 For example, assuming that the update graph of a TIPS view is as shown in
@@ -646,7 +645,7 @@ incremental-change-media-types:
 :  If a TIPS can provide updates with incremental changes for a
    resource, the "incremental-change-media-types" field has an entry
    for that resource-id, and the value is the supported media types
-   of the incremental change separated by commas.  For the
+   of incremental changes, separated by commas.  For the
    implementation of this specification, this MUST be "application/
    merge-patch+json", "application/json-patch+json", or "application/
    merge-patch+json,application/json-patch+json", unless defined by a future
@@ -683,8 +682,8 @@ If the set is not closed, at least one resource R1 in the "uses" field of a TIPS
 depends on another resource R0 which is not in the "uses" field of the same
 TIPS. Thus, a client cannot receive incremental updates for R0 from the same
 TIPS service. If the client observes in an update of R1 that the version tag for
-R0 has changed, it must make a request to retrieve the full content of R0, which
-is likely to be less efficient than receiving the incremental updates of R0.
+R0 has changed, it must request the full content of R0, which is likely to be
+less efficient than receiving the incremental updates of R0.
 
 ## An Example
 
@@ -864,7 +863,7 @@ tips-view-uri:
    ~~~
 
    where schema must be "http" or "https" unless specified by a future
-   extension, and host, port, path are as specified in Sections 3.2.2, 3.2.3,
+   extension, and host, port and path are as specified in Sections 3.2.2, 3.2.3,
    and 3.3 in {{RFC3986}}. The URI MUST be unique per client session and may be
    de-aliased by the server to refer to the actual location of the TIPS view
    which may be shared by other clients.
@@ -893,8 +892,8 @@ tips-view-summary:
    the cumulative size of the incremental updates available from that
    version onward and compare it to the size of the complete resource
    snapshot.  If the snapshot is bigger, the server should recommend
-   the first incremental update edge starting from client's tagged
-   version.  Else, the server should recommend the latest snapshot
+   the first incremental update edge starting from the client's tagged
+   version.  Otherwise, the server should recommend the latest snapshot
    edge.
 
    The heartbeat-interval field contains the interval length of the heartbeat.
@@ -954,7 +953,7 @@ Furthermore, it is RECOMMENDED that the server uses the following HTTP codes to
 indicate other errors, with the media type "application/alto-error+json".
 
 -  429 (Too Many Requests): when the number of TIPS views open requests exceeds
-   server threshold. Server may indicate when to re-try the request in the
+   the server threshold. The server may indicate when to re-try the request in the
    "Re-Try After" headers.
 
 ##  Open Example
@@ -963,7 +962,7 @@ For simplicity, assume that the ALTO server is using the Basic
 authentication.  If a client with username "client1" and password
 "helloalto" wants to create a TIPS view of an ALTO Cost Map resource
 with resource ID "my-routingcost-map", it can send the
-request depiced in {{ex-op}}.
+request depicted in {{ex-op}}.
 
 ~~~~
     POST /tips HTTP/1.1
@@ -1008,7 +1007,7 @@ message shown in {{ex-op-rep}}.
 
 Upon creating a TIPS view, the ALTO client must indicate its liveness to that
 specific TIPS view by sending a heartbeat request every heartbeat-interval
-second(s). The heartbeat request MUST have the follow format:
+second(s). The heartbeat request MUST have the following format:
 
 ~~~~
     POST /<tips-view-path>/heartbeat HTTP/1.1
@@ -1046,7 +1045,7 @@ following format:
     HOST: <tips-view-host>
 ~~~~
 
-The response to a valid request must be 200 if success, and the
+The response to a valid request must be 200 if successful, and the
 corresponding error code if there is any error.
 
 It is RECOMMENDED that the server uses the following HTTP codes to
@@ -1056,8 +1055,8 @@ regarding TIPS view close requests.
 -  404 (Not Found): if the requested TIPS view does not exist or is
    closed.
 
-It must be noted that whether or not the server actually releases the resources
-associated with the TIPS view is implementation dependent. For example, an ALTO
+It must be noted that whether or not the server releases the resources
+associated with the TIPS view is implementation-dependent. For example, an ALTO
 server may maintain a set of clients that subscribe to the TIPS view of a
 resource: a client that deletes the view is removed from the set, and the TIPS
 view is only removed when the dependent set becomes empty. See other potential
@@ -1094,9 +1093,9 @@ example.
 If the request is valid (`ug/<i>/<j>` exists), the response is encoded
 as a JSON object whose data format is indicated by the media type.
 
-It is possible that a client conducts proactive fetching of future updates, by
+A client may conduct proactive fetching of future updates, by
 long polling updates that have not been listed in the directory yet. For
-long-poll prefetch, the client must have indicated the media type which may
+long-poll prefetch, the client must have indicated the media type that may
 appear. It is RECOMMENDED that the server allows for at least the prefetch of
 `<end-seq> -> <end-seq + 1>`
 
@@ -1126,8 +1125,8 @@ regarding update item requests.
 -  425 (Too Early): if the seq exceeds the server prefetch window
 
 -  429 (Too Many Requests): when the number of pending (long-poll)
-   requests exceeds server threshold.  Server may indicate when to
-   re-try the request in the "Re-Try After" headers.
+   requests exceeds the server threshold. The server may indicate when to re-try
+   the request in the "Re-Try After" headers.
 
 ##  Example {#iu-example}
 
@@ -1155,12 +1154,12 @@ The response is shown in {{ex-get-res}}.
 
 ## New Next Edge Recommendation
 
-While intended TIPS usage is for the client to recieve a recommended
+While intended TIPS usage is for the client to receive a recommended
 starting edge in the TIPS summary, consume that edge, then construct
 all future URIs by incrementing the sequence count by 1, there may be
 cases in which the client needs to request a new next edge to
 consume.  For example, if a client has an open TIPS view yet has not
-polled in a while, the client may requests the next logical
+polled in a while, the client may request the next logical
 incremental URI but the server has compacted the updates graph so it
 no longer exists.  Thus, the client must request a new next edge to
 consume based on its current version of the resource.
@@ -1176,7 +1175,7 @@ given TIPS view by sending an HTTP POST request with the media type
     HOST: <tips-view-host>
 ~~~~
 
-The POST body have the following form, where providing the version
+The POST body has the following form, where providing the version
 tag of the resource the client already has is optional:
 
 ~~~~
@@ -1239,7 +1238,7 @@ merge patch for incremental changes.  JSON merge patch is clearly
 superior to JSON patch for describing incremental changes to cost
 maps, endpoint costs, and endpoint properties.  For these data
 structures, JSON merge patch is more space efficient, as well as
-simpler to apply.  There is no advantage allowing a server to use
+simpler to apply.  There is no advantage in allowing a server to use
 JSON patch for those resources.
 
 The case is not as clear for incremental changes to network maps.
@@ -1251,7 +1250,7 @@ array of prefixes for both PIDs.  On the other hand, to process a
 JSON patch update, the ALTO client would have to retain the indexes
 of the prefixes for each PID.  Logically, the prefixes in a PID are
 an unordered set, not an array; aside from handling updates, a client
-has no need to retain the array indexes of the prefixes.  Hence, to
+does not need to retain the array indexes of the prefixes.  Hence, to
 take advantage of JSON patch for network maps, ALTO clients would
 have to retain additional, otherwise unnecessary, data.
 
@@ -1270,12 +1269,13 @@ There are two levels of load balancing in TIPS. The first level is to balance
 the load of TIPS views for different clients, and the second is to balance the
 load of incremental updates.
 
-Load balancing of TIPS views can either be achieved at the application layer or
-at the infrastructure layer. For example, an ALTO server may set `<tips-view-host>`
-to different subdomains to distribute TIPS views, or simply use the same host of
-the TIPS service and rely on load balancers to distribute the load.
+Load balancing of TIPS views can be achieved either at the application layer or
+at the infrastructure layer. For example, an ALTO server may set
+`<tips-view-host>` to different subdomains to distribute TIPS views, or simply
+use the same host of the TIPS service and rely on load balancers to distribute
+the load.
 
-TIPS allow clients to make concurrent pulls of the incremental
+TIPS allows clients to make concurrent pulls of incremental
 updates potentially through different HTTP connections.  As a
 consequence, it introduces additional complexities when the ALTO
 server is being load balanced -- a feature widely used to build
@@ -1330,21 +1330,19 @@ In {{fig-cross}}, the cost-map versions 101 and 102 (denoted as C101 and C102)
 are dependent on the network-map version 89 (denoted as N89). The cost-map
 version 103 (C103) is dependent on the network-map version 90 (N90), and so on.
 
-In pull-mode, a client can decide the order in which to receive the updates.
+Thus, the client must decide the order in which to receive and apply the
+updates. The order may affect how fast the client can build a consistent view
+and how long the client needs to buffer the update.
 
-In push-mode, the server must decide.  Pushing order may affect how
-fast the client can build a consistent view and how long the client
-needs to buffer the update.
-
--  Example 1: The server pushes N89, N90, N91, C101, C102 in that
+-  Example 1: The client requests N89, N90, N91, C101, C102 in that
    order.  The client either gets no consistent view of the resources
-   or it has to buffer N90 and N91.
+   or has to buffer N90 and N91.
 
--  Example 2: The server pushes C101, C102, C103, N89.  The client
-   either gets no consistent view or it has to buffer C103.
+-  Example 2: The client requests C101, C102, C103, N89.  The client
+   either gets no consistent view or has to buffer C103.
 
-Therefore, the server is RECOMMENDED to push updates in the ascending
-order of the smallest dependent tag, e.g., {C101, C102, N89} before
+Therefore, the client is RECOMMENDED to request and process updates in the
+ascending order of the smallest dependent tag, e.g., {C101, C102, N89} before
 {C103, N90}
 
 ## Considerations for Client Processing Updates {#client-processing}
@@ -1384,7 +1382,7 @@ the new network map version tag.
 Though a server should send update items sequentially, it is possible that a
 client receives the update items out of order (in the case of a retransmitted
 update item or a result of concurrent fetch). The client must buffer the update
-items if they arrive out of order and then apply them sequentially (based upon
+items if they arrive out of order and then apply them sequentially (based on
 the sequence numbers) due to the operation of JSON merge patch and JSON patch.
 
 ## Considerations for Updates to Filtered Cost Maps
@@ -1394,13 +1392,13 @@ constraint tests, then an ALTO client may request updates to a
 Filtered Cost Map request with a constraint test.  In this case, when
 a cost changes, the updates graph MUST have an update if the new
 value satisfies the test.  If the new value does not, whether there
-is an update depends on whether the previous value satisfied the
+is an update depends on whether the previous value satisfies the
 test.  If it did not, the updates graph SHOULD NOT have an update.
 But if the previous value did, then the updates graph MUST add an
 update with a "null" value to inform the ALTO client that this cost
 no longer satisfies the criteria.
 
-TIPS can avoid having to handle such a complicated behavior by
+TIPS can avoid having to handle such complicated behavior by
 offering TIPS only for Filtered Cost Maps that do not allow
 constraint tests.
 
@@ -1511,7 +1509,7 @@ The availability of continuous updates, when the client indicates receiving
 server push, can also cause overload for an ALTO client, in particular, an ALTO
 client with limited processing capabilities. The current design does not include
 any flow control mechanisms for the client to reduce the update rates from the
-server. For example, TCP, HTTP/2, and QUIC provide stream and connection flow
+server. For example, TCP, HTTP/2 and QUIC provide stream and connection flow
 control data limits, and PUSH stream limits, which might help prevent the client
 from being overloaded. Under overloading, the client MAY choose to remove the
 information resources with high update rates.
@@ -1561,7 +1559,7 @@ Security considerations:
 : See the Security Considerations section of This-Document.
 
 Interoperability considerations:
-: This document specifies format of conforming messages and the interpretation
+: This document specifies the format of conforming messages and the interpretation
   thereof.
 
 Published specification:
@@ -1630,7 +1628,7 @@ Security considerations:
 : See the Security Considerations section of This-Document.
 
 Interoperability considerations:
-: This document specifies format of conforming messages and the interpretation
+: This document specifies the format of conforming messages and the interpretation
   thereof.
 
 Published specification:
@@ -1679,7 +1677,7 @@ Provisional registration?:
 
 --- back
 
-# A High Level Deployment Model {#sec-dep-model}
+# A High-Level Deployment Model {#sec-dep-model}
 
 Conceptually, the TIPS system consists of three types of resources:
 
@@ -1765,8 +1763,8 @@ This specification adheres fully to {{RFC9205}} as further elaborated below:
    potentially including links to other relevant resources.  Doing so
    ensures that the deployment is as flexible as possible
    (potentially spanning multiple servers), allows evolution, and
-   also gives the application the opportunity to tailor the
-   "discovery document" to the client" ({{Section 4.4.1 of RFC9205}}).
+   also allows the application to tailor the "discovery document" to the client"
+   ({{Section 4.4.1 of RFC9205}}).
 
 -  TIPS uses existing HTTP schemes ({{Section 4.4.2 of RFC9205}}).
 
@@ -1778,15 +1776,9 @@ This specification adheres fully to {{RFC9205}} as further elaborated below:
    breaks many of the assumptions of HTTP as a stateless protocol and
    will cause problems in interoperability, security, operability,
    and evolution" ({{Section 4.11 of RFC9205}}).  The only relationship
-   between requests is that a client must make a request to first
-   discover where a TIPS view of resource will be served, which is
-   consistent with the URI discovery in {{Section 4.4.1 of RFC9205}}.
-
-*  {{Section 4.14 of RFC9205}} notes that there are
-   quite a few caveats with using server push, mostly because of lack
-   of widespread support.  The authors have considered these
-   factors and have still decided server push can be valuable in the
-   TIPS use case.
+   between requests is that a client must first discover where a TIPS view of
+   a resource will be served, which is consistent with the URI discovery in
+   {{Section 4.4.1 of RFC9205}}.
 
 # Push-mode TIPS using HTTP Server Push {#push}
 
