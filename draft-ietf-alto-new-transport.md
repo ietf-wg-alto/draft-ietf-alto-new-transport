@@ -314,40 +314,36 @@ ID#i-#j:
     | Protocols | |    Policy    | | Information | | Interface |
     +-----------+ +--------------+ +-------------+ +-----------+
           |              |                |              |
-+----------------------------------------------------------------------+
-| ALTO Server                                                          |
-| +------------------------------------------------------------------+ |
-| |                                              Network Information | |
-| | +-------------+                         +-------------+          | |
-| | | Information |                         | Information |          | |
-| | | Resource #1 |                         | Resource #2 |          | |
-| | +-------------+                         +-------------+          | |
-| +-----|--------------------------------------/-------\-------------+ |
-|       |                                     /         \              |
-| +-----|------------------------------------/-----------\-----------+ |
-| |     |       Transport Information       /             \          | |
-| | +--------+                     +--------+        +--------+      | |
-| | |  tv1   |----+          +-----|  tv2   |        |  tv3   |---+  | |
-| | +--------+    |          |     +--------+        +--------+   |  | |
-| |     |         |          |           |             |          |  | |
-| | +--------+ +--------+ +--------+ +--------+ +--------+ +--------+| |
-| | | tv1/ug | | tv1/hb | | tv2/ug | | tv2/hb | | tv3/ug | | tv3/hb || |
-| | +--------+ +--------+ +--------+ +--------+ +--------+ +--------+| |
-| +----|\---------/\---------|---------/---------------|------|------+ |
-|      | \       /  \        |        /                |      |        |
-+------|--\-----/----\-------|-------/-----------------|------|--------+
-       |   \   /      \      |      /                  |      +
-       |    +-/-----+  \     |     /                   |     /
-       |     /       \  \    |    /                    |    /
-       |    /         \  \   |   /                     |   /
-       |   /           \  \  |  /                      |  |
++-----------------------------------------------------------------+
+| ALTO Server                                                     |
+| +-------------------------------------------------------------+ |
+| |                                         Network Information | |
+| | +-------------+                         +-------------+     | |
+| | | Information |                         | Information |     | |
+| | | Resource #1 |                         | Resource #2 |     | |
+| | +-------------+                         +-------------+     | |
+| +-----|--------------------------------------/-------\--------+ |
+|       |                                     /         \         |
+| +-----|------------------------------------/-----------\------+ |
+| |     |       Transport Information       /             \     | |
+| | +--------+                     +--------+        +--------+ | |
+| | |  tv1   |                     |  tv2   |        |  tv3   | | |
+| | +--------+                     +--------+        +--------+ | |
+| |     |                          /                     |      | |
+| | +--------+            +--------+                 +--------+ | |
+| | | tv1/ug |            | tv2/ug |                 | tv3/ug | | |
+| | +--------+            +--------+                 +--------+ | |
+| +----|----\----------------|-------------------------|--------+ |
+|      |     \               |                         |          |
++------|------\--------------|-------------------------|----------+
+       |       +------+      |                         |
+       |               \     |                         |
    +----------+       +----------+                 +----------+
    | Client 1 |       | Client 2 |                 | Client 3 |
    +----------+       +----------+                 +----------+
 
 tvi   = TIPS view i
 tvi/ug = incremental updates graph associated with tvi
-tvi/hb = client liveness check for tvi
 ~~~~
 {: #fig-overview artwork-align="center" title="Overview of ALTO TIPS"}
 
@@ -361,10 +357,6 @@ Each client uses the TIPS view to retrieve updates. Specifically, a TIPS view
 (tv1) is created for the map service #1, and is shared by multiple clients. For
 the filtering service #2, two different TIPS views (tv2 and tv3) are created upon
 different client requests with different filter sets.
-
-A heartbeat mechanism is used to detect the liveness of clients using TIPS. It
-allows the ALTO server to identify unused TIPS views, e.g., because of
-accidentally crashed ALTO clients, and release the resources of such views.
 
 # TIPS Updates Graph
 
@@ -488,15 +480,14 @@ wants to monitor. For each requested resource, the server returns a JSON object
 that contains a URI, which points to the root of a TIPS view (denoted as
 TIPS-V), and a summary of the current view, which contains the information to
 correctly interact with the current view. With the URI to the root of a TIPS
-view, clients can construct URIs (see {{schema}}) to fetch incremental updates
-and to report liveness.
+view, clients can construct URIs (see {{schema}}) to fetch incremental updates.
 
 An example workflow is shown in {{fig-workflow-pull}}. After the TIPS-F
 service receives the request from the client to monitor the updates of an ALTO
 resource, it creates a TIPS view service and returns the corresponding
 information to the client. The URI points to that specific TIPS-V instance and
-the summary contains a heartbeat interval, the start-seq and end-seq of the
-update graph, and a server-recommended edge to consume first, e.g., from i to j.
+the summary contains the start-seq and end-seq of the update graph, and a
+server-recommended edge to consume first, e.g., from i to j.
 
 An ALTO client can then continuously pull each additional update with the
 information. For example, the client in {{fig-workflow-pull}} first fetches the
@@ -504,13 +495,11 @@ update from i to j, and then from j to j+1. Note that the update item at
 `<tips-view-uri>/ug/<j>/<j+1>` may not yet exist, so the server holds the
 request until the update becomes available (long polling).
 
-In the meantime, the client must periodically send a heartbeat signal by making
-a POST request to `/<tips-view-path>/hb` to indicate that the client is still
-active. Otherwise, the server may close the TIPS view to release the resources.
-See details in {{tips-heartbeat}}.
-
-Once the client no longer needs the TIPS view, it can send a DELETE request to
-the TIPS-V service.
+It must be noted that a server may close a TIPS view, e.g., under high system
+load or due to inactivity. It is RECOMMENDED that a client detects the liveness
+and declares interests of the TIPS view by sending a polling edge request. For
+example, as long as the polling request to `<tips-view-uri>/ug/<j>/<j+1>` does
+not receive error code 404, the TIPS view is still alive.
 
 ~~~~ drawing
 Client                                 TIPS-F           TIPS-V
@@ -528,24 +517,21 @@ Client                                 TIPS-F           TIPS-V
   |                                                        .
   | GET /<tips-view-path>/ug/<j>/<j+1>                     .
   |------------------------------------------------------> |
-  |                                                        |
-  | POST /<tips-view-path>/hb                              |
-  |------------------------------------------------------> |
-  |                                                        |
+  .                                                        .
+  .                                                        .
   | content on edge j to j+1                               |
   | <------------------------------------------------------|
   |                                                        .
-  | DELETE <tips-view-path>                                .
-  |------------------------------------------------------> |
-  |                                                        o
-  o
+  o                                                        .
+                                                           .
+                                         TIPS View Closed  o
 ~~~~
 {: #fig-workflow-pull artwork-align="center" title="ALTO TIPS Workflow Supporting Client Pull"}
 
 ## Resource Location Schema {#schema}
 
 The resource location schema defines how a client constructs URI to fetch
-incremental updates and to report liveness through heartbeat requests.
+incremental updates.
 
 To access each update in an updates graph, consider the model
 represented as a "virtual" file system (adjacency list), contained within the
@@ -572,7 +558,6 @@ For example, assuming that the update graph of a TIPS view is as shown in
     |  |  \_ 105
     |  \_ 105
     |     \_ 106
-    |_ hb           // heartbeat
     \_ ...
 ~~~~
 {: #fig-ug-schema artwork-align="center" title="Location Schema Example"}
@@ -598,16 +583,6 @@ to the next sequential node (with the sequence number of end-seq + 1):
 
 Incremental updates of a TIPS view are read-only. Thus, they are fetched using
 the HTTP GET method.
-
-In the meantime, the URI of the heartbeat service of a TIPS view has the
-following format:
-
-~~~
-    <tips-view-uri>/hb
-~~~
-
-To avoid the message hitting an HTTP cache, the heartbeat request must use the
-POST method.
 
 # TIPS Information Resource Directory (IRD) Announcement {#ird}
 
@@ -775,9 +750,7 @@ Upon request, a server sends a TIPS view to a client. This TIPS view may be
 created at the time of the request or may already exist (either because another
 client has already created a TIPS view for the same requested network resource
 or because the server perpetually maintains a TIPS view for an often-requested
-resource). The server MAY keep track of which clients are subscribing to each
-TIPS view to determine whether or not it should delete a TIPS view and its
-corresponding updates graph and associated data.
+resource).
 
 ## Open Request {#open-req}
 
@@ -833,7 +806,6 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 
     object {
       UpdatesGraphSummary   updates-graph-summary;
-      JSONNumber            heartbeat-interval;
     } TIPSViewSummary;
 
     object {
@@ -852,34 +824,27 @@ AddTIPSResponse, denoted as media type "application/alto-tips+json":
 with the following fields:
 
 tips-view-uri:
-:  URI to the requested TIPS view. The value of this field must have the
+:  URI to the requested TIPS view. The value of this field MUST have the
    following format:
 
    ~~~
-       schema "://" tips-view-host "/" tips-view-path
+       scheme "://" tips-view-host "/" tips-view-path
 
        tips-view-host = host [ ":" port]
        tips-view-path = path
    ~~~
 
-   where schema must be "http" or "https" unless specified by a future
+   where scheme MUST be "http" or "https" unless specified by a future
    extension, and host, port and path are as specified in Sections 3.2.2, 3.2.3,
-   and 3.3 in {{RFC3986}}. The URI MUST be unique per client session and may be
-   de-aliased by the server to refer to the actual location of the TIPS view
-   which may be shared by other clients.
+   and 3.3 in {{RFC3986}}.
 
-:  When creating the URI for the TIPS view, TIPS MUST NOT use other
-   properties of an HTTP request, such as cookies or the client's IP
-   address, to determine the TIPS view.  Furthermore, TIPS MUST NOT
-   reuse a URI for a different object in the same user session.
-
-:  It is expected that there is an internal mechanism to map a tips-
-   view-uri to the TIPS view to be accessed.  For example, TIPS may
-   assign a unique, internal state id to each TIPS view instance.
-   However, the exact mechanism is left to the TIPS provider.
+   A server SHOULD NOT use properties that are not included in the request body
+   to determine the URI of a TIPS view, such as cookies or the client's IP
+   address. Furthermore, TIPS MUST NOT reuse a URI for a different TIPS view
+   (different resources or different request bodies).
 
 tips-view-summary:
-:  Contains an updates-graph-summary and a heartbeat-interval.
+:  Contains an updates-graph-summary.
 
    The updates-graph-summary field contains the starting sequence
    number (start-seq) of the updates graph and the last sequence
@@ -896,18 +861,7 @@ tips-view-summary:
    version.  Otherwise, the server should recommend the latest snapshot
    edge.
 
-   The heartbeat-interval field contains the interval length of the heartbeat.
-   The time unit is second and the value MUST be interpreted as a floating
-   number.
-
-   The client is expected to send a heartbeat message (see {{tips-heartbeat}})
-   for each TIPS view that it is currently using, at least every
-   heartbeat-interval seconds. It is RECOMMENDED that the ALTO server picks an
-   appropriate value for the heartbeat-interval field: if the value is too big,
-   it may waste additional resources to maintain unused TIPS views; but if the
-   value is too small, the normal use of the TIPS service might be disrupted.
-
-If the request has any errors, the TIPS service must return an HTTP
+If the request has any errors, the TIPS service MUST return an HTTP
 "400 Bad Request" to the ALTO client; the body of the response
 follows the generic ALTO error response format specified in
 Section 8.5.2 of {{RFC7285}}.  Hence, an example ALTO error response
@@ -952,9 +906,9 @@ field exists, the "field" field MUST exist.
 Furthermore, it is RECOMMENDED that the server uses the following HTTP codes to
 indicate other errors, with the media type "application/alto-error+json".
 
--  429 (Too Many Requests): when the number of TIPS views open requests exceeds
-   the server threshold. The server may indicate when to re-try the request in the
-   "Re-Try After" headers.
+- 429 (Too Many Requests): when the number of TIPS views open requests exceeds
+  the server threshold. The server may indicate when to re-try the request in
+  the "Re-Try After" headers.
 
 ##  Open Example
 
@@ -984,7 +938,7 @@ message shown in {{ex-op-rep}}.
 ~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
-    Content-Length: 287
+    Content-Length: 258
 
     {
       "tips-view-uri": "https://alto.example.com/tips/2718281828459",
@@ -996,71 +950,11 @@ message shown in {{ex-op-rep}}.
             "seq-i": 0,
             "seq-j": 105
           }
-        },
-        "heartbeat-interval": 5
+        }
       }
     }
 ~~~~
 {: #ex-op-rep artwork-align="left" title="Response Example"}
-
-## Heartbeat Request and Response {#tips-heartbeat}
-
-Upon creating a TIPS view, the ALTO client must indicate its liveness to that
-specific TIPS view by sending a heartbeat request every heartbeat-interval
-second(s). The heartbeat request MUST have the following format:
-
-~~~~
-    POST /<tips-view-path>/heartbeat HTTP/1.1
-    HOST: <tips-view-host>
-~~~~
-
-The body of the request must be empty.
-
-The response to a heartbeat request must have status code 200 if the server has
-acknowledged the heartbeat message, and the corresponding error code if there is
-any error. When the request is successful, the body of the response must be empty.
-
-It is RECOMMENDED that the server uses the following HTTP codes to
-indicate errors, with the media type "application/alto-error+json",
-regarding TIPS view heartbeat requests.
-
--  404 (Not Found): if the requested TIPS view does not exist or is
-   closed.
-
-An ALTO server should close a TIPS view if multiple consecutive heartbeat
-requests are not received for that TIPS view. The maximum number of missing
-heartbeat requests is specific to the server implementation, e.g.,
-statically configured for the server, specific to the resource and/or client,
-or dynamically set based on the server load, etc.
-
-## Close Request and Response {#close-req}
-
-An ALTO client can indicate it no longer desires to pull/receive updates for a
-specific network resource by "deleting" the TIPS view using the returned
-tips-view-uri and the HTTP DELETE method. The DELETE request MUST have the
-following format:
-
-~~~~
-    DELETE /<tips-view-path> HTTP/1.1
-    HOST: <tips-view-host>
-~~~~
-
-The response to a valid request must be 200 if successful, and the
-corresponding error code if there is any error.
-
-It is RECOMMENDED that the server uses the following HTTP codes to
-indicate errors, with the media type "application/alto-error+json",
-regarding TIPS view close requests.
-
--  404 (Not Found): if the requested TIPS view does not exist or is
-   closed.
-
-It must be noted that whether or not the server releases the resources
-associated with the TIPS view is implementation-dependent. For example, an ALTO
-server may maintain a set of clients that subscribe to the TIPS view of a
-resource: a client that deletes the view is removed from the set, and the TIPS
-view is only removed when the dependent set becomes empty. See other potential
-implementations in {{shared-tips-view}}.
 
 # TIPS Data Transfers - Client Pull {#pull}
 
@@ -1113,7 +1007,7 @@ indicate errors, with the media type "application/alto-error+json",
 regarding update item requests.
 
 -  404 (Not Found): if the requested TIPS view does not exist or is
-   closed.
+   closed by the server.
 
 -  410 (Gone): if an update has a seq that is smaller than the start-
    seq.
@@ -1211,7 +1105,7 @@ indicate errors, with the media type "application/alto-error+json",
 regarding new next edge requests.
 
 -  404 (Not Found): if the requested TIPS view does not exist or is
-   closed.
+   closed by the server.
 
 -  415 (Unsupported Media Type): if the media type(s) accepted by the
    client does not include the media type `application/alto-tips+json`.
@@ -1263,7 +1157,7 @@ Therefore, each TIPS instance may choose to encode the updates using
 JSON merge patch or JSON patch based on the type of changes in
 network maps.
 
-##  Considerations for Load Balancing {#load-balancing}
+## Considerations for Load Balancing {#load-balancing}
 
 There are two levels of load balancing in TIPS. The first level is to balance
 the load of TIPS views for different clients, and the second is to balance the
@@ -1427,16 +1321,15 @@ network map or cost map) that may be frequently queried by many
 clients.  Some potential options are listed below:
 
 -  An ALTO server creates one TIPS view of the common resource for
-   each client.  When the client deletes the view, the server deletes
-   the view in the server storage.
+   each client.
 
 -  An ALTO server maintains one copy of the TIPS view for each common
    resource and all clients requesting the same resources use the
    same copy.  There are two ways to manage the storage for the
    shared copy:
 
-   -  the ALTO server maintains the set of clients that subscribe to
-      the TIPS view, and only removes the view from the storage when
+   -  the ALTO server maintains the set of clients that have sent a polling
+      request to the TIPS view, and only removes the view from the storage when
       the set becomes empty.
 
    -  the TIPS view is never removed from the storage.
@@ -1486,46 +1379,39 @@ additional risks and their remedies.
 
 ## TIPS: Denial-of-Service Attacks
 
-Allowing TIPS views enables a new class of Denial-of-Service attacks.
-In particular, for the TIPS server, an ALTO client might
-create an excessive number of TIPS views.
+Allowing TIPS views enables new classes of Denial-of-Service attacks. In
+particular, for the TIPS server, one or multiple malicious ALTO clients might
+create an excessive number of TIPS views, to exhaust the server resource and/or
+to block normal users from the accessing the service.
 
-To avoid these attacks on the TIPS server, the server SHOULD choose
-to limit the number of active views and reject new requests when that threshold
-is reached. TIPS allows predictive fetching and the server SHOULD also choose to
-limit the number of pending requests. If a new request exceeds the threshold,
-the server SHOULD log the event and may return the HTTP status "429 Too many
-requests".
+To avoid such attacks, the server SHOULD choose to limit the number of active
+views and reject new requests when that threshold is reached. TIPS allows
+predictive fetching and the server SHOULD also choose to limit the number of
+pending requests. If a new request exceeds the threshold, the server SHOULD log
+the event and may return the HTTP status "429 Too many requests".
 
-It is important to note that the preceding approaches are not the
-only possibilities.  For example, it may be possible for TIPS to use
-somewhat more clever logic involving IP reputation, rate-limiting,
-and compartmentalization of the overall threshold into smaller
-thresholds that apply to subsets of potential clients.
+It is important to note that the preceding approaches are not the only
+possibilities. For example, it may be possible for TIPS to use somewhat more
+clever logic involving TIPS view eviction policies, IP reputation,
+rate-limiting, and compartmentalization of the overall threshold into smaller
+thresholds that apply to subsets of potential clients. If service availability
+is a concern, ALTO clients may establish service level agreements with the ALTO
+server.
 
 ## ALTO Client: Update Overloading or Instability
 
-The availability of continuous updates, when the client indicates receiving
-server push, can also cause overload for an ALTO client, in particular, an ALTO
-client with limited processing capabilities. The current design does not include
-any flow control mechanisms for the client to reduce the update rates from the
-server. For example, TCP, HTTP/2 and QUIC provide stream and connection flow
-control data limits, and PUSH stream limits, which might help prevent the client
-from being overloaded. Under overloading, the client MAY choose to remove the
-information resources with high update rates.
+The availability of continuous updates can also cause overload for an ALTO
+client, in particular, an ALTO client with limited processing capabilities. The
+current design does not include any flow control mechanisms for the client to
+reduce the update rates from the server. For example, TCP, HTTP/2 and QUIC
+provide stream and connection flow control data limits, which might help prevent
+the client from being overloaded. Under overloading, the client MAY choose to
+remove the information resources with high update rates.
 
 Also, under overloading, the client may no longer be able to detect
 whether information is still fresh or has become stale.  In such a
 case, the client should be careful in how it uses the information to
 avoid stability or efficiency issues.
-
-## Spoofed URI
-
-An outside party that can read the TIPS response or that can observe
-TIPS requests can obtain the TIPS view URI and use that to send
-fraudulent "DELETE" requests, thus disabling the service for the
-valid ALTO client.  This can be avoided by encrypting the requests
-and responses (Section 15 of {{RFC7285}}).
 
 # IANA Considerations
 
@@ -1681,7 +1567,7 @@ Provisional registration?:
 
 Conceptually, the TIPS system consists of three types of resources:
 
-- (R1) TIPS frontend to manage (create/delete) TIPS views.
+- (R1) TIPS frontend to create TIPS views.
 
 - (R2) TIPS view directory, which provides metadata (e.g., references) about the
   network resource data.
@@ -1798,13 +1684,12 @@ protocol improvement.
 # Persistent HTTP Connections
 
 Previous versions of this document use persistent HTTP connections to detect the
-liveness of clients. This design is replaced with the heartbeat mechanism
-because it does not conform well with the best current practice of HTTP. For
-example, if an ALTO client is accessing a TIPS view over an HTTP proxy, the
-connection is not established directly between the ALTO client and the ALTO
-server, but between the ALTO client and the proxy and between the proxy and the
-ALTO server. Thus, using persistent connections may not correctly detect the
-right liveness state.
+liveness of clients. This design, however, does not conform well with the best
+current practice of HTTP. For example, if an ALTO client is accessing a TIPS
+view over an HTTP proxy, the connection is not established directly between the
+ALTO client and the ALTO server, but between the ALTO client and the proxy and
+between the proxy and the ALTO server. Thus, using persistent connections may
+not correctly detect the right liveness state.
 
 # Acknowledgments
 {:numbered="false"}
