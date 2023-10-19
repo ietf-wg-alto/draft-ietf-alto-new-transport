@@ -495,11 +495,14 @@ update from i to j, and then from j to j+1. Note that the update item at
 `<tips-view-uri>/ug/<j>/<j+1>` may not yet exist, so the server holds the
 request until the update becomes available (long polling).
 
-It must be noted that a server may close a TIPS view, e.g., under high system
-load or due to inactivity. It is RECOMMENDED that a client detects the liveness
-and declares interests of the TIPS view by sending a polling edge request. For
-example, as long as the polling request to `<tips-view-uri>/ug/<j>/<j+1>` does
-not receive error code 404, the TIPS view is still alive.
+A server MAY close a TIPS view at any time, e.g., under high system load or due
+to client inactivity. In the event that a TIPS view is closed, an edge request
+will receive error code 404 in response, and the client will have to request a
+new TIPS view URI.
+
+If resources allow, servers SHOULD avoid closing TIPS views that have active
+polling edge requests or have recently served responses until clients have had a
+reasonable interval to request the next update.
 
 ~~~~ drawing
 Client                                 TIPS-F           TIPS-V
@@ -1328,11 +1331,11 @@ clients.  Some potential options are listed below:
    same copy.  There are two ways to manage the storage for the
    shared copy:
 
-   -  the ALTO server maintains the set of clients that have sent a polling
-      request to the TIPS view, and only removes the view from the storage when
-      the set becomes empty.
+   - the ALTO server maintains the set of clients that have sent a polling
+     request to the TIPS view, and only removes the view from the storage when
+     the set becomes empty and no client immediately issues a new edge request;
 
-   -  the TIPS view is never removed from the storage.
+   - the TIPS view is never removed from the storage.
 
 Developers may choose different implementation options depending on
 criteria such as request frequency, available resources of the ALTO
