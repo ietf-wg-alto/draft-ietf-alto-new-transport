@@ -1172,12 +1172,11 @@ at the infrastructure layer. For example, an ALTO server may set
 use the same host of the TIPS service and rely on load balancers to distribute
 the load.
 
-TIPS allows clients to make concurrent pulls of incremental
-updates potentially through different HTTP connections.  As a
-consequence, it introduces additional complexities when the ALTO
-server is being load balanced -- a feature widely used to build
-scalable and fault-tolerant web services.  For example, a request may
-be incorrectly processed if the following two conditions both hold:
+TIPS allows a client to make concurrent pulls of incremental updates for the
+same TIPS view potentially through different HTTP connections. As a consequence,
+it introduces additional complexities when the ALTO server is being load
+balanced. For example, a request may be directed to a wrong backend server and
+get incorrectly processed if the following two conditions both hold:
 
 -  the backend servers are stateful, i.e., the TIPS view is created
    and stored only on a single server;
