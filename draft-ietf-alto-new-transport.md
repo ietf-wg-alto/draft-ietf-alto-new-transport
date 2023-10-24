@@ -734,7 +734,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
           "my-routingcost-map": "application/merge-patch+json",
           "my-hopcount-map": "application/merge-patch+json",
           "my-simple-filtered-cost-map": "application/merge-patch+json"
-        },
+        }
       }
     }
 ~~~
