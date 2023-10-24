@@ -676,7 +676,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
     "my-routingcost-map": {
       "uri": "https://alto.example.com/costmap/routingcost",
       "media-type": "application/alto-costmap+json",
-      "uses": ["my-networkmap"],
+      "uses": ["my-network-map"],
       "capabilities": {
         "cost-type-names": ["num-routingcost"]
       }
@@ -684,7 +684,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
     "my-hopcount-map": {
       "uri": "https://alto.example.com/costmap/hopcount",
       "media-type": "application/alto-costmap+json",
-      "uses": ["my-networkmap"],
+      "uses": ["my-network-map"],
       "capabilities": {
         "cost-type-names": ["num-hopcount"]
       }
@@ -693,7 +693,7 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
       "uri": "https://alto.example.com/costmap/filtered/simple",
       "media-type": "application/alto-costmap+json",
       "accepts": "application/alto-costmapfilter+json",
-      "uses": ["my-networkmap"],
+      "uses": ["my-network-map"],
       "capabilities": {
         "cost-type-names": ["num-routingcost", "num-hopcount"],
         "cost-constraints": false
