@@ -118,8 +118,8 @@ native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 # Introduction {#intro}
 
 Application-Layer Traffic Optimization (ALTO) provides means for network
-applications to obtain network status information. So far, two transport
-protocols have been designed:
+applications to obtain network status information. So far, the ALTO information
+can be transported in two ways:
 
 1. The ALTO base protocol {{RFC7285}}, which is designed for the simple use case
    in which an ALTO client requests a network information resource, and the
@@ -839,7 +839,9 @@ tips-view-uri:
 
    where scheme MUST be "http" or "https" unless specified by a future
    extension, and host, port and path are as specified in Sections 3.2.2, 3.2.3,
-   and 3.3 in {{RFC3986}}.
+   and 3.3 in {{RFC3986}}. An ALTO server SHOULD use the "https" scheme unless
+   the contents of the TIPS view are intended to be publicly accessible and does
+   not raise security concerns.
 
    A server SHOULD NOT use properties that are not included in the request body
    to determine the URI of a TIPS view, such as cookies or the client's IP
@@ -933,7 +935,7 @@ request depicted in {{ex-op}}.
       "resource-id": "my-routingcost-map"
     }
 ~~~~
-{: #ex-op artwork-align="left" title="Open Example"}
+{: #ex-op artwork-align="left" title="Request Example of Opening a TIPS View"}
 
 If the operation is successful, the ALTO server returns the
 message shown in {{ex-op-rep}}.
@@ -957,7 +959,62 @@ message shown in {{ex-op-rep}}.
       }
     }
 ~~~~
-{: #ex-op-rep artwork-align="left" title="Response Example"}
+{: #ex-op-rep artwork-align="left" title="Response Example of Opening a TIPS View"}
+
+Below is another example of the same query using Digest authentication, a
+mandatory authentication method of ALTO servers as defined in {{Section 8.3.5 of
+RFC7285}}. The content of the response is the same as in {{ex-op-rep}} and thus
+omitted for simplicity.
+
+~~~
+    POST /tips HTTP/1.1
+    Host: alto.example.com
+    Accept: application/alto-tips+json, application/alto-error+json
+    Authorization: Basic Y2xpZW50MTpoZWxsb2FsdG8K
+    Content-Type: application/alto-tipsparams+json
+    Content-Length: 41
+
+    {
+      "resource-id": "my-routingcost-map"
+    }
+
+    HTTP/1.1 401 UNAUTHORIZED
+    WWW-Authenticate: Digest
+        realm="alto.example.com",
+        qop="auth",
+        algorithm="MD5",
+        nonce="173b5aba4242409ee2ac3a4fd797f9d7",
+        opaque="a237ff9ab865379a69d9993162ef55e4"
+
+    POST /tips HTTP/1.1
+    Host: alto.example.com
+    Accept: application/alto-tips+json, application/alto-error+json
+    Authorization: Digest
+        username="client1",
+        realm="alto.example.com",
+        uri="/tips",
+        qop=auth,
+        algorithm=MD5,
+        nonce="173b5aba4242409ee2ac3a4fd797f9d7",
+        nc=00000001,
+        cnonce="ZTg3MTI3NDFmMDQ0NzI1MDQ3MWE3ZTFjZmM5MTNiM2I=",
+        response="8e937ae696c1512e4f990fa21c7f9347",
+        opaque="a237ff9ab865379a69d9993162ef55e4"
+    Content-Type: application/alto-tipsparams+json
+    Content-Length: 41
+
+    {
+      "resource-id": "my-routingcost-map"
+    }
+
+
+    HTTP/1.1 200 OK
+    Content-Type: application/alto-tips+json
+    Content-Length: 258
+
+    {....}
+~~~
+{: #ex-op-digest artwork-align="left" title="Open Example with Digest Authentication"}
 
 # TIPS Data Transfers - Client Pull {#pull}
 
@@ -1009,11 +1066,10 @@ It is RECOMMENDED that the server uses the following HTTP codes to
 indicate errors, with the media type "application/alto-error+json",
 regarding update item requests.
 
--  404 (Not Found): if the requested TIPS view does not exist or is
-   closed by the server.
+-  404 (Not Found): if the requested update does not exist, or the requested
+   TIPS view does not exist or is closed by the server.
 
--  410 (Gone): if an update has a seq that is smaller than the start-
-   seq.
+-  410 (Gone): if an update has a seq that is smaller than the start-seq.
 
 -  415 (Unsupported Media Type): if the media type(s) accepted by the
    client does not include the media type of the update chosen by the
