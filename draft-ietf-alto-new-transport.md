@@ -231,8 +231,8 @@ Concurrent, non-blocking update transmission:
   suffer from head-of-line blocking inside the connection, for example, when
   there is a packet loss.
 
-Prefetching updates:
-: Prefetching updates can reduce the time to send the request, making it
+Long-polling updates:
+: Long-polling updates can reduce the time to send the request, making it
   possible to achieve sub-RTT transmission of ALTO incremental updates. In
   {{RFC8895}}, this requirement is fulfilled using server-sent event (SSE) and
   is still desired in the ALTO new transport.
@@ -249,8 +249,7 @@ ALTO information. The key idea is to introduce a unified data model to describe
 the changes (snapshots and incremental updates) of an ALTO resource, referred to
 as a TIPS view. Along with the data model, this document also specifies a
 unified naming for the snapshots and incremental updates, independent of the
-HTTP version. Thus, these updates can be concurrently requested. Prefetching is
-realized using long polling.
+HTTP version. Thus, these updates can be concurrently requested.
 
 This document assumes the deployment model discussed in  {{sec-dep-model}}.
 
@@ -1135,10 +1134,10 @@ for a concrete example.
 If the request is valid (`ug/<i>/<j>` exists), the response is encoded
 as a JSON object whose data format is indicated by the media type.
 
-A client may conduct proactive fetching of future updates, by
-long polling updates that have not been listed in the directory yet. For
-long-poll prefetch, the client must have indicated the media type that may
-appear. It is RECOMMENDED that the server allows for at least the prefetch of
+A client may conduct proactive fetching of future updates, by long polling
+updates that have not been listed in the directory yet. For such updates, the
+client must have indicated the media type that may appear. It is RECOMMENDED
+that the server allows for at least the long polling of
 `<end-seq> -> <end-seq + 1>`
 
 Hence, the server processing logic SHOULD be:
@@ -1163,7 +1162,7 @@ regarding update item requests.
    client does not include the media type of the update chosen by the
    server.
 
--  425 (Too Early): if the seq exceeds the server prefetch window
+-  425 (Too Early): if the seq exceeds the server long-polling window
 
 -  429 (Too Many Requests): when the number of pending (long-poll)
    requests exceeds the server threshold. The server may indicate when to re-try
