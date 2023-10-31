@@ -159,14 +159,21 @@ RESTful design to provide an ALTO client with a new capability to explicitly,
 concurrently issue non-blocking requests for specific incremental updates using
 native HTTP/2 or HTTP/3, while still functioning for HTTP/1.1.
 
-Despite the benefits, however, ALTO/SSE {{RFC8895}}, which solves a similar
-problem, has its advantages. First, SSE is a mature technique with a
-well-established ecosystem that can simplify development. Second, SSE does not
-allow multiple connections to receive updates for multiple objects over
-HTTP/1.1.
+While ALTO/SSE {{RFC8895}} and TIPS both can transport incremental updates of
+ALTO information resources to clients, they have different design goals. The
+TIPS extension enables more scalable and robust distribution of incremental
+updates, but is missing the session management and built-in server push
+capabilities of ALTO/SSE. From the performance perspective, TIPS is optimizing
+throughput by leveraging concurrent and out-of-order transport of data, while
+ALTO/SSE is optimizing latency as new events can be immediately transferred to
+the clients without waiting for another round of communication when there are
+multiple updates. Thus, we do not see TIPS as a replacement but as a complement
+of ALTO/SSE. One example of combining these two extensions is as shown in
+{{tips-sse}}.
 
-HTTP/2 {{RFC9113}} and HTTP/3 {{RFC9114}} also specify server push, which might
-enhance TIPS. We discuss push-mode TIPS as an alternative design in {{push}}.
+Note that future extensions may leverage server push, a feature of HTTP/2
+{{RFC9113}} and HTTP/3 {{RFC9114}}, as an alternative of SSE. We discuss why
+this alternative design is not ready in {{push}}.
 
 Specifically, this document specifies:
 
@@ -623,11 +630,11 @@ incremental-change-media-types:
 :  If a TIPS can provide updates with incremental changes for a
    resource, the "incremental-change-media-types" field has an entry
    for that resource-id, and the value is the supported media types
-   of incremental changes, separated by commas.  For the
-   implementation of this specification, this MUST be "application/
-   merge-patch+json", "application/json-patch+json", or "application/
-   merge-patch+json,application/json-patch+json", unless defined by a future
-   extension.
+   of incremental changes, separated by commas. For the implementation of this
+   specification, this MUST be "application/merge-patch+json",
+   "application/json-patch+json", or
+   "application/merge-patch+json,application/json-patch+json", unless defined by
+   a future extension.
 
    When choosing the media types to encode incremental updates for a
    resource, the server MUST consider the limitations of the
@@ -736,6 +743,17 @@ ALTO server supporting ALTO base protocol, ALTO/SSE, and ALTO TIPS.
           "my-simple-filtered-cost-map": "application/merge-patch+json"
         }
       }
+    },
+    "tips-sse": {
+      "uri": "https://alto.example.com/updates/tips",
+      "media-type": "text/event-stream",
+      "accepts": "application/alto-updatestreamparams+json",
+      "uses": [ "update-my-costs-tips" ],
+      "capabilities": {
+        "incremental-change-media-types": {
+          "update-my-costs-tips": "application/merge-patch+json"
+        }
+      }
     }
 ~~~
 {: #ex-ird artwork-align="left" title="Example of an ALTO Server Supporting ALTO Base Protocol, ALTO/SSE, and ALTO TIPS"}
@@ -745,7 +763,7 @@ support concurrent retrieval of multiple resources such as "my-
 network-map" and "my-routingcost-map" using multiple HTTP/2 streams.
 
 The resource "update-my-costs-tips" provides an ALTO TIPS service, and this is
-indicated by the media-type "application/ alto-tips+json".
+indicated by the media-type "application/alto-tips+json".
 
 # TIPS Management
 
@@ -915,7 +933,14 @@ indicate other errors, with the media type "application/alto-error+json".
   the server threshold. The server may indicate when to re-try the request in
   the "Re-Try After" headers.
 
+It is RECOMMENDED that the server provide the ALTO/SSE support for the TIPS
+resource. Thus, the client can be notified of the version updates of all the
+TIPS views that it monitors and make better cross-resource transport decisions
+(see {{cross-sched}} for related considerations).
+
 ##  Open Example
+
+### Basic Example
 
 For simplicity, assume that the ALTO server is using the Basic
 authentication.  If a client with username "client1" and password
@@ -960,6 +985,8 @@ message shown in {{ex-op-rep}}.
     }
 ~~~~
 {: #ex-op-rep artwork-align="left" title="Response Example of Opening a TIPS View"}
+
+### Example using Digest Authentication
 
 Below is another example of the same query using Digest authentication, a
 mandatory authentication method of ALTO servers as defined in {{Section 8.3.5 of
@@ -1016,6 +1043,67 @@ omitted for simplicity.
 ~~~
 {: #ex-op-digest artwork-align="left" title="Open Example with Digest Authentication"}
 
+### Example using ALTO/SSE {#tips-sse}
+
+This section gives an example of receiving incremental updates of the TIPS view
+summary using ALTO/SSE {{RFC8895}}. Consider the `tips-sse` resource, as
+announced by the IRD in {{ex-ird}}, which provides ALTO/SSE for the
+`update-my-cost-tips` resource, a client may send the following request to
+receive updates of the TIPS view (authentication is omitted for simplicity).
+
+~~~
+    POST /updates/tips HTTP/1.1
+    Host: alto.example.com
+    Accept: text/event-stream,application/alto-error+json
+    Content-Type: application/alto-updatestreamparams+json
+    Content-Length: 76
+
+    {
+      "add": {
+        "tips-123": { "resource-id": "update-my-cost-tips" }
+      }
+    }
+~~~
+{: #ex-tips-sse artwork-align="left" title="Example of Monitoring TIPS view with ALTO/SSE"}
+
+Then, the client will be able to receive the TIPS view summary as follows.
+
+~~~
+    HTTP/1.1 200 OK
+    Connection: keep-alive
+    Content-Type: text/event-stream
+
+    event: application/alto-tips+json,tips-123
+    data: {
+    data:   "tips-view-uri": "https://alto.example.com/tips/2718281828459",
+    data:   "tips-view-summary": {
+    data:     "updates-graph-summary": {
+    data:       "start-seq": 101,
+    data:       "end-seq": 106,
+    data:       "start-edge-rec" : {
+    data:         "seq-i": 0,
+    data:         "seq-j": 105
+    data:       }
+    data:     }
+    data:   }
+    data: }
+~~~
+
+When there is an update to the TIPS view, for example, the `end-seq` is
+increased by 1, the client will be able to receive the incremental update of the
+TIPS view summary as follows.
+
+~~~
+    event: application/merge-patch+json,tips-123
+    data: {
+    data:   "tips-view-summary": {
+    data:     "updates-graph-summary": {
+    data:       "end-seq": 107
+    data:     }
+    data:   }
+    data: }
+~~~
+
 # TIPS Data Transfers - Client Pull {#pull}
 
 TIPS allows an ALTO client to retrieve the content of an update item
@@ -1037,10 +1125,10 @@ The GET request MUST have the following format:
 
 For example, consider the updates graph in {{fig-ug-schema}}. If the client
 wants to query the content of the first update item (0 -> 101) whose media type
-is "application/alto- costmap+json", it must send a request to
-"/tips/2718281828459/ug/0/101" and set the "Accept" header to "application/alto-
-costmap+json, application/alto-error+json". See {{iu-example}} for a concrete
-example.
+is "application/alto-costmap+json", it must send a request to
+"/tips/2718281828459/ug/0/101" and set the "Accept" header to
+"application/alto-costmap+json,application/alto-error+json". See {{iu-example}}
+for a concrete example.
 
 ## Response
 
@@ -1121,43 +1209,35 @@ consume based on its current version of the resource.
 
 An ALTO client requests that the server provide a next edge recommendation for a
 given TIPS view by sending an HTTP POST request with the media type
-"application/alto-tipsparams+json". The request has the form:
+"application/alto-tipsparams+json". The URL of the request MUST have the format of
 
-~~~~
-    POST /<tips-view-path>/ug HTTP/1.1
-    HOST: <tips-view-host>
-~~~~
+~~~
+    <tips-view-path>/ug
+~~~
 
-The POST body has the following form, where providing the version
-tag of the resource the client already has is optional:
+and the `HOST` field MUST be the `<tips-view-host>`.
 
-~~~~
-    object {
-        [JSONString  tag;]
-    } TIPSNextEdgeReq;
-~~~~
-
+The POST body has the same format as the TIPSReq {{fig-open-req}}. The
+`resource-id` MUST be the same as the resource ID used to create the TIPS view,
+and the optional `input` field MUST NOT be present.
 
 ###  Response
 
-The response to a valid request MUST be a JSON object of type
-UpdatesGraphSummary (defined in {{open-resp}} but reproduced in {{fig-resp}} as
-well), denoted as media type "application/alto-tips+json":
+The response to a valid request MUST be a JSON merge patch to the object of type
+AddTIPSResponse (defined in {{open-resp}}), denoted as media type
+"application/merge-patch+json". The "update-graph-summary" field MUST be present
+in the response and hence its parent field "tips-view-summary" MUST be present
+as well.
 
-~~~~
-    object {
-      JSONNumber       start-seq;
-      JSONNumber       end-seq;
-      StartEdgeRec     start-edge-rec;
-    } UpdatesGraphSummary;
+If the `tag` field is present in the request, the server MUST check if any
+version within the range [start-seq, end-seq] has the same tag value. If the
+version exists, e.g., denoted as tag-seq, the server MUST compute the paths from
+both tag-seq and 0 to the end-seq, and choose the one with the minimal cost. The
+cost MAY be implementation specific, e.g., number of messages, accumulated data
+size, etc. The first edge of the selected path MUST be returned as the
+recommended next edge.
 
-    object {
-      JSONNumber       seq-i;
-      JSONNumber       seq-j;
-    } StartEdgeRec;
-~~~~
-{: #fig-resp artwork-align="left" title="UpdatesGraphSummary"}
-
+If the `tag` field is NOT present, it MUST be interpreted as the tag-seq is 0.
 
 It is RECOMMENDED that the server uses the following HTTP codes to
 indicate errors, with the media type "application/alto-error+json",
@@ -1166,8 +1246,50 @@ regarding new next edge requests.
 -  404 (Not Found): if the requested TIPS view does not exist or is
    closed by the server.
 
--  415 (Unsupported Media Type): if the media type(s) accepted by the
-   client does not include the media type `application/alto-tips+json`.
+### Example
+
+We give an example of the new next edge recommendation service. Assume that a
+client already creates a TIPS view as in {{open-example}}, whose updates graph
+is as shown in {{fig-ug}}. Now assume that the client already has tag 0881080
+whose corresponding sequence number is 103, and sends the following new next
+edge recommendation request (authentication is omitted for simplicity):
+
+~~~
+    POST /tips/2718281828459/ug HTTP/1.1
+    HOST alto.example.com
+    Accept: application/merge-patch+json, application/alto-error+json
+    Content-Type: application/alto-tipsparams+json
+    Content-Length: 62
+
+    {
+      "resource-id": "my-routingcost-map",
+      "tag": "0881080"
+    }
+~~~
+
+According to {{fig-ug}}, there are 3 potential paths: 103 -> 104 -> 105 -> 106,
+103 -> 105 -> 106, and 0 -> 105 -> 106. Assume that the server chooses shortest
+update path by the accumulated data size and the best path is 103 -> 105 -> 106.
+Thus, the server responds with the following message:
+
+~~~
+    HTTP/1.1 200 OK
+    Content-Type: application/merge-patch+json
+    Content-Length: 193
+
+    {
+      "tips-view-summary": {
+        "updates-graph-summary": {
+          "start-seq": 101,
+          "end-seq": 106,
+          "start-edge-rec": {
+            "seq-i": 103,
+            "seq-j": 105
+          }
+        }
+      }
+    }
+~~~
 
 # Operation and Processing Considerations
 
@@ -1257,7 +1379,7 @@ balancing for TIPS, including:
    of an ALTO server may configure layer-7 load balancers that
    distribute requests based on the tips-view-path component in the URI.
 
-## Considerations for Cross-Resource Dependency Scheduling
+## Considerations for Cross-Resource Dependency Scheduling {#cross-sched}
 
 Dependent ALTO resources result in cross-resource dependencies in
 TIPS.  Consider the following pair of resources, where my-cost-map
