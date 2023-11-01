@@ -186,6 +186,11 @@ Specifically, this document specifies:
 
 -  URI patterns to fetch the snapshots or incremental updates.
 
+Some operational complexities that must be taken into consideration when
+implementing this extension are discussed in {{ops-considerations}}, including
+load balancing {{load-balancing}}, fetching and processing incremental updates
+of dependent resources {{cross-sched}}
+
 {{sec-bcp-http}} discusses to what extent the TIPS design adheres to the Best
 Current Practices for building protocols with HTTP {{RFC9205}}.
 
@@ -379,7 +384,7 @@ where the server tracks the change of the resource maps with version IDs that ar
 assigned sequentially (i.e., incremented by 1 each time):
 
 -  Each node in the graph is a version of the resource, where a tag identifies the
-   content of the version (tag is valid only within the scope of resource).
+   content of the version (a tag is valid only within the scope of resource).
    Version 0 is reserved as the initial state (empty/null).
 
 -  Each edge is an update item. In particular, the edge from i to j is the update
@@ -453,12 +458,12 @@ the following invariants:
 
 -  Continuity: At any time, let ns denote the smallest non-zero version (i.e.,
    start-seq) in the update graph and ne denote the latest version (i.e.,
-   end-seq). Then any version in between ns and ne must also exist. This implies
+   end-seq). Then any version in between ns and ne MUST also exist. This implies
    that the incremental update from ni to ni + 1 exists for any ns <= ni <= ne,
    and all versions in the update graph (except 0) is an integer interval
    `[ns, ne]`.
 
--  Feasibility: Let ns denote the start-seq in the update graph. The server must
+-  Feasibility: Let ns denote the start-seq in the update graph. The server MUST
    provide a snapshot of ns and, in other words, there is always a direct link
    to ns in the update graph.
 
@@ -653,13 +658,13 @@ incremental-change-media-types:
 The "uses" attribute MUST be an array with the resource-ids of every
 network information resource for which this TIPS can provide service.
 
-This set may be any subset of the ALTO server's network information resources
-and may include resources defined in linked IRDs. However, it is RECOMMENDED
+This set MAY be any subset of the ALTO server's network information resources
+and MAY include resources defined in linked IRDs. However, it is RECOMMENDED
 that the ALTO server selects a set that is closed under the resource dependency
 relationship. That is, if a TIPS' "uses" set includes resource R1 and resource
-R1 depends on ("uses") resource R0, then the TIPS' "uses" set SHOULD include R0
+R1 depends on ("uses") resource R0, then the TIPS' "uses" set should include R0
 as well as R1. For example, if a TIPS provides a TIPS view for a cost map, it
-SHOULD also provide a TIPS view for the network map upon which that cost map
+should also provide a TIPS view for the network map upon which that cost map
 depends.
 
 If the set is not closed, at least one resource R1 in the "uses" field of a TIPS
@@ -874,13 +879,13 @@ tips-view-summary:
    recommended edge to consume (start-edge-rec).  How the server
    calculates the recommended edge depends on the implementation.
    Ideally, if the client does not provide a version tag, the server
-   should recommend the edge of the latest snapshot available.  If
-   the client does provide a version tag, the server should calculate
+   SHOULD recommend the edge of the latest snapshot available.  If
+   the client does provide a version tag, the server SHOULD calculate
    the cumulative size of the incremental updates available from that
    version onward and compare it to the size of the complete resource
-   snapshot.  If the snapshot is bigger, the server should recommend
+   snapshot.  If the snapshot is bigger, the server SHOULD recommend
    the first incremental update edge starting from the client's tagged
-   version.  Otherwise, the server should recommend the latest snapshot
+   version.  Otherwise, the server SHOULD recommend the latest snapshot
    edge.
 
 If the request has any errors, the TIPS service MUST return an HTTP
@@ -909,7 +914,7 @@ field exists, the "field" field MUST exist.
 
 -  If the TIPS request does not have a "resource-id" field, the error
    code of the error message MUST be `E_MISSING_FIELD` and the "field"
-   field SHOULD be "resource-id".  The TIPS service MUST NOT create
+   field MUST be "resource-id".  The TIPS service MUST NOT create
    any TIPS view.
 
 -  If the "resource-id" field is invalid or is not associated with
@@ -929,7 +934,7 @@ Furthermore, it is RECOMMENDED that the server uses the following HTTP codes to
 indicate other errors, with the media type "application/alto-error+json".
 
 - 429 (Too Many Requests): when the number of TIPS views open requests exceeds
-  the server threshold. The server may indicate when to re-try the request in
+  the server threshold. The server MAY indicate when to re-try the request in
   the "Re-Try After" headers.
 
 It is RECOMMENDED that the server provide the ALTO/SSE support for the TIPS
@@ -1124,8 +1129,8 @@ The GET request MUST have the following format:
 
 For example, consider the updates graph in {{fig-ug-schema}}. If the client
 wants to query the content of the first update item (0 -> 101) whose media type
-is "application/alto-costmap+json", it must send a request to
-"/tips/2718281828459/ug/0/101" and set the "Accept" header to
+is "application/alto-costmap+json", it sends a request to
+"/tips/2718281828459/ug/0/101" and sets the "Accept" header to
 "application/alto-costmap+json,application/alto-error+json". See {{iu-example}}
 for a concrete example.
 
@@ -1136,7 +1141,7 @@ as a JSON object whose data format is indicated by the media type.
 
 A client may conduct proactive fetching of future updates, by long polling
 updates that have not been listed in the directory yet. For such updates, the
-client must have indicated the media type that may appear. It is RECOMMENDED
+client MUST have indicated the media type that may appear. It is RECOMMENDED
 that the server allows for at least the long polling of
 `<end-seq> -> <end-seq + 1>`
 
@@ -1165,7 +1170,7 @@ regarding update item requests.
 -  425 (Too Early): if the seq exceeds the server long-polling window
 
 -  429 (Too Many Requests): when the number of pending (long-poll)
-   requests exceeds the server threshold. The server may indicate when to re-try
+   requests exceeds the server threshold. The server MAY indicate when to re-try
    the request in the "Re-Try After" headers.
 
 ##  Example {#iu-example}
@@ -1201,7 +1206,7 @@ cases in which the client needs to request a new next edge to
 consume.  For example, if a client has an open TIPS view yet has not
 polled in a while, the client may request the next logical
 incremental URI but the server has compacted the updates graph so it
-no longer exists.  Thus, the client must request a new next edge to
+no longer exists.  Thus, the client MAY request a new next edge to
 consume based on its current version of the resource.
 
 ###  Request
@@ -1290,52 +1295,18 @@ Thus, the server responds with the following message:
     }
 ~~~
 
-# Operation and Processing Considerations
+# Operation and Processing Considerations {#ops-considerations}
 
-## Considerations for Choosing Updates
+TIPS has some common operational considerations as ALTO/SSE {{RFC8895}},
+including:
 
-When implementing TIPS, a developer should be cognizant of the
-effects of update schedule, which includes both the choice of timing
-(i.e., when/what to trigger an update on the updates graph) and the
-choice of message format (i.e., given an update, send a full
-replacement or an incremental change).  In particular, the update
-schedule can have effects on both the overhead and the freshness of
-information.  To minimize overhead, developers may choose to batch a
-sequence of updates for resources that frequently change by
-cumulative updates or a full replacement after a while.  Developers
-should be cognizant that batching reduces the freshness of
-information and should also consider the effect of such delays on
-client behaviors.
+- server choosing update messages ({{Section 9.1 of RFC8895}});
+- client processing update messages ({{Section 9.2 of RFC8895}});
+- updates of filtered map services ({{Section 9.3 of RFC8895}});
+- updates of ordinal mode costs ({Section 9.4 of RFC8895}).
 
-For incremental updates, this design allows both JSON patch and JSON
-merge patch for incremental changes.  JSON merge patch is clearly
-superior to JSON patch for describing incremental changes to cost
-maps, endpoint costs, and endpoint properties.  For these data
-structures, JSON merge patch is more space efficient, as well as
-simpler to apply.  There is no advantage in allowing a server to use
-JSON patch for those resources.
-
-The case is not as clear for incremental changes to network maps.
-
-First, consider small changes, such as moving a prefix from one PID
-to another.  JSON patch could encode that as a simple insertion and
-deletion, while JSON merge patch would have to replace the entire
-array of prefixes for both PIDs.  On the other hand, to process a
-JSON patch update, the ALTO client would have to retain the indexes
-of the prefixes for each PID.  Logically, the prefixes in a PID are
-an unordered set, not an array; aside from handling updates, a client
-does not need to retain the array indexes of the prefixes.  Hence, to
-take advantage of JSON patch for network maps, ALTO clients would
-have to retain additional, otherwise unnecessary, data.
-
-Second, consider more involved changes, such as removing half of the
-prefixes from a PID.  JSON merge patch would send a new array for
-that PID, while JSON patch would have to send a list of remove
-operations and delete the prefix one by one.
-
-Therefore, each TIPS instance may choose to encode the updates using
-JSON merge patch or JSON patch based on the type of changes in
-network maps.
+There are also some operation considerations specific to TIPS, which we discuss
+below.
 
 ## Considerations for Load Balancing {#load-balancing}
 
@@ -1344,7 +1315,7 @@ the load of TIPS views for different clients, and the second is to balance the
 load of incremental updates.
 
 Load balancing of TIPS views can be achieved either at the application layer or
-at the infrastructure layer. For example, an ALTO server may set
+at the infrastructure layer. For example, an ALTO server MAY set
 `<tips-view-host>` to different subdomains to distribute TIPS views, or simply
 use the same host of the TIPS service and rely on load balancers to distribute
 the load.
@@ -1375,7 +1346,7 @@ balancing for TIPS, including:
    servers are stateful, the load balancers must be properly
    configured to guarantee that requests of the same TIPS view always
    arrive at the same server.  For example, an operator or a provider
-   of an ALTO server may configure layer-7 load balancers that
+   of an ALTO server MAY configure layer-7 load balancers that
    distribute requests based on the tips-view-path component in the URI.
 
 ## Considerations for Cross-Resource Dependency Scheduling {#cross-sched}
@@ -1414,82 +1385,12 @@ and how long the client needs to buffer the update.
 -  Example 2: The client requests C101, C102, C103, N89.  The client
    either gets no consistent view or has to buffer C103.
 
-Therefore, the client is RECOMMENDED to request and process updates in the
-ascending order of the smallest dependent tag, e.g., {C101, C102, N89} before
-{C103, N90}
-
-## Considerations for Client Processing Updates {#client-processing}
-
-In general, when an ALTO client receives a full replacement for a
-resource, the ALTO client should replace the current version with the
-new version.  When an ALTO client receives an incremental update for
-a resource, the ALTO client should apply those updates to the current
-version of the resource.
-
-However, because resources can depend on other resources (e.g., cost
-maps depend on network maps), an ALTO client must not use a dependent
-resource if the resource on which it depends has changed.  There are
-at least two ways an ALTO client can do that.  The following
-paragraphs illustrate these techniques by referring to network and
-cost map messages, although these techniques apply to any dependent
-resources.
-
-Note that when a network map changes, the server should send the
-network map update message before sending the updates for the
-dependent cost maps.
-
-One approach is for the ALTO client to save the network map update
-message in a buffer and continue to use the previous network map and
-the associated cost maps until the ALTO client receives the update
-messages for all dependent cost maps.  The ALTO client then applies
-all network and cost map updates atomically.
-
-Alternatively, the ALTO client may update the network map
-immediately.  In this case, the cost maps using the network map
-become invalid because they are inconsistent with the current network
-map; hence, the ALTO client must mark each such dependent cost map as
-temporarily invalid and must not use each such cost map until the
-ALTO client receives a cost map update indicating that it is based on
-the new network map version tag.
-
-Though a server should send update items sequentially, it is possible that a
-client receives the update items out of order (in the case of a retransmitted
-update item or a result of concurrent fetch). The client must buffer the update
-items if they arrive out of order and then apply them sequentially (based on
-the sequence numbers) due to the operation of JSON merge patch and JSON patch.
-
-## Considerations for Updates to Filtered Cost Maps
-
-If TIPS provides updates to a Filtered Cost Map that allows
-constraint tests, then an ALTO client may request updates to a
-Filtered Cost Map request with a constraint test.  In this case, when
-a cost changes, the updates graph MUST have an update if the new
-value satisfies the test.  If the new value does not, whether there
-is an update depends on whether the previous value satisfies the
-test.  If it did not, the updates graph SHOULD NOT have an update.
-But if the previous value did, then the updates graph MUST add an
-update with a "null" value to inform the ALTO client that this cost
-no longer satisfies the criteria.
-
-TIPS can avoid having to handle such complicated behavior by
-offering TIPS only for Filtered Cost Maps that do not allow
-constraint tests.
-
-## Considerations for Updates to Ordinal Mode Costs
-
-For an ordinal mode cost map, a change to a single cost point may
-require updating many other costs.  As an extreme example, suppose
-the lowest cost changes to the highest cost.  For a numerical mode
-cost map, only that one cost changes.  But for an ordinal mode cost
-map, every cost might change.  While this document allows TIPS to
-offer incremental updates for ordinal mode cost maps, TIPS
-implementors should be aware that incremental updates for ordinal
-costs are more complicated than for numerical costs, and that small
-changes of the original cost value may result in large updates.
-
-A TIPS implementation can avoid this complication by only offering
-full replacements as updates in the updates graph for ordinal cost
-maps.
+To get consistent ALTO information, a client must process the updates following
+the guidelines specified in {{Section 9.2 of RFC8895}}. If resource permits
+(i.e., sufficient updates can be buffered), an ALTO client can safely use long
+polling to fetch all the updates. This allows a client to build consistent views
+quickly as the updates are already stored in the buffer. Otherwise, it is
+RECOMMENDED to request
 
 ## Considerations for Managing Shared TIPS Views {#shared-tips-view}
 
@@ -1520,7 +1421,7 @@ server, the ability to scale, and programming complexity.
 ##  Considerations for Offering Shortcut Incremental Updates
 
 Besides the mandatory stepwise incremental updates (from i to i+1),
-an ALTO server may optionally offer shortcut incremental updates, or
+an ALTO server MAY optionally offer shortcut incremental updates, or
 simple shortcuts, between two non-consecutive versions i and i+k (k >
 1).  Such shortcuts offer alternative paths in the update graph and
 can potentially speed up the transmission and processing of
@@ -1567,14 +1468,14 @@ To avoid such attacks, the server SHOULD choose to limit the number of active
 views and reject new requests when that threshold is reached. TIPS allows
 predictive fetching and the server SHOULD also choose to limit the number of
 pending requests. If a new request exceeds the threshold, the server SHOULD log
-the event and may return the HTTP status "429 Too many requests".
+the event and return the HTTP status "429 Too many requests".
 
 It is important to note that the preceding approaches are not the only
 possibilities. For example, it may be possible for TIPS to use somewhat more
 clever logic involving TIPS view eviction policies, IP reputation,
 rate-limiting, and compartmentalization of the overall threshold into smaller
 thresholds that apply to subsets of potential clients. If service availability
-is a concern, ALTO clients may establish service level agreements with the ALTO
+is a concern, ALTO clients MAY establish service level agreements with the ALTO
 server.
 
 ## ALTO Client: Update Overloading or Instability
@@ -1876,6 +1777,6 @@ not correctly detect the right liveness state.
 The authors of this document would like to thank Mark Nottingham and Spencer
 Dawkins for providing invaluable reviews of earlier versions of this document,
 Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous feedback, Russ
-White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins, and
-Sheng Jiang for the directorate reviews, Martin Duke for the Area Director
-review, and Mohamed Boucadair for shepherding the document.
+White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins, Linda
+Dunbar and Sheng Jiang for the directorate reviews, Martin Duke for the Area
+Director review, and Mohamed Boucadair for shepherding the document.
