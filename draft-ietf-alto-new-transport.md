@@ -140,7 +140,7 @@ provide features that can improve certain properties of ALTO and ALTO/SSE.
   complete information resources. A client can run the base protocol on top of
   HTTP/2 or HTTP/3 to request multiple information resources in concurrent
   streams, but each request must be for a complete information resource: there is
-  no capability it transmits incremental updates. Hence, there can be a large
+  no capability for the server to transmit incremental updates. Hence, there can be a large
   overhead when the client already has an information resource and then there are
   small changes to the resource.
 
