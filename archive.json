@@ -1,0 +1,1524 @@
+{
+  "magic": "E!vIA5L86J2I",
+  "timestamp": "2023-11-07T00:33:25.161764+00:00",
+  "repo": "ietf-wg-alto/draft-ietf-alto-new-transport",
+  "labels": [
+    {
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    },
+    {
+      "name": "documentation",
+      "description": "Improvements or additions to documentation",
+      "color": "0075ca"
+    },
+    {
+      "name": "duplicate",
+      "description": "This issue or pull request already exists",
+      "color": "cfd3d7"
+    },
+    {
+      "name": "enhancement",
+      "description": "New feature or request",
+      "color": "a2eeef"
+    },
+    {
+      "name": "good first issue",
+      "description": "Good for newcomers",
+      "color": "7057ff"
+    },
+    {
+      "name": "help wanted",
+      "description": "Extra attention is needed",
+      "color": "008672"
+    },
+    {
+      "name": "invalid",
+      "description": "This doesn't seem right",
+      "color": "e4e669"
+    },
+    {
+      "name": "question",
+      "description": "Further information is requested",
+      "color": "d876e3"
+    },
+    {
+      "name": "wontfix",
+      "description": "This will not be worked on",
+      "color": "ffffff"
+    },
+    {
+      "name": "WGLC",
+      "description": "",
+      "color": "0e8a16"
+    },
+    {
+      "name": "IESG",
+      "description": "",
+      "color": "FEEB8D"
+    },
+    {
+      "name": "Dir_Review",
+      "description": "",
+      "color": "1EACA6"
+    },
+    {
+      "name": "tsvart",
+      "description": "",
+      "color": "bfd4f2"
+    },
+    {
+      "name": "secdir",
+      "description": "",
+      "color": "c5def5"
+    },
+    {
+      "name": "opsdir",
+      "description": "",
+      "color": "8D5A81"
+    },
+    {
+      "name": "artart",
+      "description": "",
+      "color": "b60205"
+    },
+    {
+      "name": "httpdir",
+      "description": "",
+      "color": "f9d0c4"
+    },
+    {
+      "name": "rtgdir",
+      "description": "",
+      "color": "d93f0b"
+    },
+    {
+      "name": "2nd",
+      "description": "",
+      "color": "fef2c0"
+    },
+    {
+      "name": "AD review",
+      "description": "",
+      "color": "d93f0b"
+    }
+  ],
+  "issues": [
+    {
+      "number": 3,
+      "id": "I_kwDOHit-9c5guoAh",
+      "title": "ACK directorate reviewers",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/3",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "Both Mark Nottingham and Spencer Dawkins (art-art) provided reviews for early versions of the document, but this is not ACKed.\r\n\r\nPlease fix that in the next revision.",
+      "createdAt": "2023-03-14T06:46:42Z",
+      "updatedAt": "2023-04-04T04:29:42Z",
+      "closedAt": "2023-04-04T04:29:42Z",
+      "comments": []
+    },
+    {
+      "number": 4,
+      "id": "I_kwDOHit-9c5guo0a",
+      "title": "To what extent this work adheres to \"Building Protocols with HTTP\" BCP",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/4",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "https://datatracker.ietf.org/doc/rfc9205/",
+      "createdAt": "2023-03-14T06:49:22Z",
+      "updatedAt": "2023-05-16T08:58:44Z",
+      "closedAt": "2023-05-16T08:58:44Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This work adheres fully to RFC 9205 for the following reasons (all citations refer to RFC 9205): \r\n\r\n- TIPS does not \u201c redefine, refine, or overlay the semantics of generic protocol elements such as methods, status codes, or existing header fields\u201d and instead focuses \u201cprotocol elements that are specific to [the TIPS] application -- namely, [its] HTTP resources\u201d (Section 3.1). \r\n- There are no statically defined URI components (Section 3.2). \r\n- No minimum version of HTTP is specified by TIPS which is recommended (Section 4.1)\r\n- This work follows the advice that \u201cWhen specifying examples of protocol interactions, applications should document both the request and response messages with complete header sections, preferably in HTTP/1.1 format [HTTP/1.1].\u201d (Section 4.1\r\n- The draft does use URI templates which is recommended (Section 4.2)\r\n- TIPS follows the pattern that \u201ca client will begin interacting with a given application server by requesting an initial document that contains information about that particular deployment, potentially including links to other relevant resources.  Doing so ensures that the deployment is as flexible as possible (potentially spanning multiple servers), allows evolution, and also gives the application the opportunity to tailor the \"discovery document\" to the client.\u201d (Section 4.4.1)\r\n- TIPS uses existing HTTP schemes (Section 4.4.2)\r\n- TIPS defines its errors \u201cto use the most applicable status code\u201d (Section 4.6)\r\n- TIPS does not \u201cmake assumptions about the relationship between separate requests on a single transport connection; doing so breaks many of the assumptions of HTTP as a stateless protocol and will cause problems in interoperability, security, operability, and evolution.\u201d (Section 4.11) The only relationship between requests is that a client must make a request to first discover where a TIPS view of resource will be served, which is consistent with URI discovery in Section 4.4.1. \r\n- Section 4.14 of RFC 9205 notes that there are quite a few caveats with using server push, mostly because of lack of widespread support. We, the authors, have considered these factors and have still decided server push can be valuable in the TIPS use case. ",
+          "createdAt": "2023-04-23T21:38:29Z",
+          "updatedAt": "2023-04-23T21:38:29Z"
+        },
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> This work adheres fully to RFC 9205 for the following reasons (all citations refer to RFC 9205):\r\n\r\nCan we have that list included as an appendix in the draft? Thanks.",
+          "createdAt": "2023-04-25T11:21:50Z",
+          "updatedAt": "2023-04-25T11:21:50Z"
+        },
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for addressing this. We can close this issue. ",
+          "createdAt": "2023-05-16T08:51:34Z",
+          "updatedAt": "2023-05-16T08:51:34Z"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "id": "I_kwDOHit-9c5gurye",
+      "title": "IANA Actions",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/5",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "The current text says: \r\n\r\n> IANA is requested to register the following media type under ALTO registry as defined in [[RFC7285](https://ietf-wg-alto.github.io/draft-ietf-alto-new-transport/draft-ietf-alto-new-transport.html#RFC7285)]:\r\n\r\nwhile the media types should be registered at https://www.iana.org/assignments/media-types/media-types.xhtml#application.",
+      "createdAt": "2023-03-14T07:00:28Z",
+      "updatedAt": "2023-04-04T14:44:11Z",
+      "closedAt": "2023-04-04T14:42:57Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Indeed ALTO does not have a registry for the media types. Fixed by the latest patch.",
+          "createdAt": "2023-04-04T14:44:11Z",
+          "updatedAt": "2023-04-04T14:44:11Z"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "id": "I_kwDOHit-9c5guwJn",
+      "title": "Check the JSON Examples",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/6",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "For example, the following one is to be fixed:\r\n\r\nOLD\r\n\r\n>     \"my-network-map\": {\r\n>       \"uri\": \"https://alto.example.com/networkmap\",\r\n>       \"media-type\": \"application/alto-networkmap+json\",\r\n>     },\r\n>     ...\r\n\r\nNEW:\r\n\r\n>     \"my-network-map\": {\r\n>       \"uri\": \"https://alto.example.com/networkmap\",\r\n>       \"media-type\": \"application/alto-networkmap+json\"\r\n>     },\r\n>     ...\r\n\r\nI think this is imported from RFC8895. I will fill an errata against RFC8895.",
+      "createdAt": "2023-03-14T07:12:53Z",
+      "updatedAt": "2023-04-04T04:30:07Z",
+      "closedAt": "2023-04-04T04:30:07Z",
+      "comments": []
+    },
+    {
+      "number": 7,
+      "id": "I_kwDOHit-9c5g-IUn",
+      "title": "Explicit transport requirements",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/7",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "tsvart"
+      ],
+      "body": "From B. Adoba:\r\n\r\n> Overall, the document does not lay out the transport requirements explicitly, and so it is hard for me to tell whether the proposed design is optimal or not.\r\n>  In particular, it would be useful to understand the desired reliability vs.\r\n> latency tradeoff, as well as the requirements for backward compatibility (e.g.\r\n> need to operate over HTTP 1.x as well as HTTP/2 and HTTP/3).\r\n",
+      "createdAt": "2023-03-16T07:48:36Z",
+      "updatedAt": "2023-04-04T15:32:46Z",
+      "closedAt": "2023-04-04T15:32:46Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Response from Kai in the mailing list: https://mailarchive.ietf.org/arch/msg/tsv-art/ak3PunrseOcQtrPLEKt763uFVWc/\r\n\r\nKAI: You are right and it's a very good suggestion to put forward the\r\nrequirements first. We will put a new section in the next revision. Some key\r\nrequirements include:\r\n\r\n1. Availability: Clients can subscribe at any time and are still able to get\r\n   a complete snapshot.\r\n2. Efficiency: Enable concurrent delivery of the update data. Enable selective\r\n   delivery of update data.\r\n3. Backward compatibility: The mechanism can operate over HTTP/1.x as well as\r\n   HTTP/2 and HTTP/3. The mechanism should reuse constructs from previous ALTO\r\n   standards.",
+          "createdAt": "2023-04-04T15:21:55Z",
+          "updatedAt": "2023-04-04T15:21:55Z"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "id": "I_kwDOHit-9c5g-Iwt",
+      "title": "HTTP version constraints",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/8",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "tsvart"
+      ],
+      "body": "From B. Adoba:\r\n\r\n> There seems to be a requirement for the protocol to support HTTP 1.x as well as\r\n> HTTP/2 and HTTP/3, but this is not stated explicitly, nor is it justified. In other WGs desiring to use the new capabilities of HTTP/3, a decision has sometimes been made to limit the level of backward compatibility (e.g. support for HTTP/3 and HTTP/2 only) in order to make it possible to take full advantage of the features of HTTP/3.  This decision is easier to make for a new protocol than for one which already has significant HTTP 1.x deployment. So if the transport approach used here is contrained by the existing HTTP/1.x deployments, it would be useful to say so up front.\r\n",
+      "createdAt": "2023-03-16T07:49:57Z",
+      "updatedAt": "2023-04-04T15:32:59Z",
+      "closedAt": "2023-04-04T15:32:59Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Response from Kai in the mailing list: https://mailarchive.ietf.org/arch/msg/tsv-art/ak3PunrseOcQtrPLEKt763uFVWc/\r\n\r\nKAI: We will make this requirement explicit in the next revision. Early versions of\r\nthis draft does constrain the HTTP version to HTTP/2 and HTTP/3 but after the\r\ndiscussion with Mark Nottingham (after the HTTP early review) and the chairs, we\r\nrealize that the core of the design does not rely on HTTP/2 or HTTP/3. Thus, the\r\ndecision is to make the core mechanism independent of HTTP versions but enable\r\nenhanced features when HTTP/2 or HTTP/3 is used.",
+          "createdAt": "2023-04-04T15:23:29Z",
+          "updatedAt": "2023-04-04T15:23:29Z"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "id": "I_kwDOHit-9c5g-JFb",
+      "title": "requirements for reliability and latency ",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/9",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "tsvart"
+      ],
+      "body": "From B. Adoba\r\n\r\n> Also, the requirements for reliability and latency are not explicitly laid out.\r\n> The diagrams show incremental update N+1 always depending on update N.  Is this an inherent limitation imposed to meet a requirement, or is it a choice that could potentially be modified? For example, do bad things happen if a client were to obtain a coherent set of information at times N and N+2 but not at time\r\n> N+1? Or would it be better to delay receipt of the N+2 info so as to \r\n> N+allow for\r\n> the retransmission of N+1 info?\r\n\r\n> There is a tradeoff between latency and reliability that can be made if layered coding can be permitted.  For example, if it is possible to modify the dependencies, a client wouldn't necessarily have to obtain every update (e.g.\r\n> if the bandwidth was insufficient to allow them all to be delivered within the required time frame).\r\n> \r\n> Are there circumstances where such a tradeoff would be desirable?  As an example, there could be a base layer of updates where update N+2 depends on update N, and an extension layer (with higher update frequency) where update\r\n> N+1 depends on update N.  The client could request both layers if it \r\n> N+could\r\n> handle the higher frequency, or just the base layer if it could not. A diagram describing this kind of two-layer dependency structure is here:\r\n> https://www.w3.org/TR/webrtc-svc/#L1T2*\r\n> \r\n> ALthough such an approach does have lower coding efficiency, it can potentially respond better to situations in which the client's bandwidth availability can vary substantially, by taking fuller advantage of HTTP/3, allowing the client to restore sync even if a \"discardable\" update were not delivered, as long as the stream of \"non-discardable\" updates could be delivered.\r\n\r\n",
+      "createdAt": "2023-03-16T07:50:59Z",
+      "updatedAt": "2023-04-04T15:33:23Z",
+      "closedAt": "2023-04-04T15:33:23Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Response from Kai in the mailing list: https://mailarchive.ietf.org/arch/msg/tsv-art/ak3PunrseOcQtrPLEKt763uFVWc/\r\n\r\n&gt; Also, the requirements for reliability and latency are not explicitly laid out.\r\n&gt; The diagrams show incremental update N+1 always depending on update N.  Is this\r\n&gt; an inherent limitation imposed to meet a requirement, or is it a choice that\r\n&gt; could potentially be modified? For example, do bad things happen if a client\r\n&gt; were to obtain a coherent set of information at times N and N+2 but not at time\r\n&gt; N+1? Or would it be better to delay receipt of the N+2 info so as to allow for\r\n&gt; the retransmission of N+1 info?\r\n&gt;\r\n\r\nKAI: Thanks for the comment. One small clarification: the N and N+1 are not id for\r\nthe incremental updates, they actually refer to the logical version of the content.\r\nThe content of the data is always the same as long as the updates along a legitimate\r\npath from an old version to the new version are applied sequentially.\r\n\r\nIt is true that the draft requires that the incremental update from N to N+1 always\r\nexists (to enable long-polling), but it is legitimate to have an incremental update\r\nfrom N to N+2. So I wouldn't say that it's a choice but it is not a hard constraint\r\neither. Then in the TIPS view the server will return something like:\r\n\r\n<tips-view-root>\r\n- ug\r\n  - 0\r\n    - ...\r\n  - N\r\n    - N+1\r\n    - N+2 &lt;----- This indicates an incremental update from N to N+2\r\n  - N+1\r\n    - N+2\r\n  - N+2\r\n    - N+3\r\n\r\nThus, the client can request updates either from N to N+1 and then from N+1 to N+2, or\r\ndirectly from N to N+2. However, even though the updates can be transmitted in parallel,\r\nthey must be applied sequentially, at least with the current coding (JSON merge patch).\r\n\r\nTo answer your last two questions, let us assume N+2 and N+1 in the question refer\r\nto the update from N+1 to N+2 and from N to N+1.\r\n\r\n&gt; Do bad things happen if ...?\r\nYes, the client may potentially get an incorrect result if it applies update N+2 first. \r\n\r\n&gt; Would it be better to delay ...?\r\nThat depends. The client can receive update N+2 first but only applies it after applying\r\nupdate N+1. This may avoid the idle time if transmitting update N+2 takes longer than\r\napplying update N+1, see below.\r\n\r\nDelay:\r\n|---recv n+1---|---retrans n+1---|---recv n+2---|\r\n                                 |-apply n+1-|  |---apply n+2---|\r\n\r\nNo delay:\r\n|---recv n+1---|---retrans n+1---|\r\n|---recv n+2---|\r\n                                 |-apply n+1-|---apply n+2---|\r\n\r\n&gt; There is a tradeoff between latency and reliability that can be made if layered\r\n&gt; coding can be permitted.  For example, if it is possible to modify the\r\n&gt; dependencies, a client wouldn't necessarily have to obtain every update (e.g.\r\n&gt; if the bandwidth was insufficient to allow them all to be delivered within the\r\n&gt; required time frame).\r\n&gt;\r\n&gt; Are there circumstances where such a tradeoff would be desirable?  As an\r\n&gt; example, there could be a base layer of updates where update N+2 depends on\r\n&gt; update N, and an extension layer (with higher update frequency) where update\r\n&gt; N+1 depends on update N.  The client could request both layers if it could\r\n&gt; handle the higher frequency, or just the base layer if it could not. A diagram\r\n&gt; describing this kind of two-layer dependency structure is here:\r\n&gt; https://www.w3.org/TR/webrtc-svc/#L1T2*\r\n&gt;\r\n&gt; ALthough such an approach does have lower coding efficiency, it can potentially\r\n&gt; respond better to situations in which the client's bandwidth availability can\r\n&gt; vary substantially, by taking fuller advantage of HTTP/3, allowing the client\r\n&gt; to restore sync even if a \"discardable\" update were not delivered, as long as\r\n&gt; the stream of \"non-discardable\" updates could be delivered.\r\n&gt;\r\n\r\nKAI: Thanks for the comment. We believe the current document does support layered\r\ncoding: if a server implements layered coding, the updates can be expressed using\r\nthe current update graph structure (maybe we should make this more explicit?).\r\nWe do not have the concept of \"discardable\" updates in the document but it is\r\npossible to achieve higher efficiency by discarding some updates. For example, in\r\nSection 5.1 and 7.2.1, we mention that the client (when using pull mode) and the\r\nserver (when using push mode) may not necessarily transmit the stepwise updates\r\nbut only take shortest paths in the dependency graph -- any update that is not on\r\nthe shortest path can be discarded.\r\n\r\nI like the idea of layered coding. It may speed up the search of shortest path if\r\nupper layer coding is likely to be \"shorter\" than lower layer coding, like in skip\r\nlists. However, I am not sure that we have a good sense of how to do layered coding\r\nfor ALTO resources or more generally JSON objects right now. How about we can add a\r\nsection to discuss \"layered coding\" as a recommendation for server implementation\r\nfirst? Then we may seek to standardize that with more analysis and evidences of\r\nthe benefits.</tips-view-root></[noreply@ietf.org](mailto:noreply@ietf.org)>",
+          "createdAt": "2023-04-04T15:30:08Z",
+          "updatedAt": "2023-04-04T15:30:08Z"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "id": "I_kwDOHit-9c5hJWg6",
+      "title": "SETTINGS_ENABLE_PUSH ",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/10",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "artart"
+      ],
+      "body": "From Spencer:\r\n\r\n> I know a lot of things changed in this draft since I early-reviewed -01 - I'm now early-reviewing -07 - but I'm not sure that my previous observation about this HTTP setting\r\n> \r\n> 0x02     SETTINGS_ENABLE_PUSH (a BCP14 \u201cMUST\u201d)\r\n> \r\n> has been addressed.\r\n> \r\n> As I pointed out in my previous review RFC 9114 reserves this value in the parallel HTTP/3 registry (https://www.rfc-editor.org/rfc/rfc9114.html#iana-setting-table), and says this about these reserved values in https://www.rfc-editor.org/rfc/rfc9114.html#section-7.2.4.1:\r\n> [7.2.4.1. ](https://datatracker.ietf.org/doc/html/rfc9114#section-7.2.4.1)[Defined SETTINGS Parameters](https://datatracker.ietf.org/doc/html/rfc9114#name-defined-settings-parameters)\r\n> \r\n> Setting identifiers that were defined in [[HTTP/2](https://datatracker.ietf.org/doc/html/rfc9113)] where there is no corresponding HTTP/3 setting have also been reserved ([Section 11.2.2](https://datatracker.ietf.org/doc/html/rfc9114#iana-settings)). These reserved settings MUST NOT be sent, and their receipt MUST be treated as a [connection error](https://datatracker.ietf.org/doc/html/rfc9114#errors) of type [H3_SETTINGS_ERROR](https://datatracker.ietf.org/doc/html/rfc9114#H3_SETTINGS_ERROR).[\u00b6](https://datatracker.ietf.org/doc/html/rfc9114#section-7.2.4.1-5)\r\n> \r\n> I don't know what needs to be changed in this specification to reflect this, but even the abstract and the last paragraph of the Introduction refer to \"native HTTP/2 or HTTP/3 server push\".\r\n> \r\n> Section 2.4 and 2.5 address the use of TIPS inside an HTTP/1.x connection, which doesn't support server push, so I know you folks have thought about how that works.Do you need to address this for HTTP/3 as well? \r\n> \r\n> More strategically, should you be encouraging clients to add support for server PUSH in a new application protocol, if it's already been removed from HTTP/3? But I see this document is in WGLC now, so you can think about that and Do The Right Thing. \r\n> \r\n> I have some BCP 14 questions about this text in",
+      "createdAt": "2023-03-17T19:31:32Z",
+      "updatedAt": "2023-04-04T15:56:12Z",
+      "closedAt": "2023-04-04T15:56:12Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "From Kai's response in the mailing list: https://mailarchive.ietf.org/arch/msg/art/wz6ePe0muhOiQTAoHVM-0FY4vHc/\r\n\r\nKAI: Thanks for the comment. The current text does not work for HTTP/3, as you mentioned that the initialization of server push has changed in HTTP/3. However, it does not mean that the support for server push is removed in HTTP/3. We will update section 7.2 to specify how to enable server push in HTTP/3 using the procedure in https://www.rfc-editor.org/rfc/rfc9114.html#name-server-push.",
+          "createdAt": "2023-04-04T15:46:16Z",
+          "updatedAt": "2023-04-04T15:46:16Z"
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOHit-9c5hJW0b",
+      "title": "Section 3.3",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/11",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "artart"
+      ],
+      "body": "From Spencer\r\n\r\n> [3.3. ](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#section-3.3)[Uses](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#name-uses)\r\n> \r\n> This set may be any subset of the ALTO server's network information resources and may include resources defined in linked IRDs. However, it is RECOMMENDED that the ALTO server selects a set that is closed under the resource dependency relationship. That is, if a TIPS' \"uses\" set includes resource R1 and resource R1 depends on (\"uses\") resource R0, then the TIPS' \"uses\" set SHOULD include R0 as well as R1. For example, a TIPS for a cost map SHOULD also provide a TIPS view for the network map upon which that cost map depends.\r\n> \r\n> I have the same question about R1 and R0, but let's start with a specific case. If a TIPS for a cost map does not also provide a TIPS view for the underlying network map, what happens next? \r\n> \r\n> (Nit) is there a missing term after TIPS in \"a TIPS for a cost map\" in this paragraph?",
+      "createdAt": "2023-03-17T19:32:38Z",
+      "updatedAt": "2023-04-04T15:56:23Z",
+      "closedAt": "2023-04-04T15:56:23Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Response from Kai in the mailing list: https://mailarchive.ietf.org/arch/msg/art/wz6ePe0muhOiQTAoHVM-0FY4vHc/\r\n\r\nKAI: Thanks for the comment. If the TIPS (service) only provides a TIPS view for the cost map but not for the network map, the client will not be able to receive incremental updates about the network map. Thus, when there is a change to the network map, the change will be reflected in a TIPS incremental update of the cost map where the \"depentdent-vtags\" field will be updated (see https://datatracker.ietf.org/doc/html/rfc7285#section-11.2.3.6). Then, the client knows the mapping between IP prefixes and the PID values has changed but does not know the details. The client needs to query the dependent network map resource to get the new mapping.\r\n\r\n> (Nit) is there a missing term after TIPS in \"a TIPS for a cost map\" in this paragraph?\r\n\r\nKAI: Not exactly but the text is a bit unclear. We propose to use the following text instead:\r\n\r\n..., if a TIPS service provides a TIPS view for a cost map, it SHOULD also provide a TIPS view for the network map upon which that cost map depends.",
+          "createdAt": "2023-04-04T15:48:19Z",
+          "updatedAt": "2023-04-04T15:48:19Z"
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "id": "I_kwDOHit-9c5hJXF8",
+      "title": "Section 4.4  Close Request",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/12",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "artart"
+      ],
+      "body": "From Spencer:\r\n\r\nIn [4.4. ](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#section-4.4)[Close Request](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#name-close-request)\r\n\r\nAn ALTO client can indicate it no longer desires to pull/receive updates for a specific network resource by \"deleting\" the TIPS view using the returned tips-view-uri and the HTTP DELETE method. Whether or not the server actually deletes the TIPS view is implementation dependent. Likely, a server will remove the client from a dependency set associated with the TIPS view. A server will not want to delete a TIPS view if another client is using it.\r\n\r\nI'm guessing here, but this looks like it's conflating client usage with server storage management. If client A says \"delete the TIPS view\", and no other client is using it, that view is deleted, but if another client is using it, and the view is not deleted, what happens next? I could imagine that a server might delete the underlying TIPS view when all clients who were using it have deleted it. Does server behavior in this case need to be implementation dependent?",
+      "createdAt": "2023-03-17T19:33:34Z",
+      "updatedAt": "2023-04-04T15:56:33Z",
+      "closedAt": "2023-04-04T15:56:33Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Response from Kai in the mailing list: https://mailarchive.ietf.org/arch/msg/art/wz6ePe0muhOiQTAoHVM-0FY4vHc/\r\n\r\nKAI: Thanks for the comment. From a client's point of view, it sees only one copy of the TIPS view for any resource. However, on the server side, there are different implementation options, especially for common resources (e.g., network map or cost map) that may be frequently queried by many clients:\r\n\r\n- create multiple copies, one for each client --> when the client deletes the view, delete it in the server storage\r\n- create one copy for all clients\r\n  - maintain a refcount --> when refcount == 0, delete\r\n  - never delete (thus no need to maintain the client usage)\r\n\r\nI think this is implementation dependent. Maybe the text is somehow misleading, how about the following?\r\n\r\n...Whether or not the server actually deletes the TIPS view is implementation dependent. For example, an ALTO server may maintain a set of clients that subscribe to the TIPS view of a resource: a client that deletes the view is removed from the set, and the TIPS view is only removed when the dependent set becomes empty.",
+          "createdAt": "2023-04-04T15:50:49Z",
+          "updatedAt": "2023-04-04T15:50:49Z"
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "id": "I_kwDOHit-9c5hJXbg",
+      "title": "Clarifications",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/13",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "emiapwil"
+      ],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "artart"
+      ],
+      "body": "From Spencer\r\n\r\n> [8.1. ](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#section-8.1)[Considerations for Load Balancing](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#name-considerations-for-load-bal)\r\n> TIPS allow clients to make concurrent pulls of the incremental updates potentianlly through different HTTP connections. As a consequence, it introduces additional complexties when the ALTO server is being load balanced -- a feature widely used to build scalable and fault-tolerant web services. For example, a request may be incorrectly processed if\r\n> \r\n> \u2022\tthe backend servers are stateful, i.e., the TIPS view is created and stored only on a single server;\r\n> \r\n> \u2022\tthe ALTO server is using layer-4 load balancing, i.e., the requests are distributed based on the TCP 5-tuple.\r\n> \r\n> are these conditions ANDed, or ORed? Is either condition sufficient to cause a problem, or are both required?\r\n> \r\n> Also, in the last paragraph of this section, \r\n> \r\n> \u2022\tFor example, the ALTO server may configure layer-7 load balancers that distribute requests based on URL or cookies.\r\n> \r\n> Isn't this talking something that an operator or provider of the ALTO server would do, rather than the ALTO server itself?\r\n> \r\n> I have a similar question about \r\n> [8.2. ](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#section-8.2)[Considerations for Choosing Updates](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#name-considerations-for-choosing)\r\n> TIPS should be cognizant of the effects of its update schedule, which includes both the choice of timing (i.e., when/what to trigger an update on the updates graph) and the choice of message format (i.e., given an update, send a full replacement or an incremental change).\r\n> \r\n> and\r\n> \r\n> Therefore, each TIPS may decide on its own whether to use JSON merge patch or JSON patch according to the changes in network maps.\r\n> \r\n> is TIPS thinking, or is that up to a human? \r\n> \r\n> And in \r\n> [8.6. ](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#section-8.6)[Considerations for Updates to Ordinal Mode Costs](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-07#name-considerations-for-updates-t)\r\n> While this document allows TIPS to offer incremental updates for ordinal mode cost maps, TIPS implementors should be aware that incremental updates for ordinal costs are more complicated than for numerical costs, and ALTO clients should be aware that small changes may result in large updates.\r\n> \r\n> I'm guessing that ALTO clients aren't aware. \r\n> \r\n> I'm not sure I've caught all of these occurrences, but perhaps the GenArt reviewer will notice others, if they are present!",
+      "createdAt": "2023-03-17T19:34:42Z",
+      "updatedAt": "2023-04-04T15:56:44Z",
+      "closedAt": "2023-04-04T15:56:44Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Please see below the responses and proposed changes.\r\n\r\n1. The two conditions need to both be true to cause the problem.\r\n\r\n> For example, a request may be incorrectly processed if the following conditions both hold\r\n\r\n2. Yes, it should be the operator/provider of the ALTO server than the server itself\r\n\r\n> For example, the operator or the provider of the ALTO server may configure layer-7 load balancers that distribute requests based on URLs or cookies.\r\n\r\n3. It's some human.\r\n\r\n> When implementing TIPS, programmers should be cognizant of the effects of the update schedule\r\n\r\nand \r\n\r\n> Therefore, each TIPS service instance may choose to encode the updates using JSON merge patch or JSON patch based on the changes in network maps.\r\n\r\n4. No, the client need not know the issue.\r\n\r\n> ..., TIPS implementors should be aware that incremental updates for ordinal costs are more complicated than for numerical costs.\r\n\r\n> This complication can be avoided by only offering full replacements as updates when providing TIPS for ordinal cost maps.",
+          "createdAt": "2023-03-21T15:50:57Z",
+          "updatedAt": "2023-03-21T15:50:57Z"
+        },
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Full response in mailing list: https://mailarchive.ietf.org/arch/msg/art/wz6ePe0muhOiQTAoHVM-0FY4vHc/",
+          "createdAt": "2023-04-04T15:54:43Z",
+          "updatedAt": "2023-04-04T15:54:43Z"
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "id": "I_kwDOHit-9c5hlCvf",
+      "title": "Server Push Usage",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/14",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n> Section 7.1 says \"A client can add itself explicitly to the receiver set or add itself to the receiver set when requesting the TIPS view.\"  It describes two methods for doing this, but neither indicates which request will remain open so that the client can receive push promises.\r\n> \r\n> HTTP server push requires that the server send pushes alongside an outstanding request, but aside from discussion of streams in Section 7.3.1, I can't work out how the client would do that.  Section 2.4 also fails to make this clear.\r\n> \r\n> Consequently, I cannot convince myself that the primary feature of this document will work.\r\n> ",
+      "createdAt": "2023-03-23T08:53:54Z",
+      "updatedAt": "2023-07-13T05:42:31Z",
+      "closedAt": "2023-07-13T05:42:31Z",
+      "comments": []
+    },
+    {
+      "number": 15,
+      "id": "I_kwDOHit-9c5hlC1d",
+      "title": "Terminology",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/15",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n> I'm raising this to the level of a serious issue because this draft is made extraordinarily difficult to understand as a result of this.  Take Section 2.3, which introduces some terms.  That same section then includes completely different terms in Figure 1; terms that turn out to be critical concepts.\r\n> \r\n> I'll also note, though you might treat this as a separate issue, that while the use of template-like URLs as a convention is a powerful explanatory tool, the draft doesn't make this clear enough.  The use of i and j for instance, are introduced in an example, which is easy to skip, only to find that the rest of the document critically depends on understanding what those mean.\r\n",
+      "createdAt": "2023-03-23T08:54:11Z",
+      "updatedAt": "2023-06-11T03:36:36Z",
+      "closedAt": "2023-06-11T03:36:36Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I feel that we have fixed this issue in the latest revision.\r\n\r\nSee [section 2.2](https://datatracker.ietf.org/doc/html/draft-ietf-alto-new-transport-08#name-tips-terminology) in -08 and diff [here](https://author-tools.ietf.org/iddiff?url1=draft-ietf-alto-new-transport-07&url2=draft-ietf-alto-new-transport-08&difftype=--html).",
+          "createdAt": "2023-05-16T09:03:00Z",
+          "updatedAt": "2023-05-16T09:03:00Z"
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "id": "I_kwDOHit-9c5hlC4b",
+      "title": "Delete Usage",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/16",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n> Section 4.4 describes a use for HTTP's DELETE verb that is novel to say the least.  If the goal is to use DELETE to remove something and that something is a client's membership in a group (a receiver set here), then you should provide each client with a URL of their own to delete.  Whether you provide a resource for the collection (which might be useful for adding clients) or not is up to you, but this approach is not consistent with how HTTP is expected to operate and will result in surprises.\r\n> \r\n> Of course, the use of one request (here, the DELETE) to stop server push that might be happening on another request, is also not how server push is expected to work.\r\n",
+      "createdAt": "2023-03-23T08:54:19Z",
+      "updatedAt": "2023-07-13T05:42:10Z",
+      "closedAt": "2023-07-13T05:42:10Z",
+      "comments": []
+    },
+    {
+      "number": 17,
+      "id": "I_kwDOHit-9c5hlC6g",
+      "title": "Connections and Clients",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/17",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n> I can't pin this one down, but there seems to be some sort of assumption that there is a 1:1 correspondence between connections and clients.  That is not how HTTP works.  In HTTP, every request stands on its own.  Though there might be linkages between requests, those linkages should not affect how HTTP itself operates, including server push.  (You might detect a common theme here.)\r\n> \r\n> As I noted, I'm not completely certain about raising this issue because of a lack of clarity about how the protocol is supposed to operate.\r\n",
+      "createdAt": "2023-03-23T08:54:25Z",
+      "updatedAt": "2023-07-13T05:42:03Z",
+      "closedAt": "2023-07-13T05:42:03Z",
+      "comments": []
+    },
+    {
+      "number": 18,
+      "id": "I_kwDOHit-9c5hlC9d",
+      "title": "Specification by Example",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/18",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n> I found that this document leaned a little too heavily on examples, to the point that it sometimes does not concretely specify expected behaviour at all. The content of examples were used to show the general shape of what is being considered.  As I noted before, examples can be a powerful explanatory tool, but it means that the true interoperability requirements are not always directly written.  Implementers need to infer normative requirements in some cases.\r\n> \r\n> See the use of /<tips-view-uri>/... everywhere it appears, Section 2.1.1 (schema, where the figures are critical to understanding; I also found Figure 2 very hard to understand, so I had to ignore it, even if it still seems crucial), Figure 4, the figures in Section 2.4, Section 8.3.\r\n> \r\n> Probably the biggest hole here is j+1 in examples.  I couldn't find a statement anywhere that says that increments need to strictly increment by 1 each time (separately, why 101 and not just 1?).  There seems to be an assumption about that, but the directory resources all seem to indicate that the server is responsible for numbering increments.  Fixing that seems important.\r\n",
+      "createdAt": "2023-03-23T08:54:33Z",
+      "updatedAt": "2023-06-11T03:37:06Z",
+      "closedAt": "2023-06-11T03:37:06Z",
+      "comments": []
+    },
+    {
+      "number": 19,
+      "id": "I_kwDOHit-9c5hlDAi",
+      "title": "Design Complexity",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/19",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson\r\n\r\n\r\n> This design is very complex.  Some of the details in the document probably do not need to be specified in the level of detail provided.  Section 5 for instance describes resources that provide clients with data about other resources, which isn't really consistent with HTTP principles, but they probably aren't necessary either.\r\n> \r\n> As long as servers adhere to the invariants (S5.5), clients can ask for incremental resources based on what they know and either get a snapshot or increments based on what the server is willing to serve them and what they are willing to process.  The design here requires additional round trips to gather information about the information the client really wants when it could probably ask for a resource, use etags to indicate what it has, use Accept to indicate what it can handle, and the server could then work out what best to serve up.\r\n> \r\n> A specific problem that this design creates is strong coupling.  The client needs to know about URI structure in order to use the information in the TIPS view.\r\n> \r\n> Similar comments might apply to managing the set of clients that might want server push (though again, see the first issue).\r\n\r\nand..\r\n\r\n> Section 5.5 says:\r\n> \r\n> > Continuity: ns -> ne, anything in between ns and ne also exists \r\n> > (implies ni ->\r\n>   ni + 1 patch exists), where ns is start-seq and ne is end-seq\r\n> \r\n> This section might be reduced to saying:\r\n> \r\n> > A server needs to ensure that any resource state that it makes \r\n> > available MUST\r\n> be reachable by clients, either directly via a snapshot (that is, relative to 0) or indirectly by requesting an earlier snapshot and a contiguous set of incremental updates.\r\n",
+      "createdAt": "2023-03-23T08:54:41Z",
+      "updatedAt": "2023-07-13T05:41:50Z",
+      "closedAt": "2023-07-13T05:41:49Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "We had some discussion on this issue among the authors and discussed this in the ALTO weekly meeting on April 19. It is suggested that we summarize the discussion here, providing visibility to the working group. Currently, there are three options:\r\n\r\n1. Stick with the \"metadata\" information\r\n2. Let the server directly reply to the client about the next update to be fetched, when a client is creating (or reconnecting) to a TIPS view. Then the client fetches further updates by incrementing by 1.\r\n3. Similar to approach 2 but the server piggybacks information about the current available updates and potential shortcuts to the client, basically a compromise of 1 & 2.",
+          "createdAt": "2023-04-18T13:34:44Z",
+          "updatedAt": "2023-04-19T11:53:29Z"
+        },
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "After further discussion, we agreed that providing the metadata is unnecessary for the TIPS protocol. Thus, we will remove the metadata section from the document and, instead, add the capability for the client to request the next recommended edge to consume (option 2 from above), based on the logic described below:\r\n\r\nIn the current version of the draft, after requesting the TIPS view, the client receives a recommended starting edge in the TIPS view summary. The client SHOULD then consume that edge and construct the future URIs based on the sequential nature. This is what allows for the concurrent transmission of updates in HTTP/2 and HTTP/3 in the long polling case, because the client can request multiple at the same time. \r\n\r\nHowever, imagine that the client has not polled in a while:\r\nScenario 1: the client requests the next logical incremental URI, but the server has compacted the queue so it no longer exists. \r\nScenario 2: the client hasn't pulled in a long time and thinks it might be better to get a full replacement of the resource. \r\n\r\nIn both these scenarios, the client must take the same following action:\r\nCurrent version w/ full metadata: the client pulls the metadata of the updates graph and calculates the next edge to take (which is presumably the most recent snapshot). The client pulls that edge and then follows the same increment by 1 pattern as before.\r\nNew Proposed Version: the client requests for the next edge it should pull based on the version tag of the resource it already has and the server provides it with the recommended next-edge URI. The client then pulls that edge using that URI and constructs the future ones from there, following the same increment by 1 pattern as before.  ",
+          "createdAt": "2023-04-23T21:19:09Z",
+          "updatedAt": "2023-04-23T21:19:09Z"
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "id": "I_kwDOHit-9c5hlDud",
+      "title": "Some Nits",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/20",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "httpdir"
+      ],
+      "body": "From Martin Thomson:\r\n\r\n> These are just the ones that really jumped out.\r\n> \r\n> I suggest checking for typos, I saw many.\r\n> \r\n> Please use proper section references when linking.  Links in the form `<xref target=\"RFC1234\" section=\"4.5\"/>` will ensure that your HTML is properly generated.\r\n> \r\n> Please submit a bug report for whatever is going on with the caption on Figure 2.  It looks like you have a cross reference in there that xml2rfc is mangling.\r\n> \r\n> \"long pull\" is not a thing (Section 2.1)\r\n> \r\n> \"Connection: Closed\" is not a thing (Section 4.2)\r\n> \r\n> Please use real lists (1) especially when the content of the item is long and\r\n> (2) because it makes (a) reading and (b) citing the document easier.\r\n> \r\n> I can't work out why \"next-edge\" (Section 5.2) is null when server push is disabled.  Why would a client need to know that only when push is enabled?  If push is enabled, won't the client be pushed the next increment?  On the other hand, if push is disabled, won't the client need to know what to request next?\r\n\r\n\r\n",
+      "createdAt": "2023-03-23T08:56:51Z",
+      "updatedAt": "2023-05-12T09:36:24Z",
+      "closedAt": "2023-05-12T09:36:23Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Fixed by [9b94550](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/9b94550390e4db03dec71e38165af72baf47881e) and [bc92d14](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/bc92d1493123186ed1198bd4267b4211bf317a74)",
+          "createdAt": "2023-05-12T09:36:23Z",
+          "updatedAt": "2023-05-12T09:36:23Z"
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "id": "I_kwDOHit-9c5iCVJ3",
+      "title": "Nits from Secdir ",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/21",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "secdir"
+      ],
+      "body": "From Donald Eastlake:\r\n\r\n> Section 1.0, Page 4:\r\n> OLD\r\n> functioning for HTTP/1.x. TIPS also provides an ALTO server to\r\n> NEW\r\n> functioning for HTTP/1.x. TIPS also provides for an ALTO server to\r\n> \r\n> Section 2.1.1, Page 8: Seems too vague. A sentence about tips-view-uri wouldn't hurt. At the bottom it says \"Use the URI as above\". Which URI above? What exactly does \"use\" mean?\r\n> \r\n> Section 2.2, Page 9, Figure 3: Figure looks kind of incomplete. Shouldn't there be arrows from R1 to R2/R3?\r\n> \r\n> Section 2.3, Page 10: In the text on \"Information Resource Directory\" the first sentence is confusing. What is the thing that is requested to discover? Maybe you should replace \"Requested\" at the start of the sentence with \"Produced when a server is requested\"...\r\n> \r\n> Section 2.3, Page 11 at top: That's Figure 4, not 1.\r\n> \r\n> Section 2.4, Page 12, 1st paragraph: I think a service runs \"over\" a connection, not \"inside\" a connection.\r\n> \r\n> Section 4.4, Page 23: Seems kind of feeble. How about, given that a disconnect is treated as a DELETE, something like the following, which probably implies that the server maintains a use count. (This document need not mention such a count.)\r\n> OLD\r\n> set associated with the TIPS view. A server will not want to delete\r\n> NEW\r\n> set associated with the TIPS view. A server MUST NOT delete\r\n",
+      "createdAt": "2023-03-28T23:09:45Z",
+      "updatedAt": "2023-03-31T16:27:23Z",
+      "closedAt": "2023-03-31T16:27:23Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Responded to mailing list review and received approval of proposed changes: https://mailarchive.ietf.org/arch/msg/secdir/faTLo_F1R9_FPG03Ea8knNsiar0/",
+          "createdAt": "2023-03-31T16:27:23Z",
+          "updatedAt": "2023-03-31T16:27:23Z"
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "id": "I_kwDOHit-9c5iQKcO",
+      "title": "Ordering",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/22",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "rtgdir"
+      ],
+      "body": "From Russ White\r\n\r\n> This document assumes data will be pushed in the correct order, but it doesn't seem to say this is a requirement. Since the document is dealing with changes to a network topology (for instance), it seems like this would be a requirement to mention someplace. It could be that I missed this requirement, however.",
+      "createdAt": "2023-03-30T22:23:43Z",
+      "updatedAt": "2023-03-31T16:32:45Z",
+      "closedAt": "2023-03-31T16:32:45Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Responded to mailing list review and updated document accordingly: https://mailarchive.ietf.org/arch/msg/alto/oObG7Fynw-YWXjMHCFbP4XYoi2I/",
+          "createdAt": "2023-03-31T16:32:45Z",
+          "updatedAt": "2023-03-31T16:32:45Z"
+        }
+      ]
+    },
+    {
+      "number": 23,
+      "id": "I_kwDOHit-9c5ijOMA",
+      "title": "Ops Considerations",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/23",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "Dir_Review",
+        "opsdir"
+      ],
+      "body": "From Sheng Jiang\r\n\r\n> This document intents for Standards Track. It  document specifies a new ALTO Transport Information Publication Service (TIPS), which takes advantage of HTTP/2 and later versions already support concurrent, non-blocking transport of multiple streams in the same HTTP connection. This document is well-written and READY with minor Nits (below) for publication.\r\n> \r\n> In section 2.5 \"TIPS With HTTP/1.x\". This document claims \"TIPS\r\n>    still functions with HTTP/1.x for client pull functionality only,\r\n>    with the limitation that it cannot cancel any outstanding requests or\r\n>    fetch resources concurrently over the same connection.\" However, it is unclear what operations/procedure defined in this document will fail when TIPS work over HTTP/1.x (also whether there are scenarios the server/client have to fall back to HTTP/1.x), the signal or error code the TIPS will provide, and how the server and client should act when these failures happen.\r\n> \r\n> This looks like an operational hole that authors must fill before publication.\r\n> However, I am not sure, if there is no scenarios that the server/client have to fall back to HTTP/1.x, the authors may simply declare the TIPS SHOULD not work with HTTP/1.x.\r\n> ",
+      "createdAt": "2023-04-04T08:09:59Z",
+      "updatedAt": "2023-04-07T17:24:33Z",
+      "closedAt": "2023-04-07T17:24:33Z",
+      "comments": [
+        {
+          "author": "lkeller19",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Full mailing list response here: https://mailarchive.ietf.org/arch/msg/alto/4kY7J1o1PpBn1gmybppd-4bBfbM/\r\n\r\nProposed change to section 2.5:\r\nOLD\r\n<name>TIPS with HTTP/1.x<name>\r\n\r\n<t>While TIPS is designed to take advantage of newer HTTP features, TIPS still functions with HTTP/1.x for client pull functionality only, with the limitation that it cannot cancel any outstanding requests or fetch resources concurrently over the same connection.<t>\r\n\r\nNEW\r\n<name>TIPS with Different HTTP Versions<name>\r\n\r\n<t>The HTTP version a connection uses is negotiated between client and server based on the respective HTTP RFC documents.</t>\r\n\r\n <t>While TIPS is designed to take advantage of newer HTTP features like server push and substreams for concurrent fetch, TIPS still functions with HTTP/1.x for client pull defined in Section 6, with the limitation that it cannot cancel any outstanding requests or fetch resources concurrently over the same connection due to the blocking nature of HTTP/1.x requests.  Additionally, because HTTP/1.x does not support server push, the use of TIPS with server push defined in Section 7 is not available if a client connects to an ALTO server with HTTP/1.x. If a client only capable of HTTP/1.x desires to monitor multiple resources at the same time, it must open multiple connections, one for each resource. For HTTP/2 and /3, because of substreams, multiple resources can be monitored simultaneously.</t>",
+          "createdAt": "2023-04-07T17:24:33Z",
+          "updatedAt": "2023-04-07T17:24:33Z"
+        }
+      ]
+    },
+    {
+      "number": 24,
+      "id": "I_kwDOHit-9c5mB0lz",
+      "title": "normative language for http responses",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/24",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "2nd"
+      ],
+      "body": "For text such as:\r\n\r\n> The response to a valid request MUST be 200 if success, and the corresponding error code if there is any error.\r\n\r\nPlease note that RFC9205 says the following: \r\n\r\n>    When writing a specification, it's often tempting to specify exactly\r\n>    how HTTP is to be implemented, supported, and used.  However, this\r\n>    can easily lead to an unintended profile of HTTP behaviour.  For\r\n>    example, it's common to see specifications with language like this:\r\n> \r\n>    |  A POST request MUST result in a 201 (Created) response.\r\n> \r\n>    This forms an expectation in the client that the response will always\r\n>    be 201 (Created) when in fact there are a number of reasons why the\r\n>    status code might differ in a real deployment; for example, there\r\n>    might be a proxy that requires authentication, or a server-side\r\n>    error, or a redirection.  If the client does not anticipate this, the\r\n>    application's deployment is brittle.\r\n\r\nYou may avoid using the normative language here. Please check similar uses in the I-D. Thanks.",
+      "createdAt": "2023-05-16T10:43:22Z",
+      "updatedAt": "2023-06-05T09:21:43Z",
+      "closedAt": "2023-06-05T09:21:42Z",
+      "comments": []
+    },
+    {
+      "number": 28,
+      "id": "I_kwDOHit-9c5mnHsa",
+      "title": "SHOULD reply may exacerbate a DoS Attack",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/28",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "2nd"
+      ],
+      "body": "> In these\r\n> cases, the server SHOULD return the HTTP status \"429 Too many\r\n> requests\".\r\n\r\nI would lower this to a \"may\" (without even using the normative language). However, I would a SHOULD to log the event.",
+      "createdAt": "2023-05-23T08:38:08Z",
+      "updatedAt": "2023-06-05T09:22:31Z",
+      "closedAt": "2023-06-05T09:22:31Z",
+      "comments": []
+    },
+    {
+      "number": 30,
+      "id": "I_kwDOHit-9c5nWr4j",
+      "title": "1:1 connection/client",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/30",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "2nd"
+      ],
+      "body": "Unless I' m mistaken, I don't see NEW text in the updated version to motivate this design choice:\r\n\r\n> Each client maintains a single HTTP connection with the ALTO server and\r\n> uses the TIPS view to retrieve updates.\r\n\r\nI thought that we agreed to have such text. Did I missed something? Thanks. ",
+      "createdAt": "2023-05-31T11:31:02Z",
+      "updatedAt": "2023-06-11T03:23:20Z",
+      "closedAt": "2023-06-11T03:23:19Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Sorry I got a flu earlier this week. I should be back on revising the document today. @boucadair ",
+          "createdAt": "2023-06-08T02:46:54Z",
+          "updatedAt": "2023-06-08T02:46:54Z"
+        }
+      ]
+    },
+    {
+      "number": 31,
+      "id": "I_kwDOHit-9c5ngDhM",
+      "title": "Meng's Review",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/31",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "2nd"
+      ],
+      "body": ">   ** Section 1: \"Hence, a client can run the base protocol on top of\r\n>   HTTP/2 or HTTP/3 to request multiple information resources\r\n>   concurrently, in concurrent streams, ... Hence, there can be large\r\n>   overhead when the client already has ...\"\r\n> \r\n> The first sentence here simply illustrates how stream multiplexing can be used. There is no obvious causal relation with previous sentence. \r\n> Maybe the first \"hence\" can be deleted.\r\n> \r\n> Also, does \"concurrently\" and \"in concurrent streams\" have the same meaning? IMHO, with stream multiplexing in HTTP/2 and HTTP/3, \"in concurrent streams\" is effectively \"concurrently\".\r\n> \r\n>   ** Section 1, just above Section 1.1: \"URI patterns to fetch the\r\n>   snapshots or incremental updates\"\r\n> \r\n> Is it necessary to specify here it is ALTO CLIENT that fetches snapshots or updates from ALTO SERVER?\r\n> \r\n>   ** Section 2.1: \"a client can direct request ...\"\r\n> \r\n> direct --> directly (I saw Qiufang already pointed this out. Just put it here to remind)\r\n> \r\n>   ** Section 3.1: \"from 103 and 105\"\r\n> \r\n> and --> to\r\n> \r\n>   ** Section 4.1: \"the client indicate for server push ...\"\r\n> \r\n> indicate --> indicates\r\n> \r\n>   ** Section 4.2: \"The HTTP version of a \"https\" connection uses is\r\n>   negotiated\"\r\n> \r\n> Delete \"of\", or delete \"uses\"\r\n> \r\n>   ** Section 4.2: \"For HTTP/2 and /3, because of streams\"\r\n> \r\n> Here, \"because of streams\" sounds a bit unclear to me. Maybe it can be changed to \"because multiplexed streams are supported\" or \"with/using multiplexed streams\".\r\n> \r\n>   ** Section 5.2: \"IncrementalUpdateMediaTypes incremental-change-media-types\"\r\n> \r\n> The expression in object type and variable name may be kept consistent, using either change or update.\r\n> \r\n>   ** HTTP status codes in Section 6/7/8\r\n> \r\n> It may improve clarity by listing possible HTTP status codes in each scenario, like those listed in Section 7.2. (not sure this is necessary\r\n> though)\r\n> \r\n>   ** Section 7.1\r\n> \r\n> To keep the context clear, you may explicitly point to the example given in Section 6.3.\r\n",
+      "createdAt": "2023-06-01T14:29:42Z",
+      "updatedAt": "2023-06-05T09:22:19Z",
+      "closedAt": "2023-06-05T09:22:19Z",
+      "comments": []
+    },
+    {
+      "number": 32,
+      "id": "I_kwDOHit-9c5ngD48",
+      "title": "Mahdi's Review",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/32",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC",
+        "2nd"
+      ],
+      "body": "> However, I would like to point out three minor errors, in addition to the comments made earlier by Meng and Qiufang:\r\n> 1.\tOn page 43, there is a repetition of the word \"section\" in the last paragraph of Appendix B.\r\n> 2.\tOn page 33 (section 9.2), the sentence \"For incremental updates...\" contains repeated parts.\r\n> 3.\tOn page 10, in Section 3.2, the opening sentence needs revision. It currently reads, \"Which we can [name?].\"\r\n> Furthermore, I have a couple of not-so-important comments:\r\n>        A. On page 41 (Appendix A), the types of resources mentioned do not reflect the hierarchical (top-down) nature of the three categories. \r\n>        B. It appears that a simple limit on the maximum number of parallel requests is insufficient to mitigate the threat of DDoS, as stated later in the document. Could you clarify what HTTP status should be returned if a server is unable to process requests from non-malicious clients due to a high load?\r\n> Lastly, I would like to reiterate the comment made by Meng to ensure the document is as comprehensive as possible:\r\n> \r\n> \"\r\n>   ** HTTP status codes in Section 6/7/8\r\n> \r\n> It may improve clarity by listing possible HTTP status codes in each \r\n> scenario, like those listed in Section 7.2. (not sure this is necessary \r\n> though)\r\n> \"\r\n",
+      "createdAt": "2023-06-01T14:30:27Z",
+      "updatedAt": "2023-06-05T09:22:04Z",
+      "closedAt": "2023-06-05T09:22:04Z",
+      "comments": []
+    },
+    {
+      "number": 36,
+      "id": "I_kwDOHit-9c5ra6Ht",
+      "title": "Obsolete RFC 8895?",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/36",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "From @martinduke \r\n\r\n> A) Is this intended to obsolete RFC 8895? The example* implies that a server would choose to support both. If this is meant to be the long term state, under what circumstances would a client still use SSE? This document should clarify the relationship. My preference would be to obsolete it, unless there is a compelling use case to retain. Certainly, there is little to no implementation of SSE today, so the cost of deprecation should be low.",
+      "createdAt": "2023-07-13T05:40:23Z",
+      "updatedAt": "2023-07-24T06:47:30Z",
+      "closedAt": "2023-07-24T06:47:30Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed in [this commit](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/cc5ced932c925e2e9ea524517fc7cc95a1594479).",
+          "createdAt": "2023-07-24T06:47:30Z",
+          "updatedAt": "2023-07-24T06:47:30Z"
+        }
+      ]
+    },
+    {
+      "number": 37,
+      "id": "I_kwDOHit-9c5ra6oV",
+      "title": "Server Push Motivation",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/37",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "from @martinduke \r\n\r\n> B) Can you elaborate on why \"The authors have considered these factors and have still decided server push can be valuable in the TIPS use case\"? The charter mentions PUSH but we don't need to do it if it's not the right thing.",
+      "createdAt": "2023-07-13T05:41:26Z",
+      "updatedAt": "2023-07-24T06:47:43Z",
+      "closedAt": "2023-07-24T06:47:43Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed in [this commit](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/cc5ced932c925e2e9ea524517fc7cc95a1594479).",
+          "createdAt": "2023-07-24T06:47:43Z",
+          "updatedAt": "2023-07-24T06:47:43Z"
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "id": "I_kwDOHit-9c5ra8yq",
+      "title": "S2.1/Websockets",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/38",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "from @martinduke:\r\n\r\n> (S2.1) This says that clients can currently get ALTO data over WebSockets and cites RFC8895. 8895 does not contain the text \"websockets\", so I'm wondering what this means.\r\n",
+      "createdAt": "2023-07-13T05:45:51Z",
+      "updatedAt": "2023-07-24T06:46:39Z",
+      "closedAt": "2023-07-24T06:46:39Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed by commit [95da6b](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/95da6b9ae41c13c40282fd409ec43257571111e6).",
+          "createdAt": "2023-07-24T06:46:37Z",
+          "updatedAt": "2023-07-24T06:46:37Z"
+        }
+      ]
+    },
+    {
+      "number": 39,
+      "id": "I_kwDOHit-9c5ra9Ko",
+      "title": "S2.2/TIPS View versions",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/39",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "from @martinduke \r\n\r\n \r\n> (S2.2) It might be worth pointing out in the text that the distinction between tv2 and tv3 has nothing to do with the HTTP version, only the fact that the clients have requested different filter sets.\r\n> \r\n\r\n",
+      "createdAt": "2023-07-13T05:47:23Z",
+      "updatedAt": "2023-07-24T06:46:13Z",
+      "closedAt": "2023-07-24T06:46:13Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed by commit [95da6b](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/95da6b9ae41c13c40282fd409ec43257571111e6).",
+          "createdAt": "2023-07-24T06:46:13Z",
+          "updatedAt": "2023-07-24T06:46:13Z"
+        }
+      ]
+    },
+    {
+      "number": 40,
+      "id": "I_kwDOHit-9c5ra9ct",
+      "title": "S10.2/flow control data",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/40",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "from @martinduke \r\n\r\n\r\n> (S10.2) TCP, HTTP/2, and QUIC provide stream and connection flow control data limits, and PUSH stream limits, that might help the client that gets too much data.",
+      "createdAt": "2023-07-13T05:48:30Z",
+      "updatedAt": "2023-07-24T06:45:30Z",
+      "closedAt": "2023-07-24T06:45:29Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed by commit [95da6b](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/95da6b9ae41c13c40282fd409ec43257571111e6).",
+          "createdAt": "2023-07-24T06:45:29Z",
+          "updatedAt": "2023-07-24T06:45:29Z"
+        }
+      ]
+    },
+    {
+      "number": 41,
+      "id": "I_kwDOHit-9c5ra9yQ",
+      "title": "Various Clarifications",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/41",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "AD review"
+      ],
+      "body": "from @martinduke \r\n\r\n> (S3.1) What is the significance of the \"Base Resource\" box in Figure 2?\r\n> \r\n> (S4.3) Client poll actually requires HTTP/1.1, right? 1.0 doesn't have pipelining so it can serve multiple requests. So saying 1.1 instead of 1.x would be more precise.\r\n> \r\n> (S4.3) and (S9.1) suggest that HTTP/1 can use multiple connections, which implies that the sequence number space is identical for all connections. But (S6) and (S9.7) suggest that the server could issue an entirely different TIPS view with a different sequence number space for the same resource. Can we correct one or add some normative requirements? Is it OK or not for the server to have different sequence number representations of the same resource?\r\n> \r\n> (S5.2) Where do the values for incremental-change-media-types come from? Is it the registry for media types, with an RFC required to nominate it for use in this field? Does there need to be a new IANA registry? This appears to be an oversight in RFC8895.\r\n> \r\n> (S5.2) \"If the server does not support JSON patch to handle such a case, the server then needs to send a full replacement.\"\r\n> \r\n> But if it's long poll, the server can't decide, no? If there's no way to get from 112 to 113, and the client is asking for 112/113, there's no way to resolve this.\r\n> \r\n> (S5.4) It says the example includes SSE, but I'm scanning for 'text/event-stream' and I'm not finding it. What am I missing?\r\n> \r\n> (S8.2) What does the server do if the client resets a PUSH_PROMISE? This is kind of a weird phrasing: IIUC PUSH_PROMISE goes on the request stream, so the client is resetting the request stream, not \"the PUSH_PROMISE\".\r\n> \r\n> (S8.3) The example should clarify that it is HTTP/2, not 3. Also what is the \"current stream\"? You mean the original TIPS request stream, right?\r\n> \r\n> (S8.4) What is \"SID_tq\"?",
+      "createdAt": "2023-07-13T05:49:49Z",
+      "updatedAt": "2023-07-24T06:44:57Z",
+      "closedAt": "2023-07-24T06:44:57Z",
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Addressed by commit [95da6b](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/commit/95da6b9ae41c13c40282fd409ec43257571111e6).",
+          "createdAt": "2023-07-24T06:44:57Z",
+          "updatedAt": "2023-07-24T06:44:57Z"
+        }
+      ]
+    },
+    {
+      "number": 43,
+      "id": "I_kwDOHit-9c5sZ5zg",
+      "title": "unreviewed",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/43",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/blob/cc5ced932c925e2e9ea524517fc7cc95a1594479/draft-ietf-alto-new-transport.md?plain=1#L594\r\n\r\nWhen checking the diff, I noticed that we say non-normative + unreviewed. I would delete the \"unreviewed\" part of the text",
+      "createdAt": "2023-07-24T16:11:26Z",
+      "updatedAt": "2023-10-24T05:45:18Z",
+      "closedAt": "2023-10-24T05:45:18Z",
+      "comments": [
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "does not apply anymore as the appendix was removed",
+          "createdAt": "2023-10-24T05:45:18Z",
+          "updatedAt": "2023-10-24T05:45:18Z"
+        }
+      ]
+    },
+    {
+      "number": 44,
+      "id": "I_kwDOHit-9c5sZ6KI",
+      "title": "fix json",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/44",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/blob/cc5ced932c925e2e9ea524517fc7cc95a1594479/draft-ietf-alto-new-transport.md?plain=1#L816\r\n\r\nPlease delete \",\" ",
+      "createdAt": "2023-07-24T16:12:28Z",
+      "updatedAt": "2023-11-01T02:50:48Z",
+      "closedAt": "2023-11-01T02:50:48Z",
+      "comments": []
+    },
+    {
+      "number": 47,
+      "id": "I_kwDOHit-9c5zc-e4",
+      "title": "short keepalive",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/47",
+      "state": "CLOSED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/blob/227b92c07419a5eb5a0294e80b1a2717e931a710/draft-ietf-alto-new-transport.md?plain=1#L1000C6-L1000C32\r\n\r\nI know this is an example, but I suggest to use a longer value here\r\n\r\nFYI, even for UDP, current recommendations is to use longer values \r\n\r\n\"An application that needs to employ keep-alive messages to deliver ... SHOULD NOT\r\n   transmit them more frequently than once every 15 seconds\" (RFC8085)\r\n\r\nat the TCP level, RFC9293 says the following: \r\n\r\n\"Keep-alive packets MUST only be sent when no sent data is outstanding, and no data or acknowledgment packets have been received for the connection within an interval (MUST-26). This interval MUST be configurable (MUST-27) and MUST default to no less than two hours (MUST-28).\"",
+      "createdAt": "2023-10-11T06:45:50Z",
+      "updatedAt": "2023-10-24T05:41:32Z",
+      "closedAt": "2023-10-24T05:41:32Z",
+      "comments": [
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "given that HBs were removed",
+          "createdAt": "2023-10-24T05:41:32Z",
+          "updatedAt": "2023-10-24T05:41:32Z"
+        }
+      ]
+    },
+    {
+      "number": 48,
+      "id": "I_kwDOHit-9c50vTyy",
+      "title": "position vs. SSE (form Wes)",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/48",
+      "state": "OPEN",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "1) The placement of TIPS relative to other ALTO standards is unclear.  This became evident to me on page 4, reading the bottom paragraph with \"Despite the benefits, however, ...\".  Is the gist of this paragraph supposed to be that the WG does not think that TIPS should totally replace ALTO/SSE?  It's not clear to me what the recommendation or applicability statement for these is in practical terms.  The WG should convey more clearly what it believes implementations and deployments should be using, under what circumstances.  If both protocols are maintained as standards track, then it should be clearly stated why that needs to be the case and that this does not obsolete ALTO/SSE.  It seems to be created as another option, with unclear guidance provided to implementers about what to do.",
+      "createdAt": "2023-10-24T05:42:16Z",
+      "updatedAt": "2023-10-24T05:42:16Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 50,
+      "id": "I_kwDOHit-9c50vUdK",
+      "title": "Nits from Wes",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/50",
+      "state": "OPEN",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "1) page 4\r\nfrom\r\n\"no capability it transmits incremental\"\r\nto\r\n\"no capability to transmit incremental\"\r\n\r\n2) I don't know if this is typical for other ALTO documents, but the usage of the term \"transport protocol\" in the first paragraph of section 1 is not consistent with the Internet architecture where \"transport protocols\" are TCP,\r\nUDP, SCTP, etc., nor is it \"transport\" in the sense of MPLS, etc.   I would\r\nsuggest using the alternative term \"transfer\" to be less jarring.  Of course, if this is already the standard terminology for ALTO that the IETF has accepted, then this comment can be ignored.\r\n\r\n3) In the section 5.4 example, should \"my-networkmap\" in some of the \"uses\"\r\nvalues by \"my-network-map\" that was defined at the top?\r\n",
+      "createdAt": "2023-10-24T05:45:51Z",
+      "updatedAt": "2023-10-24T05:45:51Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 51,
+      "id": "I_kwDOHit-9c50vUqz",
+      "title": "Construction of the \u201ctips-view-uri\u201d (DISCUSS from Roman)",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/51",
+      "state": "OPEN",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "** Section 6.2.  Construction of the \u201ctips-view-uri\u201d.\r\n\r\n-- Under what circumstances would it be appropriate to use http (instead of\r\nhttps) for the tips-view-uri for this new protocol mechanism?  Why is http\r\nneeded?  Could https be the only option?  I appreciate that there is history of\r\nan http URL from RFC7285 published in 2014, but has field experience continue\r\nto dictate a need for this insecure approach for an entirely new service?  If\r\nit is needed would there be a away to express a preference for secure transport?\r\n\r\n-- Is there any underlying assumption in how \u201ctips-view-path\u201d is constructed? I\r\nasked because Section 9.3 says \u201cAn outside party that can read the TIPS\r\nresponse or that can observe TIPS requests can obtain the TIPS view URI and use\r\nthat to send fraudulent \u2018DELETE\u2019 requests thus disabling the service for the\r\nvalid ALTO client.  This can be avoided by encrypting the requests and\r\nresponses (Section 15 of [RFC7285]).\u201d  Observing the tips-view-uri is one way\r\nto spoof the URI, but what if it could be guessed?  Is there an assumption that\r\na unguessable random string is part of the path?  As far as I can find, no text\r\nexplicitly says that, although the examples imply it.  If the string is\r\nguessable being encrypted doesn\u2019t help but using some kind of authentication\r\nwould.\r\n",
+      "createdAt": "2023-10-24T05:46:51Z",
+      "updatedAt": "2023-10-24T05:46:51Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 52,
+      "id": "I_kwDOHit-9c503bYS",
+      "title": "Why SHOULD and not MUST or MAY (DISCUSS from Fransesca)",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/52",
+      "state": "OPEN",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "> In several places (see below for what I identified as problematic SHOULDs) the\r\n> document lacks text about why these are SHOULD and not MUST or MAY. I agree\r\n> with John Klensin, who formulated it very clearly: If SHOULD is used, then it\r\n> must be accompanied by at least one of: (1) A general description of the\r\n> character of the exceptions and/or in what areas exceptions are likely to\r\n> arise.  Examples are fine but, except in plausible and rare cases, not\r\n> enumerated lists. (2) A statement about what should be done, or what the\r\n> considerations are, if the \"SHOULD\" requirement is not met. (3) A statement\r\n> about why it is not a MUST. I believe some context around these would be enough\r\n> to solve my concern, and give the reader enough context to make an informed\r\n> decision. If you believe the context is there, and I just missed it, please do\r\n> let me know.\r\n> \r\n> Francesca\r\n> \r\n> Section 6.2:\r\n> \r\n> > A server SHOULD NOT use properties that are not included in the request body\r\n> to determine the URI of a TIPS view, such as cookies or the client's IP address.\r\n> \r\n> > If the TIPS request does not have a \"resource-id\" field, the error code of\r\n> the error message MUST be E_MISSING_FIELD and the \"field\" field SHOULD be\r\n> \"resource-id\".\r\n> \r\n> > The \"field\" field SHOULD be the full path of the \"resource-id\" field, and the\r\n> \"value\" field SHOULD be the invalid resource-id.\r\n> \r\n> Section 7.2:\r\n> \r\n> > Hence, the server processing logic SHOULD be:\r\n> \r\n> Section 8.5:\r\n> \r\n> > If the new value does not, whether there is an update depends on whether the\r\n> previous value satisfies the test. If it did not, the updates graph SHOULD NOT\r\n> have an update.\r\n",
+      "createdAt": "2023-10-25T06:59:18Z",
+      "updatedAt": "2023-10-25T06:59:18Z",
+      "closedAt": null,
+      "comments": []
+    }
+  ],
+  "pulls": [
+    {
+      "number": 1,
+      "id": "PR_kwDOHit-9c5LWL23",
+      "title": "some edits to the abstract/intro",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/1",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-03-06T09:27:19Z",
+      "updatedAt": "2023-03-13T03:45:39Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "71131f07eabd8a61969c730569b1f073f264a151",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-1",
+      "headRefOid": "32b49e1f6eaf27f6e2b76675d8aeb07d225b37ea",
+      "closedAt": "2023-03-13T03:45:39Z",
+      "mergedAt": "2023-03-13T03:45:39Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "4609c69f1f6170a258abba76bee03f089e3d7d8a"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 2,
+      "id": "PR_kwDOHit-9c5L7zW0",
+      "title": "Update draft-ietf-alto-new-transport.xml",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/2",
+      "state": "CLOSED",
+      "author": "Roland-Schott",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-03-13T21:08:05Z",
+      "updatedAt": "2023-05-23T14:59:30Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "c8d5119972033fdb1244c70a7bae658ae1b5a033",
+      "headRepository": "Roland-Schott/draft-ietf-alto-new-transport",
+      "headRefName": "patch-1",
+      "headRefOid": "5bce10ddb525f77fad1ba64cd82014d18163b46c",
+      "closedAt": "2023-05-23T14:59:30Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "Roland-Schott",
+          "authorAssociation": "NONE",
+          "body": "Change of Address",
+          "createdAt": "2023-03-13T21:10:48Z",
+          "updatedAt": "2023-03-13T21:10:48Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 25,
+      "id": "PR_kwDOHit-9c5Qmj0Z",
+      "title": "Avoid Orphan Subsections",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/25",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "",
+      "createdAt": "2023-05-16T10:55:37Z",
+      "updatedAt": "2023-05-22T08:38:13Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "cbd2569d6dcf3e0ae7b8fd52f38a4fc1f9113167",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-2",
+      "headRefOid": "39e0d3bff81e14c0c92eaed41a6fd265698de8c3",
+      "closedAt": "2023-05-22T07:52:18Z",
+      "mergedAt": "2023-05-22T07:52:18Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "9ec406fe29dee13c4c2e71f369616359f5d5ba58"
+      },
+      "comments": [
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@boucadair Med, I have migrated the draft to markdown format (see [this branch](https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/tree/markdown)). The changes are merged as well.\r\n\r\nI am taking a complete pass of the markdown before merging it to the main branch.",
+          "createdAt": "2023-05-22T07:53:46Z",
+          "updatedAt": "2023-05-22T07:54:39Z"
+        },
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thank you, @emiapwil.\r\n\r\nLooking forward merging the new branch into the main.\r\n",
+          "createdAt": "2023-05-22T08:38:13Z",
+          "updatedAt": "2023-05-22T08:38:13Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 26,
+      "id": "PR_kwDOHit-9c5RHVyc",
+      "title": "Add a pointer to the 9205 discussion in the intro",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/26",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "",
+      "createdAt": "2023-05-23T08:06:49Z",
+      "updatedAt": "2023-06-03T14:46:13Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "60baa28c3dc2d7e73ba0fe233ee5697038b206ee",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-3",
+      "headRefOid": "509dfe07c84f9aa852521c39645fe4b61948d509",
+      "closedAt": "2023-06-03T14:46:13Z",
+      "mergedAt": "2023-06-03T14:46:13Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "3f649108efb8451ae40024868f53fdf042b84876"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 27,
+      "id": "PR_kwDOHit-9c5RHblD",
+      "title": "Better visibility of the issues that motivate TIPS",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/27",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "",
+      "createdAt": "2023-05-23T08:23:44Z",
+      "updatedAt": "2023-06-03T14:48:27Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "3f649108efb8451ae40024868f53fdf042b84876",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-4",
+      "headRefOid": "c6da85d2c160f7c7ecf6f51f02236ea728c2ef02",
+      "closedAt": "2023-06-03T14:48:27Z",
+      "mergedAt": "2023-06-03T14:48:27Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "8a9e13c956278c4e7c2a0064ca4263ecdae5d082"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 29,
+      "id": "PR_kwDOHit-9c5RNVgS",
+      "title": "minor edits to the appendix",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/29",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "WGLC"
+      ],
+      "body": "",
+      "createdAt": "2023-05-24T06:11:35Z",
+      "updatedAt": "2023-06-03T14:50:34Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "8a9e13c956278c4e7c2a0064ca4263ecdae5d082",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-5",
+      "headRefOid": "7d301c4c2e8dae5d5e47def7636ddbfdcc559c02",
+      "closedAt": "2023-06-03T14:50:34Z",
+      "mergedAt": "2023-06-03T14:50:34Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "eaeee1e8cfb000d7e0bf3af4ca529b06f43bb47e"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOHit-9c5V5CYG",
+          "commit": {
+            "abbreviatedOid": "fc3d3d5"
+          },
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-05-24T06:20:53Z",
+          "updatedAt": "2023-05-24T06:20:53Z",
+          "comments": [
+            {
+              "originalPosition": 56,
+              "body": "```suggestion\r\nbalancing flexibility. See {{load-balancing}} for a discussion on load balancing\r\n```",
+              "createdAt": "2023-05-24T06:20:53Z",
+              "updatedAt": "2023-05-24T06:20:53Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "id": "PR_kwDOHit-9c5S4YlF",
+      "title": "call out explicitly the IANA registry",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/33",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This will help me fix this part in the writeup: \r\n\r\n20. Describe the document shepherd's review of the IANA considerations section, especially with regard to its consistency with the body of the document. Confirm that all aspects of the document requiring IANA assignments are associated with the appropriate reservations in IANA registries. Confirm that any referenced IANA registries have been clearly identified. Confirm that each newly created IANA registry specifies its initial contents, allocations procedures, and a reasonable name (see [RFC 8126][11]).",
+      "createdAt": "2023-06-13T12:29:57Z",
+      "updatedAt": "2023-06-14T11:11:06Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "570f0a89ea3c923944aff807fb76b40dd2533a8a",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-6",
+      "headRefOid": "f646a0b6f5cf8a58759a74b36cb97ebb6a70fc9c",
+      "closedAt": "2023-06-14T11:11:05Z",
+      "mergedAt": "2023-06-14T11:11:05Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "ec61cedea053974af08b94f214c563b9366ebb3d"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 34,
+      "id": "PR_kwDOHit-9c5S4m-R",
+      "title": "Update the media type request to follow the template in RFC 6838",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/34",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-06-13T13:00:25Z",
+      "updatedAt": "2023-06-14T11:11:38Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "570f0a89ea3c923944aff807fb76b40dd2533a8a",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-7",
+      "headRefOid": "2acf42aae695e1e48eee98f754279e8bcbb4f67c",
+      "closedAt": "2023-06-14T11:11:38Z",
+      "mergedAt": "2023-06-14T11:11:38Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "9db70749d7bc5500db3966834d5b3995062dd778"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 35,
+      "id": "PR_kwDOHit-9c5VXC_i",
+      "title": "AD Nits",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/35",
+      "state": "MERGED",
+      "author": "martinduke",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-07-12T23:14:29Z",
+      "updatedAt": "2023-07-14T15:34:36Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "9db70749d7bc5500db3966834d5b3995062dd778",
+      "headRepository": "martinduke/draft-ietf-alto-new-transport",
+      "headRefName": "nits",
+      "headRefOid": "15efd829f7d55aa4bd003a01772a42dbc9b77f57",
+      "closedAt": "2023-07-14T15:34:36Z",
+      "mergedAt": "2023-07-14T15:34:36Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "7fbd211e208f458da7343eed6f1915d7db78ccd5"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOHit-9c5bDU2J",
+          "commit": {
+            "abbreviatedOid": "15efd82"
+          },
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-13T05:33:25Z",
+          "updatedAt": "2023-07-13T05:33:25Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 42,
+      "id": "PR_kwDOHit-9c5VyBSa",
+      "title": "Some minor fixes",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/42",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Please add captions to all figures and call them in the text rather than \"below\" thing :-)\r\n\r\nThanks.",
+      "createdAt": "2023-07-18T12:40:26Z",
+      "updatedAt": "2023-07-20T02:58:49Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "95da6b9ae41c13c40282fd409ec43257571111e6",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-8",
+      "headRefOid": "fe51a80ae7becd9d5bb18e0c0fa1fe58542c0fe6",
+      "closedAt": "2023-07-20T02:58:48Z",
+      "mergedAt": "2023-07-20T02:58:48Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "b6a5dc6039ffa04ab3215a502312f2db3353f3c2"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 45,
+      "id": "PR_kwDOHit-9c5XdbK0",
+      "title": "new AD nits",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/45",
+      "state": "MERGED",
+      "author": "martinduke",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-08-08T18:22:23Z",
+      "updatedAt": "2023-08-10T00:11:10Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "cc5ced932c925e2e9ea524517fc7cc95a1594479",
+      "headRepository": "martinduke/draft-ietf-alto-new-transport",
+      "headRefName": "nits",
+      "headRefOid": "26fa3b87ff89ee5405a3f3ea799e3433b4d40d20",
+      "closedAt": "2023-08-10T00:11:09Z",
+      "mergedAt": "2023-08-10T00:11:09Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "43d49677b7594bfad9b2959fb8ba5b442ff45895"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 46,
+      "id": "PR_kwDOHit-9c5ZsXbF",
+      "title": "some minor nits",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/46",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-09-06T14:57:54Z",
+      "updatedAt": "2023-09-20T07:10:48Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "43d49677b7594bfad9b2959fb8ba5b442ff45895",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-9",
+      "headRefOid": "6bb817fbae4f9742bf65a90187cda2fc2f268d09",
+      "closedAt": "2023-09-20T07:10:48Z",
+      "mergedAt": "2023-09-20T07:10:48Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "1a51a441203f4beb20b13d7895fc15d8bb22e1ee"
+      },
+      "comments": [
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Some nits when reviewing the recent PR from Martin.",
+          "createdAt": "2023-09-06T14:58:24Z",
+          "updatedAt": "2023-09-06T14:58:24Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 49,
+      "id": "PR_kwDOHit-9c5dmrCr",
+      "title": "fix an error in the JSON",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/49",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-10-24T05:44:34Z",
+      "updatedAt": "2023-11-01T02:50:47Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "783a1d5a7becd7625295d24c3b428c6874d5a9b1",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-10",
+      "headRefOid": "faef0bb39990e953cd74a5164436a05f8564a360",
+      "closedAt": "2023-11-01T02:50:47Z",
+      "mergedAt": "2023-11-01T02:50:47Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "d9522a78c1ebb1f4d625d2015e687b90ddf637c9"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 53,
+      "id": "PR_kwDOHit-9c5d8QDK",
+      "title": "nit from Erik Kline",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/pull/53",
+      "state": "MERGED",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-10-27T07:27:19Z",
+      "updatedAt": "2023-11-01T02:50:17Z",
+      "baseRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "baseRefName": "main",
+      "baseRefOid": "783a1d5a7becd7625295d24c3b428c6874d5a9b1",
+      "headRepository": "ietf-wg-alto/draft-ietf-alto-new-transport",
+      "headRefName": "boucadair-patch-11",
+      "headRefOid": "81c81745c5e7614ce2998939859dedac6d14b87c",
+      "closedAt": "2023-11-01T02:50:17Z",
+      "mergedAt": "2023-11-01T02:50:17Z",
+      "mergedBy": "emiapwil",
+      "mergeCommit": {
+        "oid": "5ce02441ebb74ba7ff2797d66f3e9fd86d92dc0d"
+      },
+      "comments": [],
+      "reviews": []
+    }
+  ]
+}
