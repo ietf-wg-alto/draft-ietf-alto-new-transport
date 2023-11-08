@@ -87,6 +87,7 @@ normative:
   RFC3986:
 
 informative:
+  RFC4122:
   RFC9205:
   IANA-Media-Type:
     title: Media Types
@@ -865,10 +866,17 @@ tips-view-uri:
    the contents of the TIPS view are intended to be publicly accessible and does
    not raise security concerns.
 
-   A server SHOULD NOT use properties that are not included in the request body
-   to determine the URI of a TIPS view, such as cookies or the client's IP
-   address. Furthermore, TIPS MUST NOT reuse a URI for a different TIPS view
-   (different resources or different request bodies).
+   A server MUST NOT use a URI for different TIPS views, either for different
+   resources or different request bodies to the same resource. URI generation is
+   implementation specific, for example, one may compute a Universally Unique
+   Identifier (UUID, {{RFC4122}}) or a hash value based on the request, and
+   append it to a base URL. For performance considerations, it is NOT
+   RECOMMENDED to use properties that are not included in the request body to
+   determine the URI of a TIPS view, such as cookies or the client's IP address,
+   which may result in duplicated TIPS views in cases such as mobile clients.
+   However, this is not mandatory as a server may intentionally use client
+   information to compute the TIPS view URI to provide service isolation between
+   clients.
 
 tips-view-summary:
 :  Contains an updates-graph-summary.
@@ -912,23 +920,21 @@ has the format shown in {{ex-bad-request}}.
 Note that "field" and "value" are optional fields.  If the "value"
 field exists, the "field" field MUST exist.
 
--  If the TIPS request does not have a "resource-id" field, the error
-   code of the error message MUST be `E_MISSING_FIELD` and the "field"
-   field MUST be "resource-id".  The TIPS service MUST NOT create
-   any TIPS view.
+-  If the TIPS request does not have a "resource-id" field, the error code of
+   the error message MUST be `E_MISSING_FIELD` and the "field" field, if
+   present, MUST be "resource-id". The TIPS service MUST NOT create any TIPS
+   view.
 
--  If the "resource-id" field is invalid or is not associated with
-   the TIPS, the error code of the error message MUST be
-   `E_INVALID_FIELD_VALUE`.  The "field" field SHOULD be the full path
-   of the "resource-id" field, and the "value" field SHOULD be the
-   invalid resource-id.
+-  If the "resource-id" field is invalid or is not associated with the TIPS, the
+   error code of the error message MUST be `E_INVALID_FIELD_VALUE`. If present,
+   the "field" field MUST be the full path of the "resource-id" field, and the
+   "value" field MUST be the invalid resource-id.
 
--  If the resource is a POST-mode service that requires input, the
-   client MUST set the "input" field to a JSON object with the
-   parameters that that resource expects.  If the "input" field is
-   missing or invalid, TIPS MUST return the same error response that
-   resource would return for missing or invalid input (see
-   {{RFC7285}}).
+-  If the resource is a POST-mode service that requires input, the client MUST
+   set the "input" field to a JSON object with the parameters that that resource
+   expects. If the "input" field is missing or invalid, TIPS MUST return the
+   same error response that resource would return for missing or invalid input
+   (see {{RFC7285}}).
 
 Furthermore, it is RECOMMENDED that the server uses the following HTTP codes to
 indicate other errors, with the media type "application/alto-error+json".
@@ -972,10 +978,10 @@ message shown in {{ex-op-rep}}.
 ~~~~
     HTTP/1.1 200 OK
     Content-Type: application/alto-tips+json
-    Content-Length: 258
+    Content-Length: 255
 
     {
-      "tips-view-uri": "https://alto.example.com/tips/2718281828459",
+      "tips-view-uri": "https://alto.example.com/tips/2718281828",
       "tips-view-summary": {
         "updates-graph-summary": {
           "start-seq": 101,
@@ -1079,7 +1085,7 @@ Then, the client will be able to receive the TIPS view summary as follows.
 
     event: application/alto-tips+json,tips-123
     data: {
-    data:   "tips-view-uri": "https://alto.example.com/tips/2718281828459",
+    data:   "tips-view-uri": "https://alto.example.com/tips/2718281828",
     data:   "tips-view-summary": {
     data:     "updates-graph-summary": {
     data:       "start-seq": 101,
@@ -1130,7 +1136,7 @@ The GET request MUST have the following format:
 For example, consider the updates graph in {{fig-ug-schema}}. If the client
 wants to query the content of the first update item (0 -> 101) whose media type
 is "application/alto-costmap+json", it sends a request to
-"/tips/2718281828459/ug/0/101" and sets the "Accept" header to
+"/tips/2718281828/ug/0/101" and sets the "Accept" header to
 "application/alto-costmap+json,application/alto-error+json". See {{iu-example}}
 for a concrete example.
 
@@ -1139,18 +1145,18 @@ for a concrete example.
 If the request is valid (`ug/<i>/<j>` exists), the response is encoded
 as a JSON object whose data format is indicated by the media type.
 
-A client may conduct proactive fetching of future updates, by long polling
-updates that have not been listed in the directory yet. For such updates, the
-client MUST have indicated the media type that may appear. It is RECOMMENDED
-that the server allows for at least the long polling of
-`<end-seq> -> <end-seq + 1>`
+A client MAY conduct proactive fetching of future updates, by long polling
+updates that have not been provided in the directory yet. For such updates, the
+client MUST indicate all media types that may appear. It is RECOMMENDED that the
+server allows for at least the long polling of `<end-seq> -> <end-seq + 1>`.
 
-Hence, the server processing logic SHOULD be:
+Hence, the server processing logic MUST be:
 
 -  If `ug/<i>/<j>` exists: return content using encoding.
 
--  Else if `ug/<i>/<j>` pre-fetch is acceptable: put request in a
-   backlog queue.
+-  Else if long polling `ug/<i>/<j>` is acceptable: put request in a
+   backlog queue, then either a response is triggered when the content is ready
+   or the request is interrupted, e.g., by a network error.
 
 -  Else: return error.
 
@@ -1179,7 +1185,7 @@ Assume the client wants to get the contents of the update item on
 edge 0 to 101.  The format of the request is shown in {{ex-get}}.
 
 ~~~~
-    GET /tips/2718281828459/ug/0/101 HTTP/1.1
+    GET /tips/2718281828/ug/0/101 HTTP/1.1
     Host: alto.example.com
     Accept: application/alto-costmap+json, \
               application/alto-error+json
@@ -1259,7 +1265,7 @@ whose corresponding sequence number is 103, and sends the following new next
 edge recommendation request (authentication is omitted for simplicity):
 
 ~~~
-    POST /tips/2718281828459/ug HTTP/1.1
+    POST /tips/2718281828/ug HTTP/1.1
     HOST alto.example.com
     Accept: application/merge-patch+json, application/alto-error+json
     Content-Type: application/alto-tipsparams+json
