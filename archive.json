@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-11-07T00:33:25.161764+00:00",
+  "timestamp": "2023-11-09T00:32:50.369446+00:00",
   "repo": "ietf-wg-alto/draft-ietf-alto-new-transport",
   "labels": [
     {
@@ -1043,16 +1043,31 @@
       "id": "I_kwDOHit-9c503bYS",
       "title": "Why SHOULD and not MUST or MAY (DISCUSS from Fransesca)",
       "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/52",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "boucadair",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "> In several places (see below for what I identified as problematic SHOULDs) the\r\n> document lacks text about why these are SHOULD and not MUST or MAY. I agree\r\n> with John Klensin, who formulated it very clearly: If SHOULD is used, then it\r\n> must be accompanied by at least one of: (1) A general description of the\r\n> character of the exceptions and/or in what areas exceptions are likely to\r\n> arise.  Examples are fine but, except in plausible and rare cases, not\r\n> enumerated lists. (2) A statement about what should be done, or what the\r\n> considerations are, if the \"SHOULD\" requirement is not met. (3) A statement\r\n> about why it is not a MUST. I believe some context around these would be enough\r\n> to solve my concern, and give the reader enough context to make an informed\r\n> decision. If you believe the context is there, and I just missed it, please do\r\n> let me know.\r\n> \r\n> Francesca\r\n> \r\n> Section 6.2:\r\n> \r\n> > A server SHOULD NOT use properties that are not included in the request body\r\n> to determine the URI of a TIPS view, such as cookies or the client's IP address.\r\n> \r\n> > If the TIPS request does not have a \"resource-id\" field, the error code of\r\n> the error message MUST be E_MISSING_FIELD and the \"field\" field SHOULD be\r\n> \"resource-id\".\r\n> \r\n> > The \"field\" field SHOULD be the full path of the \"resource-id\" field, and the\r\n> \"value\" field SHOULD be the invalid resource-id.\r\n> \r\n> Section 7.2:\r\n> \r\n> > Hence, the server processing logic SHOULD be:\r\n> \r\n> Section 8.5:\r\n> \r\n> > If the new value does not, whether there is an update depends on whether the\r\n> previous value satisfies the test. If it did not, the updates graph SHOULD NOT\r\n> have an update.\r\n",
       "createdAt": "2023-10-25T06:59:18Z",
-      "updatedAt": "2023-10-25T06:59:18Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2023-11-08T14:19:07Z",
+      "closedAt": "2023-11-08T14:19:06Z",
+      "comments": [
+        {
+          "author": "boucadair",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@emiapwil, can you please check this one and report back to Francesca? Thank you.",
+          "createdAt": "2023-11-08T11:59:07Z",
+          "updatedAt": "2023-11-08T11:59:07Z"
+        },
+        {
+          "author": "emiapwil",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Got it.",
+          "createdAt": "2023-11-08T13:22:51Z",
+          "updatedAt": "2023-11-08T13:22:51Z"
+        }
+      ]
     }
   ],
   "pulls": [
