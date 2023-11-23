@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-11-21T00:35:12.809807+00:00",
+  "timestamp": "2023-11-23T00:34:31.709103+00:00",
   "repo": "ietf-wg-alto/draft-ietf-alto-new-transport",
   "labels": [
     {
@@ -1068,6 +1068,22 @@
           "updatedAt": "2023-11-08T13:22:51Z"
         }
       ]
+    },
+    {
+      "number": 54,
+      "id": "I_kwDOHit-9c53eKWW",
+      "title": "Zahed DISCUSS Points",
+      "url": "https://github.com/ietf-wg-alto/draft-ietf-alto-new-transport/issues/54",
+      "state": "OPEN",
+      "author": "boucadair",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "\r\n- I understand this new transport is supposed to take advantages of HTTP/2 and HTTP/3 features and have backward compatibility with HTTP/1.x (x=1, likely). My take is, if I want to server ALTO server over HTTP2/ or HTTP/3 I would use this new transport. Now if I also want to also support HTTP1.x for whatever reasons then I have issue, should this new transport is sufficient to support all the HTTP versions up to HTTP/3? if yes, then why this does specification not update or even obsolete [rfc8895](https://datatracker.ietf.org/doc/rfc8895/)? if the answer is NO, does that mean I need to implement both this specification and [rfc8895](https://datatracker.ietf.org/doc/rfc8895/) for HTTP1.1? This relation is not explicitly defined in this current draft, which it should.\r\n\r\n- I am not convinced that incremental update actually reduces storage at ALTO server, how is that so? I don't think there is an strict requirement that all the ALTO clients need to be updated to the recent version to be functional (as described in this specification), that means unless the serve is sure that all the clients are updated to certain version it has to keep the update versions. As storage reduction is a motivation for the transport requirement this motivation need to be well described to derive the requirement.\r\n\r\n- I didn't find any explanation of how the \"Concurrent, non-blocking update transmission\" requirement is meet by the new transport. is this solved by the use of HTTP/3 with uses QUIC and does not have HOL blocking within a connection? Or is this addressed by multiple concurrent HTTP connection to the ALTO server? This need to be understood better and we should define what actually \"Concurrent, non-blocking update transmission\" means in this context of fetching updates.\r\n\r\n- The encoding or data type of \"updates graph (ug)\" and \"version\" is not defined. The example uses numeric numbers which is easy to understand with incremental values. However, unless and otherwise this data type is defined then it is up to the implementers to select that and which will lead to interoperability issues. or may be I am missing something here, that is why I need to discuss the intention here.\r\n\r\n-  Here we are composing URIs from the ug , that tells me without proper encoding on ug defined there might be some internationalization issues (see [rfc6365](https://datatracker.ietf.org/doc/rfc6365/)). Has there been any thoughts or discussions on this encoding and potential issues?",
+      "createdAt": "2023-11-21T14:21:09Z",
+      "updatedAt": "2023-11-21T14:21:22Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
