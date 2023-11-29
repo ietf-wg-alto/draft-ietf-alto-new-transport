@@ -221,11 +221,11 @@ resources. Specifically, the new transport mechanism must satisfy the following
 requirements:
 
 Incremental updates:
-: Incremental updates can reduce both the data storage on an ALTO server and the
-  transmission time of the updates, especially when the change of an ALTO
-  resource is minor. The base protocol does not support incremental updates and
-  the current incremental update mechanism in {{RFC8895}} has limitations (as
-  discussed below).
+: Incremental updates only maintain and transfer the "diff" upon changes. Thus,
+  it is more efficient than storing and transferring the full updates,
+  especially when the change of an ALTO resource is minor. The base protocol
+  does not support incremental updates and the current incremental update
+  mechanism in {{RFC8895}} has limitations (as discussed below).
 
 Concurrent, non-blocking update transmission:
 : When a client needs to receive and apply multiple incremental updates, it is
@@ -250,12 +250,25 @@ Backward compatibility:
   are based on HTTP/1.1.
 
 The ALTO new transport specified in this document satisfies all the design
-requirements and hence improves the efficiency of continuous dissemination of
-ALTO information. The key idea is to introduce a unified data model to describe
-the changes (snapshots and incremental updates) of an ALTO resource, referred to
-as a TIPS view. Along with the data model, this document also specifies a
-unified naming for the snapshots and incremental updates, independent of the
-HTTP version. Thus, these updates can be concurrently requested.
+requirements:
+
+- This document reuses the data format introduced in {{RFC8895}} that enables
+  incremental updates using JSON patches or merge patches.
+
+- This document introduce a unified data model to describe the changes
+  (snapshots and incremental updates) of an ALTO resource, referred to as a TIPS
+  view. In the data model, snapshots and incremental updates are indexed as
+  individual HTTP resources following a unified naming convention, independent
+  of the HTTP version. Thus, these updates can be concurrently requested and be
+  transferred in a non-blocking manner either by using multiple connections or
+  leveraging multiplexed data transfer offered by HTTP/2 or HTTP/3.
+
+- The unified naming convention is based on a monotonically increasing sequence
+  number, making it possible for a client to construct the URL of a future
+  update and send a long-polling request.
+
+- The unified naming convention is independent of the HTTP versions and can
+  operate atop HTTP/1.1, HTTP/2 or HTTP/3.
 
 This document assumes the deployment model discussed in  {{sec-dep-model}}.
 
@@ -283,13 +296,14 @@ Updates graph (ug):
   versions. An ALTO map service (e.g., Cost Map, Network Map) may need only a
   single updates graph. A dynamic network information service (e.g., Filtered
   Cost Map) may create an updates graph (within a new TIPS view) for each unique
-  request.
+  request. Encoding of a updates graph is specified in {{open-req}}.
 
 Version:
 : Represents a historical content of an information resource. For an information
   resource, each version is associated with and uniquely identified by a
-  monotonically and consecutively increased sequence number. This document uses the term
-  "version s" to refer to the version associated with sequence number "s".
+  monotonically and consecutively increased sequence number. This document uses
+  the term "version s" to refer to the version associated with sequence number
+  "s". Version is encoded as a JSONNumber, as specified in {{open-req}}.
 
 Start sequence number (start-seq):
 : Is the smallest non-zero sequence number in an updates graph.
@@ -384,9 +398,13 @@ snapshots can be represented using the following directed acyclic graph model,
 where the server tracks the change of the resource maps with version IDs that are
 assigned sequentially (i.e., incremented by 1 each time):
 
--  Each node in the graph is a version of the resource, where a tag identifies the
-   content of the version (a tag is valid only within the scope of resource).
-   Version 0 is reserved as the initial state (empty/null).
+-  Each node in the graph is a version of the resource, which is identified by a
+   sequence number (defined as a JSONNumber). Version 0 is reserved as the
+   initial state (empty/null).
+
+-  A tag identifies the content of a node. A tag has the same format as the
+   "tag" field in {{Section 10.3 of RFC7285}} and is valid only within the
+   scope of resource.
 
 -  Each edge is an update item. In particular, the edge from i to j is the update
    item to transit from version i to version j.
@@ -512,9 +530,10 @@ to client inactivity. In the event that a TIPS view is closed, an edge request
 will receive error code 404 in response, and the client will have to request a
 new TIPS view URI.
 
-If resources allow, servers SHOULD avoid closing TIPS views that have active
+If resources allow, a server SHOULD avoid closing TIPS views that have active
 polling edge requests or have recently served responses until clients have had a
-reasonable interval to request the next update.
+reasonable interval to request the next update, unless guided by specific
+control policies.
 
 ~~~~ drawing
 Client                                 TIPS-F           TIPS-V
@@ -864,7 +883,10 @@ tips-view-uri:
    extension, and host, port and path are as specified in Sections 3.2.2, 3.2.3,
    and 3.3 in {{RFC3986}}. An ALTO server SHOULD use the "https" scheme unless
    the contents of the TIPS view are intended to be publicly accessible and does
-   not raise security concerns.
+   not raise security concerns. The field MUST contain only ASCII characters. If
+   the original URL contains international characters (e.g., in the domain
+   name), they MUST be properly encoded into the ASCII format (e.g., using the
+   PHP "urlencode" function).
 
    A server MUST NOT use a URI for different TIPS views, either for different
    resources or different request bodies to the same resource. URI generation is
@@ -881,19 +903,19 @@ tips-view-uri:
 tips-view-summary:
 :  Contains an updates-graph-summary.
 
-   The updates-graph-summary field contains the starting sequence
-   number (start-seq) of the updates graph and the last sequence
-   number (end-seq) that is currently available, along with a
-   recommended edge to consume (start-edge-rec).  How the server
-   calculates the recommended edge depends on the implementation.
-   Ideally, if the client does not provide a version tag, the server
-   SHOULD recommend the edge of the latest snapshot available.  If
-   the client does provide a version tag, the server SHOULD calculate
-   the cumulative size of the incremental updates available from that
-   version onward and compare it to the size of the complete resource
-   snapshot.  If the snapshot is bigger, the server SHOULD recommend
-   the first incremental update edge starting from the client's tagged
-   version.  Otherwise, the server SHOULD recommend the latest snapshot
+   The updates-graph-summary field contains the starting sequence number
+   (start-seq) of the updates graph and the last sequence number (end-seq) that
+   is currently available, along with a recommended edge to consume
+   (start-edge-rec). If the client does NOT provide a version tag, the server
+   MUST recommend the edge of the latest snapshot available.
+   If the client does provide a version tag, the server MUST either recommend
+   the first incremental update edge starting from the client's tagged version
+   or the edge of the latest snapshot. Which edge is selected depends on the
+   implementation. For example, a server MAY calculate the cumulative size of
+   the incremental updates available from that version onward and compare it to
+   the size of the complete resource snapshot. If the snapshot is bigger, the
+   server recommends the first incremental update edge starting from the
+   client's tagged version. Otherwise, the server recommends the latest snapshot
    edge.
 
 If the request has any errors, the TIPS service MUST return an HTTP
@@ -1309,7 +1331,7 @@ including:
 - server choosing update messages ({{Section 9.1 of RFC8895}});
 - client processing update messages ({{Section 9.2 of RFC8895}});
 - updates of filtered map services ({{Section 9.3 of RFC8895}});
-- updates of ordinal mode costs ({Section 9.4 of RFC8895}).
+- updates of ordinal mode costs ({{Section 9.4 of RFC8895}}).
 
 There are also some operation considerations specific to TIPS, which we discuss
 below.
@@ -1470,10 +1492,10 @@ particular, for the TIPS server, one or multiple malicious ALTO clients might
 create an excessive number of TIPS views, to exhaust the server resource and/or
 to block normal users from the accessing the service.
 
-To avoid such attacks, the server SHOULD choose to limit the number of active
+To avoid such attacks, the server MAY choose to limit the number of active
 views and reject new requests when that threshold is reached. TIPS allows
-predictive fetching and the server SHOULD also choose to limit the number of
-pending requests. If a new request exceeds the threshold, the server SHOULD log
+predictive fetching and the server MAY also choose to limit the number of
+pending requests. If a new request exceeds the threshold, the server MAY log
 the event and return the HTTP status "429 Too many requests".
 
 It is important to note that the preceding approaches are not the only
