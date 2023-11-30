@@ -883,10 +883,10 @@ tips-view-uri:
    extension, and host, port and path are as specified in Sections 3.2.2, 3.2.3,
    and 3.3 in {{RFC3986}}. An ALTO server SHOULD use the "https" scheme unless
    the contents of the TIPS view are intended to be publicly accessible and does
-   not raise security concerns. The field MUST contain only ASCII characters. If
-   the original URL contains international characters (e.g., in the domain
-   name), they MUST be properly encoded into the ASCII format (e.g., using the
-   PHP "urlencode" function).
+   not raise security concerns. The field MUST contain only ASCII characters. In
+   case the original URL contains international characters (e.g., in the domain
+   name), the ALTO server implementation MUST properly encode the URL into the
+   ASCII format (e.g., using the "urlencode" function).
 
    A server MUST NOT use a URI for different TIPS views, either for different
    resources or different request bodies to the same resource. URI generation is
