@@ -1553,8 +1553,7 @@ Security considerations:
 : See the Security Considerations section of This-Document.
 
 Interoperability considerations:
-: This document specifies the format of conforming messages and the interpretation
-  thereof.
+: N/A.
 
 Published specification:
 : {{open-resp}} of This-Document.
@@ -1622,8 +1621,7 @@ Security considerations:
 : See the Security Considerations section of This-Document.
 
 Interoperability considerations:
-: This document specifies the format of conforming messages and the interpretation
-  thereof.
+: N/A.
 
 Published specification:
 : {{open-req}} of This-Document.
