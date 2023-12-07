@@ -1805,6 +1805,6 @@ Dawkins for providing invaluable reviews of earlier versions of this document,
 Adrian Farrel, Qin Wu, and Jordi Ros Giralt for their continuous feedback, Russ
 White, Donald Eastlake, Martin Thomson, Bernard Adoba, Spencer Dawkins, Linda
 Dunbar and Sheng Jiang for the directorate reviews, Martin Duke for the Area
-Director review, Francesca Palombini, Wesley Eddy, Roman Danyliw and
-Zaheduzzaman Sarker for the telechat and IESG reviews, and Mohamed Boucadair for
-shepherding the document.
+Director review, Francesca Palombini, Wesley Eddy, Roman Danyliw, Murray
+Kucherawy and Zaheduzzaman Sarker for the telechat and IESG reviews, and Mohamed
+Boucadair for shepherding the document.
